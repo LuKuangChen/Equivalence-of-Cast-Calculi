@@ -17,11 +17,11 @@ mutual
     
 data Head (P : PreType) : Type → Set where
   ε : Head P (` P)
-  ¿ : (l : Label) → Head P ⋆
+  ⁇ : (l : Label) → Head P ⋆
 
 data Tail (P : PreType) : Type → Set where
   ε : Tail P (` P)
-  ¡ : Tail P ⋆
+  ‼ : Tail P ⋆
   ⊥ : ∀ {B} → (l : Label) → Tail P B
 
 mutual
@@ -53,17 +53,17 @@ mutual
   seq ℓ id⋆ id⋆ =
     id⋆
   seq ℓ id⋆ (↷ ε b t) =
-    ↷ (¿ ℓ) b t
-  seq ℓ id⋆ (↷ (¿ l) b t) =
-    ↷ (¿ l) b t
+    ↷ (⁇ ℓ) b t
+  seq ℓ id⋆ (↷ (⁇ l) b t) =
+    ↷ (⁇ l) b t
   seq ℓ (↷ h b (⊥ l)) c2 =
     ↷ h b (⊥ l)
-  -- now t is either ε or ¿
+  -- now t is either ε or ⁇
   seq ℓ (↷ h b t) id⋆ =
-    ↷ h b ¡
+    ↷ h b ‼
   seq ℓ (↷ h b t) (↷ ε b₁ t₁) =
     seq-body ℓ h b b₁ t₁
-  seq ℓ (↷ h b t) (↷ (¿ l) b₁ t₁) =
+  seq ℓ (↷ h b t) (↷ (⁇ l) b₁ t₁) =
     seq-body l h b b₁ t₁
   
   seq-body : ∀ {T1 T2 P1 P2 P3 P4} → Label →
@@ -95,7 +95,7 @@ user-seq (↷ h (c₁ ⊗ c₂) ε) (↷ ε (c₃ ⊗ c₄) t) =
   ↷ h (user-seq c₁ c₃ ⊗ user-seq c₂ c₄) t
 user-seq (↷ h (c₁ ⊕ c₂) ε) (↷ ε (c₃ ⊕ c₄) t) =
   ↷ h (user-seq c₁ c₃ ⊕ user-seq c₂ c₄) t
-user-seq (↷ h b ¡) id⋆ =
-  ↷ h b ¡
-user-seq (↷ h b ¡) (↷ (¿ l) b₁ t) =
+user-seq (↷ h b ‼) id⋆ =
+  ↷ h b ‼
+user-seq (↷ h b ‼) (↷ (⁇ l) b₁ t) =
   seq-body l h b b₁ t

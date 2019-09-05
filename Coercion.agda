@@ -1,20 +1,6 @@
 module Coercion (Label : Set) where
+open import Types
 
-infix 100 _⇒_
-infix 100 _⊗_
-infix 100 _⊕_
-
-mutual
-  data Type : Set where
-    ⋆ : Type
-    `_ : (P : PreType) → Type
-    
-  data PreType : Set where
-    U : PreType -- the unit type, adding other base type should be straightforward
-    _⇒_ : (T₁ T₂ : Type) → PreType
-    _⊗_ : (T₁ T₂ : Type) → PreType
-    _⊕_ : (T₁ T₂ : Type) → PreType
-    
 data Head (P : PreType) : Type → Set where
   ε : Head P (` P)
   ⁇ : (l : Label) → Head P ⋆

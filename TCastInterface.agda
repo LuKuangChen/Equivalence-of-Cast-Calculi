@@ -8,7 +8,8 @@ open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 
 open import TCast Label
-open import Terms Label Cast
+open import Terms Label
+open import Vals Label Cast
 
 mk-id : ∀ T → Cast T T
 mk-id T = id

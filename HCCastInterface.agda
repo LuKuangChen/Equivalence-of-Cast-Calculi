@@ -1,15 +1,14 @@
-{-# OPTIONS --allow-unsolved-metas #-}
-
 open import Types
 
 module HCCastInterface
   (Label : Set)
   where
-open import Relation.Nullary using (Dec; yes; no)
+open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Empty using (⊥-elim)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
+open import Variables
 open import HCCast Label
 open import Terms Label
 open import Vals Label Cast
@@ -78,23 +77,24 @@ mk-id (` (T₁ ⊗ T₂)) = ↷ ε (mk-id T₁ ⊗ mk-id T₂) ε
 mk-id (` (T₁ ⊕ T₂)) = ↷ ε (mk-id T₁ ⊕ mk-id T₂) ε
 
 mk-cast : Label → ∀ T1 T2 → Cast T1 T2
-mk-cast ℓ ⋆ ⋆ = id⋆
-mk-cast ℓ ⋆ (` U) = ↷ (⁇ ℓ) U ε
-mk-cast ℓ ⋆ (` (T₁ ⇒ T₂)) = ↷ (⁇ ℓ) (mk-cast ℓ T₁ T₂ ⇒ mk-cast ℓ T₁ T₂) ε
-mk-cast ℓ ⋆ (` (T₁ ⊗ T₂)) = ↷ (⁇ ℓ) (mk-cast ℓ T₂ T₁ ⊗ mk-cast ℓ T₁ T₂) ε
-mk-cast ℓ ⋆ (` (T₁ ⊕ T₂)) = ↷ (⁇ ℓ) (mk-cast ℓ T₂ T₁ ⊕ mk-cast ℓ T₁ T₂) ε
-mk-cast ℓ (` U) ⋆ = ↷ ε U ‼
-mk-cast ℓ (` (T₁ ⇒ T₂)) ⋆ = ↷ ε (mk-cast ℓ T₂ T₁ ⇒ mk-cast ℓ T₂ T₁) ‼
-mk-cast ℓ (` (T₁ ⊗ T₂)) ⋆ = ↷ ε (mk-cast ℓ T₁ T₂ ⊗ mk-cast ℓ T₂ T₁) ‼
-mk-cast ℓ (` (T₁ ⊕ T₂)) ⋆ = ↷ ε (mk-cast ℓ T₁ T₂ ⊕ mk-cast ℓ T₂ T₁) ‼
-mk-cast ℓ (` U) (` U) = ↷ ε U ε
-mk-cast ℓ (` (T₁ ⇒ T₂)) (` (T₃ ⇒ T₄)) = ↷ ε (mk-cast ℓ T₃ T₁ ⇒ mk-cast ℓ T₂ T₄) ε
-mk-cast ℓ (` (T₁ ⊗ T₂)) (` (T₃ ⊗ T₄)) = ↷ ε (mk-cast ℓ T₁ T₃ ⊗ mk-cast ℓ T₂ T₄) ε
-mk-cast ℓ (` (T₁ ⊕ T₂)) (` (T₃ ⊕ T₄)) = ↷ ε (mk-cast ℓ T₁ T₃ ⊕ mk-cast ℓ T₂ T₄) ε
-mk-cast ℓ (` U) (` P₁) = ↷ ε U (⊥ ℓ)
-mk-cast ℓ (` (T₁ ⇒ T₂)) (` P₁) = ↷ ε (mk-id T₁ ⇒ mk-id T₂) (⊥ ℓ)
-mk-cast ℓ (` (T₁ ⊗ T₂)) (` P₁) = ↷ ε (mk-id T₁ ⊗ mk-id T₂) (⊥ ℓ)
-mk-cast ℓ (` (T₁ ⊕ T₂)) (` P₁) = ↷ ε (mk-id T₁ ⊕ mk-id T₂) (⊥ ℓ)
+mk-cast ℓ T1 T2 = seq ℓ (mk-id T1) (mk-id T2)
+-- mk-cast ℓ ⋆ ⋆ = id⋆
+-- mk-cast ℓ ⋆ (` U) = ↷ (⁇ ℓ) U ε
+-- mk-cast ℓ ⋆ (` (T₁ ⇒ T₂)) = ↷ (⁇ ℓ) (mk-cast ℓ T₁ T₂ ⇒ mk-cast ℓ T₁ T₂) ε
+-- mk-cast ℓ ⋆ (` (T₁ ⊗ T₂)) = ↷ (⁇ ℓ) (mk-cast ℓ T₂ T₁ ⊗ mk-cast ℓ T₁ T₂) ε
+-- mk-cast ℓ ⋆ (` (T₁ ⊕ T₂)) = ↷ (⁇ ℓ) (mk-cast ℓ T₂ T₁ ⊕ mk-cast ℓ T₁ T₂) ε
+-- mk-cast ℓ (` U) ⋆ = ↷ ε U ‼
+-- mk-cast ℓ (` (T₁ ⇒ T₂)) ⋆ = ↷ ε (mk-cast ℓ T₂ T₁ ⇒ mk-cast ℓ T₂ T₁) ‼
+-- mk-cast ℓ (` (T₁ ⊗ T₂)) ⋆ = ↷ ε (mk-cast ℓ T₁ T₂ ⊗ mk-cast ℓ T₂ T₁) ‼
+-- mk-cast ℓ (` (T₁ ⊕ T₂)) ⋆ = ↷ ε (mk-cast ℓ T₁ T₂ ⊕ mk-cast ℓ T₂ T₁) ‼
+-- mk-cast ℓ (` U) (` U) = ↷ ε U ε
+-- mk-cast ℓ (` (T₁ ⇒ T₂)) (` (T₃ ⇒ T₄)) = ↷ ε (mk-cast ℓ T₃ T₁ ⇒ mk-cast ℓ T₂ T₄) ε
+-- mk-cast ℓ (` (T₁ ⊗ T₂)) (` (T₃ ⊗ T₄)) = ↷ ε (mk-cast ℓ T₁ T₃ ⊗ mk-cast ℓ T₂ T₄) ε
+-- mk-cast ℓ (` (T₁ ⊕ T₂)) (` (T₃ ⊕ T₄)) = ↷ ε (mk-cast ℓ T₁ T₃ ⊕ mk-cast ℓ T₂ T₄) ε
+-- mk-cast ℓ (` U) (` P₁) = ↷ ε U (⊥ ℓ)
+-- mk-cast ℓ (` (T₁ ⇒ T₂)) (` P₁) = ↷ ε (mk-id T₁ ⇒ mk-id T₂) (⊥ ℓ)
+-- mk-cast ℓ (` (T₁ ⊗ T₂)) (` P₁) = ↷ ε (mk-id T₁ ⊗ mk-id T₂) (⊥ ℓ)
+-- mk-cast ℓ (` (T₁ ⊕ T₂)) (` P₁) = ↷ ε (mk-id T₁ ⊕ mk-id T₂) (⊥ ℓ)
 
 apply-tail : ∀ {P T} → Tail P T → Val (` P) → CastResult T
 apply-tail ε v = succ v
@@ -156,6 +156,71 @@ lem-seq : ∀ {T1 T2 T3}
   → (v : Val T1)
   --------------------
   → apply-cast (mk-seq c1 c2) v ≡ apply-cast c1 v >>= λ u → apply-cast c2 u
-lem-seq c1 c2 v = {!!}
+lem-seq id⋆ c2 v = refl
+lem-seq (↷ (⁇ l) b t) c2 v = {!!}
+lem-seq (↷ ε b t) c2 v = {!!}
 
+lem-cast-¬⌣ : ∀ {T1 T2}
+  → (l : Label)
+  → ¬ (T1 ⌣ T2)
+  → (v : Val T1)
+  → apply-cast (mk-cast l T1 T2) v ≡ fail l
+lem-cast-¬⌣ l ¬p v = {!!}
 
+lem-cast-id⋆ : ∀ l
+  → (v : Val ⋆)
+  → apply-cast (mk-cast l ⋆ ⋆) v ≡ succ v
+lem-cast-id⋆ l v = refl
+
+lem-cast-inj : ∀ {P}
+  → (l : Label)
+  → (v : Val (` P))  
+  → apply-cast (mk-cast l (` P) ⋆) v ≡ succ (inj P v)
+lem-cast-inj l v = {!!}
+
+lem-cast-proj : ∀ l P P₁ v
+  → apply-cast (mk-cast l ⋆ (` P)) (inj P₁ v) ≡ apply-cast (mk-cast l (` P₁) (` P)) v
+lem-cast-proj l P P₁ v = {!!}
+
+lem-cast-U : 
+    (l : Label)
+  → apply-cast (mk-cast l (` U) (` U)) sole ≡ succ sole
+lem-cast-U l = refl
+
+lem-cast-⇒ : ∀ T11 T12 T21 T22
+  → ∀ {S T}
+  → (l : Label)
+  → {Γ : Context}
+  → (E : Env Γ)
+  → (c₁ : Cast T11 S)
+  → (b : (Γ , S) ⊢ T)
+  → (c₂ : Cast T T12)
+  → apply-cast (mk-cast l (` (T11 ⇒ T12)) (` (T21 ⇒ T22))) (fun E c₁ b c₂) ≡
+    succ (fun E (mk-seq (mk-cast l T21 T11) c₁) b (mk-seq c₂ (mk-cast l T12 T22)))
+lem-cast-⇒ T11 T12 T21 T22 l E c₁ b c₂ = refl
+
+lem-cast-⊗ : ∀ T11 T12 T21 T22
+  → (l : Label)
+  → (v : Val T11)
+  → (v₁ : Val T12)
+  → apply-cast (mk-cast l (` (T11 ⊗ T12)) (` (T21 ⊗ T22))) (cons v v₁) ≡
+    apply-cast (mk-cast l T11 T21) v >>= λ u →
+    apply-cast (mk-cast l T12 T22) v₁ >>= λ u₁ →
+    succ (cons u u₁)
+lem-cast-⊗ T11 T12 T21 T22 l v v₁ = refl
+    
+lem-cast-⊕-l : ∀ T11 T12 T21 T22
+  → (l : Label)
+  → (v : Val T11)
+  → apply-cast (mk-cast l (` (T11 ⊕ T12)) (` (T21 ⊕ T22))) (inl v) ≡
+    apply-cast (mk-cast l T11 T21) v >>= λ u →
+    succ (inl u)
+lem-cast-⊕-l T11 T12 T21 T22 l v = refl
+
+lem-cast-⊕-r : ∀ T11 T12 T21 T22
+  → (l : Label)
+  → (v : Val T12)
+  → apply-cast (mk-cast l (` (T11 ⊕ T12)) (` (T21 ⊕ T22))) (inr v) ≡
+    apply-cast (mk-cast l T12 T22) v >>= λ u →
+    succ (inr u)
+lem-cast-⊕-r T11 T12 T21 T22 l v = refl

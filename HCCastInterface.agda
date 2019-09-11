@@ -1,3 +1,5 @@
+{-# OPTIONS --allow-unsolved-metas #-}
+
 open import Types
 
 module HCCastInterface
@@ -6,9 +8,11 @@ module HCCastInterface
 open import Relation.Nullary using (Dec; yes; no)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Empty using (⊥-elim)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
 open import HCCast Label
-open import Terms Label Cast
+open import Terms Label
+open import Vals Label Cast
 
 mutual
   seq : Label → ∀ {T1 T2 T3 T4} → Cast T1 T2 → Cast T3 T4 →
@@ -116,3 +120,42 @@ apply-cast (↷ ε (c₁ ⊕ c₂) t) (inr v) =
   apply-tail t (inr u)
 apply-cast (↷ {P = P1} (⁇ l) b t) (inj P2 v) =
   apply-cast (mk-seq (mk-cast l (` P2) (` P1)) (↷ ε b t)) v
+
+mutual
+  seq-id-l : ∀ {T1 T2} → (c : Cast T1 T2) → mk-seq (mk-id T1) c ≡ c
+  seq-id-l id⋆ = refl
+  seq-id-l (↷ (⁇ l) b t) = refl
+  seq-id-l (↷ ε U t) = refl
+  seq-id-l (↷ ε (c₁ ⇒ c₂) t) rewrite seq-id-r c₁ | seq-id-l c₂ = refl
+  seq-id-l (↷ ε (c₁ ⊗ c₂) t) rewrite seq-id-l c₁ | seq-id-l c₂ = refl
+  seq-id-l (↷ ε (c₁ ⊕ c₂) t) rewrite seq-id-l c₁ | seq-id-l c₂ = refl
+  
+  seq-id-r : ∀ {T1 T2} → (c : Cast T1 T2) → mk-seq c (mk-id T2) ≡ c
+  seq-id-r id⋆ = refl
+  seq-id-r (↷ h b (⊥ l)) = refl
+  seq-id-r (↷ h b ‼) = refl
+  seq-id-r (↷ h U ε) = refl
+  seq-id-r (↷ h (c₁ ⇒ c₂) ε) rewrite seq-id-l c₁ | seq-id-r c₂ = refl
+  seq-id-r (↷ h (c₁ ⊗ c₂) ε) rewrite seq-id-r c₁ | seq-id-r c₂ = refl
+  seq-id-r (↷ h (c₁ ⊕ c₂) ε) rewrite seq-id-r c₁ | seq-id-r c₂ = refl
+
+lem-id : ∀ T
+  → (v : Val T)  
+  -----------------------------
+  → apply-cast (mk-id T) v ≡ succ v
+lem-id ⋆ v = refl
+lem-id (` U) sole = refl
+lem-id (` (T₁ ⇒ T₂)) (fun env c₁ b c₂) rewrite seq-id-l c₁ | seq-id-r c₂ = refl
+lem-id (` (T₁ ⊗ T₂)) (cons v₁ v₂) rewrite lem-id T₁ v₁ | lem-id T₂ v₂ =  refl
+lem-id (` (T₁ ⊕ T₂)) (inl v) rewrite lem-id T₁ v = refl
+lem-id (` (T₁ ⊕ T₂)) (inr v) rewrite lem-id T₂ v = refl
+
+lem-seq : ∀ {T1 T2 T3}
+  → (c1 : Cast T1 T2)
+  → (c2 : Cast T2 T3)
+  → (v : Val T1)
+  --------------------
+  → apply-cast (mk-seq c1 c2) v ≡ apply-cast c1 v >>= λ u → apply-cast c2 u
+lem-seq c1 c2 v = {!!}
+
+

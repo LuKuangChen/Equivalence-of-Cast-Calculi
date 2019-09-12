@@ -1,43 +1,96 @@
-{-# OPTIONS --allow-unsolved-metas #-}
+module HCast (Label : Set) where
 open import Types
+open import Variables
+open import Terms Label
 
-module HCCastInterface
-  (Label : Set)
-  where
 open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Empty using (⊥-elim)
+open import Relation.Nullary using (Dec; yes; no)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym)
 
-open import Variables
-open import HCCast Label
-open import Terms Label
-open import Vals Label Cast
+data Head (P : PreType) : Type → Set where
+  ⁇ : (l : Label) → Head P ⋆
+  ε : Head P (` P)
+
+data Last (P : PreType) : Type → Set where
+  ‼ : Last P ⋆
+  ε : Last P (` P)
+
+data Tail (P : PreType) : Type → Set where
+  fail : ∀ {T}
+    → (l : Label)
+    → Tail P T
+  last : ∀ {T}
+    → (t : Last P T)
+    → Tail P T
+
+mutual
+  data Cast : Type → Type → Set where
+    id⋆ : Cast ⋆ ⋆
+    ↷ : ∀ {A P B}
+      → (h : Head P A)
+      → (r : Rest P B)
+      → Cast A B
+
+  data Rest : PreType → Type → Set where
+    rest : ∀ {P Q B}
+      → (b : Body P Q)
+      → (t : Tail Q B)
+      → Rest P B
+    
+  data Body : PreType → PreType → Set where
+    U : Body U U
+    _⇒_ : ∀ {S1 S2 T1 T2} →
+      (c₁ : Cast S2 S1) →
+      (c₂ : Cast T1 T2) →
+      Body (S1 ⇒ T1) (S2 ⇒ T2)
+    _⊗_ : ∀ {S1 S2 T1 T2} →
+      (c₁ : Cast S1 S2) →
+      (c₂ : Cast T1 T2) →
+      Body (S1 ⊗ T1) (S2 ⊗ T2)
+    _⊕_ : ∀ {S1 S2 T1 T2} →
+      (c₁ : Cast S1 S2) →
+      (c₂ : Cast T1 T2) →
+      Body (S1 ⊕ T1) (S2 ⊕ T2)
 
 mutual
   seq : ∀ {T1 T2 T3 T4}
-    → Label
+    → T2 ≡ T3 ⊎ Label
     → Cast T1 T2
     → Cast T3 T4
   ----------------
     → Cast T1 T4
   seq ℓ id⋆ id⋆
     = id⋆
-  seq ℓ id⋆ (↷ ε r)
-    = ↷ (⁇ ℓ) r
+  seq ℓ id⋆ (↷ ε r) with ℓ
+  seq ℓ id⋆ (↷ ε r) | inj₁ ()
+  seq ℓ id⋆ (↷ ε r) | inj₂ l
+    = ↷ (⁇ l) r
   seq ℓ id⋆ (↷ (⁇ l) r)
     = ↷ (⁇ l) r
-  seq ℓ (↷ h (rest b (fail l))) c2
-    = ↷ h (rest b (fail l))
-  seq ℓ (↷ h (rest b (last t))) id⋆
-    = ↷ h (rest b (last ‼))
-  seq ℓ (↷ h (rest b (last t))) (↷ ε r)
-    = ↷ h (ext-rest ℓ b r)
-  seq ℓ (↷ h (rest b (last t))) (↷ (⁇ l) r)
-    = ↷ h (ext-rest l b r)
+  seq ℓ (↷ h r) c2 = ↷ h (seq' ℓ r c2)
+
+  seq' : ∀ {P T2 T3 T4}
+    → T2 ≡ T3 ⊎ Label
+    → Rest P T2
+    → Cast T3 T4
+  ----------------
+    → Rest P T4
+  seq' ℓ (rest b (fail l)) c2
+    = rest b (fail l)
+  seq' ℓ (rest b (last t)) id⋆
+    = rest b (last ‼)
+  seq' ℓ (rest b (last t)) (↷ (⁇ l) r)
+    = ext-rest (inj₂ l) b r
+  seq' ℓ (rest b (last t)) (↷ ε r) with ℓ
+  seq' ℓ (rest b (last ε)) (↷ ε r) | inj₁ refl
+    = ext-rest (inj₁ refl) b r
+  seq' ℓ (rest b (last t)) (↷ ε r) | inj₂ l
+    = ext-rest (inj₂ l) b r
 
   ext-rest : ∀ {P1 P2 P3 T1}
-    → Label
+    → P2 ≡ P3 ⊎ Label
     → Body P1 P2
     → Rest P3 T1
   ----------------
@@ -45,37 +98,24 @@ mutual
   ext-rest {P2 = P2} {P3 = P3} ℓ b (rest b₁ t) with (` P2) ⌣? (` P3)
   ext-rest ℓ U (rest U t) | yes ⌣U
     = rest U t
-  ext-rest ℓ (c₁ ⇒ c₂) (rest (c₃ ⇒ c₄) t) | yes ⌣⇒
-    = rest ((seq ℓ c₃ c₁) ⇒ (seq ℓ c₂ c₄)) t
-  ext-rest ℓ (c₁ ⊗ c₂) (rest (c₃ ⊗ c₄) t) | yes ⌣⊗
-    = rest ((seq ℓ c₁ c₃) ⊗ (seq ℓ c₂ c₄)) t
-  ext-rest ℓ (c₁ ⊕ c₂) (rest (c₃ ⊕ c₄) t) | yes ⌣⊕
-    = rest ((seq ℓ c₁ c₃) ⊕ (seq ℓ c₂ c₄)) t
-  ext-rest ℓ b (rest b₁ t) | no ¬p = rest b (fail ℓ)
-
-mutual
-  user-ext-rest : ∀ {P1 P2 T1}
-    → Body P1 P2
-    → Rest P2 T1
-    ----------------
-    → Rest P1 T1
-  user-ext-rest U (rest U t)
-    = rest U t
-  user-ext-rest (c₁ ⇒ c₂) (rest (c₃ ⇒ c₄) t)
-    = rest ((mk-seq c₃ c₁) ⇒ (mk-seq c₂ c₄)) t
-  user-ext-rest (c₁ ⊗ c₂) (rest (c₃ ⊗ c₄) t)
-    = rest ((mk-seq c₁ c₃) ⊗ (mk-seq c₂ c₄)) t
-  user-ext-rest (c₁ ⊕ c₂) (rest (c₃ ⊕ c₄) t)
-    = rest ((mk-seq c₁ c₃) ⊕ (mk-seq c₂ c₄)) t
-    
-  mk-seq : ∀ {T1 T2 T3} → Cast T1 T2 → Cast T2 T3 → Cast T1 T3
-  mk-seq id⋆ c2
-    = c2
-  mk-seq (↷ h (rest b (fail l))) c2
-    = ↷ h (rest b (fail l))
-  mk-seq (↷ h (rest b (last ‼))) id⋆ = ↷ h (rest b (last ‼))
-  mk-seq (↷ h (rest b (last ‼))) (↷ (⁇ l) r) = ↷ h (ext-rest l b r)
-  mk-seq (↷ h (rest b (last ε))) (↷ ε r) = ↷ h (user-ext-rest b r)
+  ext-rest ℓ (c₁ ⇒ c₂) (rest (c₃ ⇒ c₄) t) | yes ⌣⇒ with ℓ
+  ext-rest ℓ (c₁ ⇒ c₂) (rest (c₃ ⇒ c₄) t) | yes ⌣⇒ | inj₁ refl
+    = rest ((seq (inj₁ refl) c₃ c₁) ⇒ (seq (inj₁ refl) c₂ c₄)) t
+  ext-rest ℓ (c₁ ⇒ c₂) (rest (c₃ ⇒ c₄) t) | yes ⌣⇒ | inj₂ l
+    = rest ((seq (inj₂ l) c₃ c₁) ⇒ (seq (inj₂ l) c₂ c₄)) t
+  ext-rest ℓ (c₁ ⊗ c₂) (rest (c₃ ⊗ c₄) t) | yes ⌣⊗ with ℓ
+  ext-rest ℓ (c₁ ⊗ c₂) (rest (c₃ ⊗ c₄) t) | yes ⌣⊗ | inj₁ refl
+    = rest ((seq (inj₁ refl) c₁ c₃) ⊗ (seq (inj₁ refl) c₂ c₄)) t
+  ext-rest ℓ (c₁ ⊗ c₂) (rest (c₃ ⊗ c₄) t) | yes ⌣⊗ | inj₂ l
+    = rest ((seq (inj₂ l) c₁ c₃) ⊗ (seq (inj₂ l) c₂ c₄)) t
+  ext-rest ℓ (c₁ ⊕ c₂) (rest (c₃ ⊕ c₄) t) | yes ⌣⊕ with ℓ
+  ext-rest ℓ (c₁ ⊕ c₂) (rest (c₃ ⊕ c₄) t) | yes ⌣⊕ | inj₁ refl
+    = rest ((seq (inj₁ refl) c₁ c₃) ⊕ (seq (inj₁ refl) c₂ c₄)) t
+  ext-rest ℓ (c₁ ⊕ c₂) (rest (c₃ ⊕ c₄) t) | yes ⌣⊕ | inj₂ l
+    = rest ((seq (inj₂ l) c₁ c₃) ⊕ (seq (inj₂ l) c₂ c₄)) t
+  ext-rest ℓ b (rest b₁ t) | no ¬p with ℓ
+  ext-rest {P2 = _} {_} ℓ b (rest b₁ t) | no ¬p | inj₁ refl = ⊥-elim (¬p (⌣refl _))
+  ext-rest {P2 = _} {_} ℓ b (rest b₁ t) | no ¬p | inj₂ l = rest b (fail l)
 
 mutual
   mk-id : ∀ T → Cast T T
@@ -95,43 +135,22 @@ mutual
     = mk-id T₁ ⊕ mk-id T₂
 
 mk-cast : Label → ∀ T1 T2 → Cast T1 T2
-mk-cast l T1 T2 = seq l (mk-id T1) (mk-id T2)
--- mk-cast ℓ T1 T2 with T1 ⌣? T2
--- mk-cast ℓ .⋆ .⋆ | yes ⋆⌣⋆ = id⋆
--- mk-cast ℓ .⋆ .(` P) | yes (⋆⌣P P)
---   = ↷ (⁇ ℓ) (rest (mk-id-body P) (last ε))
--- mk-cast ℓ .(` P) .⋆ | yes (P⌣⋆ P)
---   = ↷     ε (rest (mk-id-body P) (last ‼))
--- mk-cast ℓ .(` U) .(` U) | yes ⌣U
---   = ↷ ε (rest U (last ε))
--- mk-cast ℓ (` (T11 ⇒ T12)) (` (T21 ⇒ T22)) | yes ⌣⇒
---   = ↷ ε (rest (mk-cast ℓ T21 T11 ⇒ mk-cast ℓ T12 T22) (last ε))
--- mk-cast ℓ (` (T11 ⊗ T12)) (` (T21 ⊗ T22)) | yes ⌣⊗
---   = ↷ ε (rest (mk-cast ℓ T11 T21 ⊗ mk-cast ℓ T12 T22) (last ε))
--- mk-cast ℓ (` (T11 ⊕ T12)) (` (T21 ⊕ T22)) | yes ⌣⊕
---   = ↷ ε (rest (mk-cast ℓ T11 T21 ⊕ mk-cast ℓ T12 T22) (last ε))
--- mk-cast ℓ ⋆ ⋆ | no ¬p
---   = ⊥-elim (¬p ⋆⌣⋆)
--- mk-cast ℓ ⋆ (` P) | no ¬p
---   = ⊥-elim (¬p (⋆⌣P P))
--- mk-cast ℓ (` P) T2 | no ¬p
---   = ↷ ε (rest (mk-id-body P) (fail ℓ))
+mk-cast l T1 T2 = seq (inj₂ l) (mk-id T1) (mk-id T2)
 
-apply-last : ∀ {P T} → Last P T → Val (` P) → Val T
-apply-last ε v = v
-apply-last ‼ v = (inj _ v)
+mk-seq : ∀ {T1 T2 T3} → Cast T1 T2 → Cast T2 T3 → Cast T1 T3
+mk-seq c1 c2 = seq (inj₁ refl) c1 c2
+
+
+
+
+open import Vals Label Cast
 
 apply-tail : ∀ {P T} → Tail P T → Val (` P) → CastResult T
 apply-tail (fail l) v = fail l
-apply-tail (last t) v = succ (apply-last t v)
+apply-tail (last ‼) v = succ (inj _ v)
+apply-tail (last ε) v = succ v
 
 mutual
-
-  apply-rest : ∀ {P T} → Rest P T → Val (` P) → CastResult T
-  apply-rest (rest b t) v
-    = apply-body b v >>= λ u →
-      apply-tail t u
-
   apply-body : ∀ {P Q} → Body P Q → Val (` P) → CastResult (` Q)
   apply-body U sole
     = succ sole
@@ -147,15 +166,20 @@ mutual
   apply-body (c₁ ⊕ c₂) (inr v)
     = apply-cast c₂ v >>= λ u →
       succ (inr u)
+      
+  apply-rest : ∀ {P T} → Rest P T → Val (` P) → CastResult T
+  apply-rest (rest b t) v
+    = apply-body b v >>= λ u →
+      apply-tail t u
   
   apply-cast : ∀ {T1 T2} → Cast T1 T2 → Val T1 → CastResult T2
   apply-cast id⋆ v
     = succ v
   apply-cast (↷ (⁇ l) r) (inj P v)
-    = apply-rest (ext-rest l (mk-id-body P) r) v
+    = apply-rest (ext-rest (inj₂ l) (mk-id-body P) r) v
   apply-cast (↷ ε r) v
     = apply-rest r v
-      
+
 mutual
   seq-id-l : ∀ {T1 T2} → (c : Cast T1 T2) → mk-seq (mk-id T1) c ≡ c
   seq-id-l id⋆ = refl
@@ -191,12 +215,24 @@ lem-seq : ∀ {T1 T2 T3}
   → (v : Val T1)
   --------------------
   → apply-cast (mk-seq c1 c2) v ≡ apply-cast c1 v >>= λ u → apply-cast c2 u
-lem-seq id⋆ c2 v = refl
-lem-seq (↷ h (rest b (fail l))) c2 v = {!!}
-lem-seq (↷ h (rest b (last ‼))) id⋆ v = sym (>>=-succ _)
-lem-seq (↷ h (rest b (last ‼))) (↷ (⁇ l) r) v = {!!}
-lem-seq (↷ (⁇ l) (rest b (last ε))) (↷ ε r) v = {!!}
-lem-seq (↷ ε (rest b (last ε))) (↷ ε r) v rewrite >>=-succ (apply-body b v) = {!!}
+lem-seq id⋆ id⋆ v = refl
+lem-seq id⋆ (↷ (⁇ l) r) v = refl
+lem-seq (↷ (⁇ l) (rest b t)) c2 (inj _ v) = {!!}
+lem-seq (↷ ε (rest b (fail l))) c2 v with apply-body b v
+lem-seq (↷ ε (rest b (fail l))) c2 v | succ v₁ = refl
+lem-seq (↷ ε (rest b (fail l))) c2 v | fail l₁ = refl
+lem-seq (↷ ε (rest b (last ‼))) id⋆ v = sym (>>=-succ _)
+lem-seq (↷ ε (rest b (last ‼))) (↷ (⁇ l) (rest b₁ t)) v = {!!}
+lem-seq (↷ ε (rest b (last ε))) (↷ ε (rest {P = P} b₁ t)) v with (` P) ⌣? (` P)
+lem-seq (↷ ε (rest U (last ε))) (↷ ε (rest {_} U t)) sole | yes ⌣U = refl
+lem-seq (↷ ε (rest (c₁ ⇒ c₂) (last ε))) (↷ ε (rest {_} (c₃ ⇒ c₄) t)) (fun env c₅ b c₆) | yes ⌣⇒ = {!!}
+lem-seq (↷ ε (rest (c₁ ⊗ c₂) (last ε))) (↷ ε (rest {_} (c₃ ⊗ c₄) t)) (cons v v₁) | yes ⌣⊗
+  rewrite lem-seq c₁ c₃ v
+        | lem-seq c₂ c₄ v₁
+        | >>=-succ (apply-cast c₁ v >>= (λ u₁ → apply-cast c₂ v₁ >>= (λ u₂ → succ (cons u₁ u₂))))
+  = {!!}
+lem-seq (↷ ε (rest b (last ε))) (↷ ε (rest {_} b₁ t)) v | yes ⌣⊕ = {!!}
+lem-seq (↷ ε (rest b (last ε))) (↷ ε (rest {_} b₁ t)) v | no ¬p = ⊥-elim (¬p (⌣refl _))
 
 lem-cast-¬⌣ : ∀ {T1 T2}
   → (l : Label)

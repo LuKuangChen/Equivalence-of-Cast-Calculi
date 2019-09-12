@@ -1,38 +1,23 @@
 module HCCast (Label : Set) where
 open import Types
 open import Relation.Nullary using (Dec; yes; no)
-open import Data.Empty using (⊥-elim)
 
 data Head (P : PreType) : Type → Set where
-  ⁇ : (l : Label) → Head P ⋆
   ε : Head P (` P)
-
-data Last (P : PreType) : Type → Set where
-  ‼ : Last P ⋆
-  ε : Last P (` P)
+  ⁇ : (l : Label) → Head P ⋆
 
 data Tail (P : PreType) : Type → Set where
-  fail : ∀ {T}
-    → (l : Label)
-    → Tail P T
-  last : ∀ {T}
-    → (t : Last P T)
-    → Tail P T
+  ε : Tail P (` P)
+  ‼ : Tail P ⋆
+  ⊥ : ∀ {B} → (l : Label) → Tail P B
 
 mutual
   data Cast : Type → Type → Set where
     id⋆ : Cast ⋆ ⋆
-    ↷ : ∀ {A P B}
-      → (h : Head P A)
-      → (r : Rest P B)
-      → Cast A B
+    ↷ : ∀ {A B P Q} →
+        (h : Head P A)(b : Body P Q)(t : Tail Q B) →
+        Cast A B
 
-  data Rest : PreType → Type → Set where
-    rest : ∀ {P Q B}
-      → (b : Body P Q)
-      → (t : Tail Q B)
-      → Rest P B
-    
   data Body : PreType → PreType → Set where
     U : Body U U
     _⇒_ : ∀ {S1 S2 T1 T2} →

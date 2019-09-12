@@ -1,0 +1,91 @@
+module HCast (Label : Set) where
+open import Types
+
+open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Empty using (⊥-elim)
+open import Relation.Nullary using (Dec; yes; no)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym)
+
+data Head (P : PreType) : Type → Set where
+  ⁇ : (l : Label) → Head P ⋆
+  ε : Head P (` P)
+
+data Last (P : PreType) : Type → Set where
+  ‼ : Last P ⋆
+  ε : Last P (` P)
+
+data Tail (P : PreType) : Type → Set where
+  fail : ∀ {T}
+    → (l : Label)
+    → Tail P T
+  last : ∀ {T}
+    → (t : Last P T)
+    → Tail P T
+
+mutual
+  data Cast : Type → Type → Set where
+    id⋆ : Cast ⋆ ⋆
+    ↷ : ∀ {A P B}
+      → (h : Head P A)
+      → (r : Rest P B)
+      → Cast A B
+
+  data Rest : PreType → Type → Set where
+    rest : ∀ {P Q B}
+      → (b : Body P Q)
+      → (t : Tail Q B)
+      → Rest P B
+    
+  data Body : PreType → PreType → Set where
+    U : Body U U
+    _⇒_ : ∀ {S1 S2 T1 T2} →
+      (c₁ : Cast S2 S1) →
+      (c₂ : Cast T1 T2) →
+      Body (S1 ⇒ T1) (S2 ⇒ T2)
+    _⊗_ : ∀ {S1 S2 T1 T2} →
+      (c₁ : Cast S1 S2) →
+      (c₂ : Cast T1 T2) →
+      Body (S1 ⊗ T1) (S2 ⊗ T2)
+    _⊕_ : ∀ {S1 S2 T1 T2} →
+      (c₁ : Cast S1 S2) →
+      (c₂ : Cast T1 T2) →
+      Body (S1 ⊕ T1) (S2 ⊕ T2)
+
+mutual
+  seq : ∀ {T1 T2 T3 T4}
+    → T2 ≡ T3 ⊎ Label
+    → Cast T1 T2
+    → Cast T3 T4
+  ----------------
+    → Cast T1 T4
+  seq ℓ id⋆ id⋆
+    = id⋆
+  seq ℓ id⋆ (↷ ε r)
+    = ↷ (⁇ ℓ) r
+  seq ℓ id⋆ (↷ (⁇ l) r)
+    = ↷ (⁇ l) r
+  seq ℓ (↷ h (rest b (fail l))) c2
+    = ↷ h (rest b (fail l))
+  seq ℓ (↷ h (rest b (last t))) id⋆
+    = ↷ h (rest b (last ‼))
+  seq ℓ (↷ h (rest b (last t))) (↷ ε r)
+    = ↷ h (ext-rest ℓ b r)
+  seq ℓ (↷ h (rest b (last t))) (↷ (⁇ l) r)
+    = ↷ h (ext-rest l b r)
+
+  ext-rest : ∀ {P1 P2 P3 T1}
+    → Label
+    → Body P1 P2
+    → Rest P3 T1
+  ----------------
+    → Rest P1 T1
+  ext-rest {P2 = P2} {P3 = P3} ℓ b (rest b₁ t) with (` P2) ⌣? (` P3)
+  ext-rest ℓ U (rest U t) | yes ⌣U
+    = rest U t
+  ext-rest ℓ (c₁ ⇒ c₂) (rest (c₃ ⇒ c₄) t) | yes ⌣⇒
+    = rest ((seq ℓ c₃ c₁) ⇒ (seq ℓ c₂ c₄)) t
+  ext-rest ℓ (c₁ ⊗ c₂) (rest (c₃ ⊗ c₄) t) | yes ⌣⊗
+    = rest ((seq ℓ c₁ c₃) ⊗ (seq ℓ c₂ c₄)) t
+  ext-rest ℓ (c₁ ⊕ c₂) (rest (c₃ ⊕ c₄) t) | yes ⌣⊕
+    = rest ((seq ℓ c₁ c₃) ⊕ (seq ℓ c₂ c₄)) t
+  ext-rest ℓ b (rest b₁ t) | no ¬p = rest b (fail ℓ)

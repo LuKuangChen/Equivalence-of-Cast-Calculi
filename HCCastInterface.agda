@@ -137,10 +137,8 @@ mutual
     = succ sole
   apply-body (c₁ ⇒ c₂) (fun E c₃ b c₄)
     = succ (fun E (mk-seq c₁ c₃) b (mk-seq c₄ c₂))
-  apply-body (c₁ ⊗ c₂) (cons v₁ v₂)
-    = apply-cast c₁ v₁ >>= λ u₁ →
-      apply-cast c₂ v₂ >>= λ u₂ →
-      succ (cons u₁ u₂)
+  apply-body (c₁ ⊗ c₂) (cons v₁ c₃ v₂ c₄)
+    = succ (cons v₁ (mk-seq c₃ c₁) v₂ (mk-seq c₄ c₂))
   apply-body (c₁ ⊕ c₂) (inl v)
     = apply-cast c₁ v >>= λ u →
       succ (inl u)
@@ -181,7 +179,7 @@ lem-id : ∀ T
 lem-id ⋆ v = refl
 lem-id (` U) sole = refl
 lem-id (` (T₁ ⇒ T₂)) (fun env c₁ b c₂) rewrite seq-id-l c₁ | seq-id-r c₂ = refl
-lem-id (` (T₁ ⊗ T₂)) (cons v₁ v₂) rewrite lem-id T₁ v₁ | lem-id T₂ v₂ = refl
+lem-id (` (T₁ ⊗ T₂)) (cons v₁ c₁ v₂ c₂) rewrite seq-id-r c₁ | seq-id-r c₂ = refl
 lem-id (` (T₁ ⊕ T₂)) (inl v) rewrite lem-id T₁ v = refl
 lem-id (` (T₁ ⊕ T₂)) (inr v) rewrite lem-id T₂ v = refl
 
@@ -253,16 +251,15 @@ lem-cast-⇒ : ∀ T11 T12 T21 T22
     succ (fun E (mk-seq (mk-cast l T21 T11) c₁) b (mk-seq c₂ (mk-cast l T12 T22)))
 lem-cast-⇒ T11 T12 T21 T22 l E c₁ b c₂ = refl
 
-lem-cast-⊗ : ∀ T11 T12 T21 T22
+lem-cast-⊗ : ∀ T01 T02 T11 T12 T21 T22
   → (l : Label)
-  → (v : Val T11)
-  → (v₁ : Val T12)
-  → apply-cast (mk-cast l (` (T11 ⊗ T12)) (` (T21 ⊗ T22))) (cons v v₁) ≡
-    apply-cast (mk-cast l T11 T21) v >>= λ u →
-    apply-cast (mk-cast l T12 T22) v₁ >>= λ u₁ →
-    succ (cons u u₁)
-lem-cast-⊗ T11 T12 T21 T22 l v v₁
-  = >>=-succ _
+  → (v₁ : Val T01)
+  → (v₂ : Val T02)
+  → (c₁ : Cast T01 T11)
+  → (c₂ : Cast T02 T12)
+  → apply-cast (mk-cast l (` (T11 ⊗ T12)) (` (T21 ⊗ T22))) (cons v₁ c₁ v₂ c₂) ≡
+    succ (cons v₁ (mk-seq c₁ (mk-cast l T11 T21)) v₂ (mk-seq c₂ (mk-cast l T12 T22)))
+lem-cast-⊗ T01 T02 T11 T12 T21 T22 l v₁ v₂ c₁ c₂ = refl
     
 lem-cast-⊕-l : ∀ T11 T12 T21 T22
   → (l : Label)

@@ -27,11 +27,13 @@ mutual
       --------
         Val (` U)
 
-    cons : ∀ {T1 T2}
+    cons : ∀ {T1 T2 T3 T4}
       → Val T1
+      → (c₁ : Cast T1 T3)
       → Val T2
+      → (c₂ : Cast T2 T4)
       ---------
-      → Val (` T1 ⊗ T2)
+      → Val (` T3 ⊗ T4)
 
     inl : ∀ {T1 T2}
       → Val T1

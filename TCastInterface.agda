@@ -28,10 +28,8 @@ do-cast l .(` P) .⋆ v | yes (P⌣⋆ P) = succ (inj P v)
 do-cast l .(` U) .(` U) v | yes ⌣U = succ v
 do-cast l (` (T11 ⇒ T12)) (` (T21 ⇒ T22)) (fun env c₁ b c₂) | yes ⌣⇒ =
   succ (fun env (seq (mk-cast l T21 T11) c₁) b (seq c₂ (mk-cast l T12 T22)))
-do-cast l (` (T11 ⊗ T12)) (` (T21 ⊗ T22)) (cons v v₁) | yes ⌣⊗ =
-  do-cast l T11 T21 v >>= λ u →
-  do-cast l T12 T22 v₁ >>= λ u₁ →
-  succ (cons u u₁)
+do-cast l (` (T11 ⊗ T12)) (` (T21 ⊗ T22)) (cons v₁ c₁ v₂ c₂) | yes ⌣⊗ =
+  succ (cons v₁ (seq c₁ (mk-cast l T11 T21)) v₂ ((seq c₂ (mk-cast l T12 T22))))
 do-cast l (` (T11 ⊕ T12)) (` (T21 ⊕ T22)) (inl v) | yes ⌣⊕ =
   do-cast l T11 T21 v >>= λ u →
   succ (inl u)

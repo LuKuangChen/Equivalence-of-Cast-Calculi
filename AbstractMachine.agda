@@ -170,18 +170,18 @@ module Machine
   progress (return₁ v κ) | fail l = blame l
   progress (return₂ v mt) = done v
   progress (return₂ v (cons₁ E e1 κ)) = inspect e1 E (mk-cont (cons₂ v κ))
-  progress (return₂ v (cons₂ v1 κ)) = return₁ (cons v1 v) κ
-  progress (return₂ v (inl κ)) = return₁ (inl v) κ
-  progress (return₂ v (inr κ)) = return₁ (inr v) κ
+  progress (return₂ v (cons₂ {T1} {T2} v1 κ)) = return₁ (cons v1 (mk-id T1) v (mk-id T2)) κ
+  progress (return₂ v (inl κ)) = return₁ (inl v (mk-id _)) κ
+  progress (return₂ v (inr κ)) = return₁ (inr v (mk-id _)) κ
   progress (return₂ v (app₁ E e2 κ)) = inspect e2 E (mk-cont (app₂ v κ))
   progress (return₂ v (app₂ (fun E c₁ b c₂) κ)) =
     return₁ v (ext-cont c₁ (mk-cont (call E b (ext-cont c₂ κ))))
-  progress (return₂ (cons v v₁) (car κ)) = return₁ v κ
-  progress (return₂ (cons v v₁) (cdr κ)) = return₁ v₁ κ
+  progress (return₂ (cons v₁ c₁ v₂ c₂) (car κ)) = return₁ v₁ (ext-cont c₁ κ)
+  progress (return₂ (cons v₁ c₁ v₂ c₂) (cdr κ)) = return₁ v₂ (ext-cont c₂ κ)
   progress (return₂ v (case₁ E e2 e3 κ)) = inspect e2 E (mk-cont (case₂ E v e3 κ))
   progress (return₂ v (case₂ E v1 e3 κ)) = inspect e3 E (mk-cont (case₃ v1 v κ))
-  progress (return₂ v3 (case₃ (inl v1) v2 κ)) = return₂ v1 (app₂ v2 κ)
-  progress (return₂ v3 (case₃ (inr v1) v2 κ)) = return₂ v1 (app₂ v3 κ)
+  progress (return₂ v3 (case₃ (inl v1 c) v2 κ)) = return₁ v1 (ext-cont c (mk-cont (app₂ v2 κ)))
+  progress (return₂ v3 (case₃ (inr v1 c) v2 κ)) = return₁ v1 (ext-cont c (mk-cont (app₂ v3 κ)))
   progress (return₂ v (call E e κ)) = inspect e (v ∷ E) κ
   progress (blame l) = blame l
   progress (done v) = done v

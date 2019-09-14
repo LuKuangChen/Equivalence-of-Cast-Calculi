@@ -30,12 +30,10 @@ do-cast l (` (T11 ⇒ T12)) (` (T21 ⇒ T22)) (fun env c₁ b c₂) | yes ⌣⇒
   succ (fun env (seq (mk-cast l T21 T11) c₁) b (seq c₂ (mk-cast l T12 T22)))
 do-cast l (` (T11 ⊗ T12)) (` (T21 ⊗ T22)) (cons v₁ c₁ v₂ c₂) | yes ⌣⊗ =
   succ (cons v₁ (seq c₁ (mk-cast l T11 T21)) v₂ ((seq c₂ (mk-cast l T12 T22))))
-do-cast l (` (T11 ⊕ T12)) (` (T21 ⊕ T22)) (inl v) | yes ⌣⊕ =
-  do-cast l T11 T21 v >>= λ u →
-  succ (inl u)
-do-cast l (` (T11 ⊕ T12)) (` (T21 ⊕ T22)) (inr v) | yes ⌣⊕ =
-  do-cast l T12 T22 v >>= λ u →
-  succ (inr u)
+do-cast l (` (T11 ⊕ T12)) (` (T21 ⊕ T22)) (inl v c) | yes ⌣⊕ =
+  succ (inl v (seq c (mk-cast l T11 T21)))
+do-cast l (` (T11 ⊕ T12)) (` (T21 ⊕ T22)) (inr v c) | yes ⌣⊕ =
+  succ (inr v (seq c (mk-cast l T12 T22)))
 do-cast l T1 T2 v | no ¬p = fail l
 
 apply-cast : ∀ {T1 T2} → Cast T1 T2 → Val T1 → CastResult T2

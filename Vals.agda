@@ -35,13 +35,15 @@ mutual
       ---------
       → Val (` T3 ⊗ T4)
 
-    inl : ∀ {T1 T2}
-      → Val T1
+    inl : ∀ {T T1 T2}
+      → Val T
+      → (c : Cast T T1)
       --------
       → Val (` T1 ⊕ T2)
       
-    inr : ∀ {T1 T2}
-      → Val T2
+    inr : ∀ {T T1 T2}
+      → Val T
+      → (c : Cast T T2)
       --------
       → Val (` T1 ⊕ T2)
 

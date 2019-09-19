@@ -9,9 +9,9 @@ open import Data.Empty using (⊥-elim)
 open import Relation.Nullary using (Dec; yes; no)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
 
-data Head (P : PreType) : Type → Set where
-  ⁇ : (l : Label) → Head P ⋆
-  ε : Head P (` P)
+data Head : PreType → Type → Set where
+  ⁇ : ∀ {P} → (l : Label) → Head P ⋆
+  ε : ∀ {P} → Head P (` P)
 
 data Last (P : PreType) : Type → Set where
   ‼ : Last P ⋆
@@ -100,9 +100,12 @@ mutual
   ext-rest (inj₁ refl) (c₁ ⊕ c₂) (rest (c₃ ⊕ c₄) t) = rest ((seq c₁ (inj₁ refl) c₃) ⊕ (seq c₂ (inj₁ refl) c₄)) t
   ext-rest {P2 = P2} {P3 = P3} (inj₂ l) b r with (` P2) ⌣? (` P3)
   ext-rest {P2 = .U} {.U} (inj₂ l) U (rest U t) | yes ⌣U = rest U t
-  ext-rest {P2 = .(_ ⇒ _)} {.(_ ⇒ _)} (inj₂ l) (c₁ ⇒ c₂) (rest (c₃ ⇒ c₄) t) | yes ⌣⇒ = rest ((seq c₃ (inj₂ l) c₁) ⇒ (seq c₂ (inj₂ l) c₄)) t
-  ext-rest {P2 = .(_ ⊗ _)} {.(_ ⊗ _)} (inj₂ l) (c₁ ⊗ c₂) (rest (c₃ ⊗ c₄) t) | yes ⌣⊗ = rest ((seq c₁ (inj₂ l) c₃) ⊗ (seq c₂ (inj₂ l) c₄)) t
-  ext-rest {P2 = .(_ ⊕ _)} {.(_ ⊕ _)} (inj₂ l) (c₁ ⊕ c₂) (rest (c₃ ⊕ c₄) t) | yes ⌣⊕ = rest ((seq c₁ (inj₂ l) c₃) ⊕ (seq c₂ (inj₂ l) c₄)) t
+  ext-rest {P2 = .(_ ⇒ _)} {.(_ ⇒ _)} (inj₂ l) (c₁ ⇒ c₂) (rest (c₃ ⇒ c₄) t) | yes ⌣⇒
+    = rest ((seq c₃ (inj₂ l) c₁) ⇒ (seq c₂ (inj₂ l) c₄)) t
+  ext-rest {P2 = .(_ ⊗ _)} {.(_ ⊗ _)} (inj₂ l) (c₁ ⊗ c₂) (rest (c₃ ⊗ c₄) t) | yes ⌣⊗
+    = rest ((seq c₁ (inj₂ l) c₃) ⊗ (seq c₂ (inj₂ l) c₄)) t
+  ext-rest {P2 = .(_ ⊕ _)} {.(_ ⊕ _)} (inj₂ l) (c₁ ⊕ c₂) (rest (c₃ ⊕ c₄) t) | yes ⌣⊕
+    = rest ((seq c₁ (inj₂ l) c₃) ⊕ (seq c₂ (inj₂ l) c₄)) t
   ext-rest {P2 = P2} {P3} (inj₂ l) b (rest b₁ t) | no ¬p = rest b (fail l)
 
 mutual
@@ -328,10 +331,14 @@ mutual
   apply-head : ∀ {P T} → Head P T → Val T → CastResult (` P)
   apply-head {P = Q} (⁇ l) (inj P v) with (` P) ⌣? (` Q)
   apply-head {.U} (⁇ l) (inj .U sole) | yes ⌣U = succ sole
-  apply-head {.(_ ⇒ _)} (⁇ l) (inj .(_ ⇒ _) (fun env c₁ b c₂)) | yes ⌣⇒ = succ (fun env (mk-seq (mk-cast l _ _) c₁) b (mk-seq c₂ (mk-cast l _ _)))
-  apply-head {.(_ ⊗ _)} (⁇ l) (inj .(_ ⊗ _) (cons v₁ c₁ v₂ c₂)) | yes ⌣⊗ = succ (cons v₁ (mk-seq c₁ (mk-cast l _ _)) v₂ (mk-seq c₂ (mk-cast l _ _)))
-  apply-head {.(_ ⊕ _)} (⁇ l) (inj .(_ ⊕ _) (inl v c)) | yes ⌣⊕ = succ (inl v (mk-seq c (mk-cast l _ _)))
-  apply-head {.(_ ⊕ _)} (⁇ l) (inj .(_ ⊕ _) (inr v c)) | yes ⌣⊕ = succ (inr v (mk-seq c (mk-cast l _ _)))
+  apply-head {(T1 ⇒ T2)} (⁇ l) (inj _ (fun env c₁ b c₂)) | yes ⌣⇒
+    = succ (fun env (seq (mk-id T1) (inj₂ l) c₁) b (seq c₂ (inj₂ l) (mk-id T2)))
+  apply-head {.(_ ⊗ _)} (⁇ l) (inj _ (cons v₁ c₁ v₂ c₂)) | yes ⌣⊗
+    = succ (cons v₁ (mk-seq c₁ (mk-cast l _ _)) v₂ (mk-seq c₂ (mk-cast l _ _)))
+  apply-head {.(_ ⊕ _)} (⁇ l) (inj _ (inl v c)) | yes ⌣⊕
+    = succ (inl v (mk-seq c (mk-cast l _ _)))
+  apply-head {.(_ ⊕ _)} (⁇ l) (inj _ (inr v c)) | yes ⌣⊕
+    = succ (inr v (mk-seq c (mk-cast l _ _)))
   apply-head {Q} (⁇ l) (inj P v) | no ¬p = fail l
   apply-head ε v = succ v
   
@@ -383,9 +390,7 @@ lem-seq (↷ h (rest {Q = .(_ ⇒ _)} (c₁ ⇒ c₂) (last ‼))) (↷ {P = (T3
         | sym (seq-assoc c₃ (inj₁ refl) (mk-id T3) (inj₂ l) (seq c₁ (inj₁ refl) c₅))
         | seq-id-r c₃
         | seq-assoc c₃ (inj₂ l) c₁ (inj₁ refl) c₅
-        | seq-assoc c₆ (inj₁ refl) c₂ (inj₁ refl) (seq (mk-id _) (inj₂ l) (mk-id T4))
-        | sym (seq-assoc c₂ (inj₁ refl) (mk-id _) (inj₂ l) (mk-id T4))
-        | seq-id-r c₂
+        | seq-assoc c₆ (inj₁ refl) c₂ (inj₂ l) (mk-id T4)
         | seq-assoc c₆ (inj₁ refl) (seq c₂ (inj₂ l) (mk-id T4)) (inj₁ refl) c₄
         | seq-assoc c₂ (inj₂ l) (mk-id T4) (inj₁ refl) c₄
         | seq-id-l c₄
@@ -473,9 +478,12 @@ lem-cast-proj : ∀ l P P₁ v
 lem-cast-proj l P P₁ v with (` P₁) ⌣? (` P)
 lem-cast-proj l .U .U sole | yes ⌣U = refl
 lem-cast-proj l (T1 ⇒ T2) (T3 ⇒ T4) (fun env c₁ b c₂) | yes ⌣⇒
-  rewrite sym (seq-assoc (mk-id T1) (inj₁ refl) (mk-id T1) (inj₂ l) (mk-id T3))
-        | seq-id-l (seq (seq (mk-id T1) (inj₂ l) (mk-id T3)) (inj₁ refl) c₁)
-        | seq-id-r (seq c₂ (inj₁ refl) (seq (mk-id T4) (inj₂ l) (mk-id T2)))
+  rewrite seq-id-l (seq (mk-id T1) (inj₂ l) c₁)
+        | seq-assoc (mk-id T1) (inj₂ l) (mk-id T3) (inj₁ refl) c₁
+        | seq-id-l c₁
+        | seq-id-r (seq c₂ (inj₂ l) (mk-id T2))
+        | sym (seq-assoc c₂ (inj₁ refl) (mk-id T4) (inj₂ l) (mk-id T2))
+        | seq-id-r c₂
   = refl
 lem-cast-proj l (T1 ⊗ T2) (T3 ⊗ T4) (cons v c₁ v₁ c₂) | yes ⌣⊗
   rewrite seq-id-r (seq c₁ (inj₁ refl) (seq (mk-id T3) (inj₂ l) (mk-id T1)))

@@ -1,6 +1,6 @@
 open import Types
 
-module AbstractMachine
+module CEKcc.Machine
   (Label : Set)
   (Cast : Type → Type → Set)
   (mk-id : ∀ T → Cast T T)
@@ -8,15 +8,9 @@ module AbstractMachine
   (mk-cast : Label → ∀ T1 T2 → Cast T1 T2)
   where
 
-open import Relation.Nullary using (Dec; yes; no)
-open import Data.Maybe using (Maybe; just; nothing)
-open import Data.Sum using (_⊎_; inj₁; inj₂)
-open import Data.Product using (Σ-syntax)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl)
-
 open import Variables
 open import Terms Label
-open import Values Label Cast
+open import CEKcc.Values Label Cast
 
 mutual
   -- cast from T1 to T2
@@ -149,7 +143,7 @@ data State : Type → Set where
     -------
     → State T
 
-module Machine
+module Progress
   (apply-cast : ∀ {T1 T2} → Cast T1 T2 → Val T1 → CastResult T2)
   where
 
@@ -174,14 +168,16 @@ module Machine
   progress (return₂ v (inl κ)) = return₁ (inl v (mk-id _)) κ
   progress (return₂ v (inr κ)) = return₁ (inr v (mk-id _)) κ
   progress (return₂ v (app₁ E e2 κ)) = inspect e2 E (mk-cont (app₂ v κ))
-  progress (return₂ v (app₂ (fun E c₁ b c₂) κ)) =
-    return₁ v (ext-cont c₁ (mk-cont (call E b (ext-cont c₂ κ))))
+  progress (return₂ v (app₂ (fun E c₁ b c₂) κ))
+    = return₁ v (ext-cont c₁ (mk-cont (call E b (ext-cont c₂ κ))))
   progress (return₂ (cons v₁ c₁ v₂ c₂) (car κ)) = return₁ v₁ (ext-cont c₁ κ)
   progress (return₂ (cons v₁ c₁ v₂ c₂) (cdr κ)) = return₁ v₂ (ext-cont c₂ κ)
   progress (return₂ v (case₁ E e2 e3 κ)) = inspect e2 E (mk-cont (case₂ E v e3 κ))
   progress (return₂ v (case₂ E v1 e3 κ)) = inspect e3 E (mk-cont (case₃ v1 v κ))
-  progress (return₂ v3 (case₃ (inl v1 c) v2 κ)) = return₁ v1 (ext-cont c (mk-cont (app₂ v2 κ)))
-  progress (return₂ v3 (case₃ (inr v1 c) v2 κ)) = return₁ v1 (ext-cont c (mk-cont (app₂ v3 κ)))
+  progress (return₂ v3 (case₃ (inl v1 c) v2 κ))
+    = return₁ v1 (ext-cont c (mk-cont (app₂ v2 κ)))
+  progress (return₂ v3 (case₃ (inr v1 c) v2 κ))
+    = return₁ v1 (ext-cont c (mk-cont (app₂ v3 κ)))
   progress (return₂ v (call E e κ)) = inspect e (v ∷ E) κ
   progress (blame l) = blame l
   progress (done v) = done v

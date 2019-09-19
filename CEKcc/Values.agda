@@ -1,6 +1,6 @@
 open import Types
 
-module Values
+module CEKcc.Values
   (Label : Set)
   (Cast : Type → Type → Set)
   where

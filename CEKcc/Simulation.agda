@@ -1,4 +1,4 @@
-module RelateCastRepresentations
+module CEKcc.Simulation
   (Label : Set)
   where
 open import Relation.Nullary using (Dec; yes; no)
@@ -6,32 +6,46 @@ open import Relation.Nullary using (Dec; yes; no)
 open import Variables
 open import Types
 open import Terms Label
-import AbstractMachine
-import Values
+import CEKcc.Machine
+import CEKcc.Values
+
+module Values = CEKcc.Values Label
 
 -- an abstract machine specialized for Type-based Cast
 
-import TCast
-module T = TCast Label
+import CEKcc.TCast
+module T = CEKcc.TCast Label
 
-module TV = Values Label T.Cast
-module TAM = AbstractMachine
+module TV = CEKcc.Values Label T.Cast
+module TAM = CEKcc.Machine
   Label
   T.Cast
   T.mk-id T.mk-seq T.mk-cast
-module TM = TAM.Machine T.apply-cast
+module TM = TAM.Progress T.apply-cast
 
--- an abstract machine specialized for Hyper-coercion-based Cast
+-- -- an abstract machine specialized for Hyper-coercion-based Cast
 
-import HCast
-module H = HCast Label
+-- import HCast
+-- module H = HCast Label
 
-module HV = Values Label H.Cast
-module HAM = AbstractMachine
+-- module HV = Values Label H.Cast
+-- module HAM = AbstractMachine
+--   Label
+--   H.Cast
+--   H.mk-id H.mk-seq H.mk-cast
+-- module HM = HAM.Machine H.apply-cast
+
+-- an abstract machine specialized for List-of-Casts-based Cast
+
+import CEKcc.LCast
+module H = CEKcc.LCast Label
+
+module HV = CEKcc.Values Label H.Cast
+module HAM = CEKcc.Machine
   Label
   H.Cast
   H.mk-id H.mk-seq H.mk-cast
-module HM = HAM.Machine H.apply-cast
+module HM = HAM.Progress H.apply-cast
 
 
 data CastRelate : ∀ {T1 T2} → T.Cast T1 T2 → H.Cast T1 T2 → Set where

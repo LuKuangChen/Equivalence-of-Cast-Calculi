@@ -16,7 +16,7 @@ data Cast (T1 : Type) : Type → Set where
   seq : ∀ {T2 T3} → Cast T1 T2 → Cast T2 T3 → Cast T1 T3
 
 open import Terms Label
-open import Vals Label Cast
+open import Values Label Cast
 
 mk-id : ∀ T → Cast T T
 mk-id T = id

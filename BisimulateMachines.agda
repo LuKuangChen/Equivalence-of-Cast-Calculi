@@ -1,4 +1,4 @@
-module CompareMachines
+module BisimulateMachines
   (Label : Set)
   where
 open import Relation.Nullary using (Dec; yes; no)
@@ -7,14 +7,14 @@ open import Variables
 open import Types
 open import Terms Label
 import AbstractMachine
-import Vals
+import Values
 
 -- an abstract machine specialized for Type-based Cast
 
 import TCast
 module T = TCast Label
 
-module TV = Vals Label T.Cast
+module TV = Values Label T.Cast
 module TAM = AbstractMachine
   Label
   T.Cast
@@ -26,7 +26,7 @@ module TM = TAM.Machine T.apply-cast
 import HCast
 module H = HCast Label
 
-module HV = Vals Label H.Cast
+module HV = Values Label H.Cast
 module HAM = AbstractMachine
   Label
   H.Cast
@@ -445,8 +445,8 @@ progress (inspect (case e1 e2 e3) E κ) = inspect e1 E (mk-cont (case₁ E e2 e3
 progress (inspect (cast l T1 T2 e) E κ) = inspect e E (ext-cont (cast l T1 T2) κ)
 progress (return₁ {lv1 = lv1} {rv1 = rv1} v {record { fst = fst ; snd = snd }} {record { fst = fst₁ ; snd = snd₁ }} (cont fst₂ snd₂))
   with (T.apply-cast fst lv1) | (H.apply-cast fst₁ rv1) | apply-cast fst₂ v
-... | Vals.succ _ | (HV.succ _) | succ u = return₂ u snd₂
-... | Vals.fail _ | (HV.fail _) | fail l = blame l
+... | Values.succ _ | (HV.succ _) | succ u = return₂ u snd₂
+... | Values.fail _ | (HV.fail _) | fail l = blame l
 progress (return₂ v mt) = done v
 progress (return₂ v (cons₁ E e1 κ)) = inspect e1 E (mk-cont (cons₂ v κ))
 progress (return₂ v (cons₂ {T1} {T2} v1 κ)) = return₁ (cons v1 id v id) κ

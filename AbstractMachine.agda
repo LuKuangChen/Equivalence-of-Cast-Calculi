@@ -16,7 +16,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
 open import Variables
 open import Terms Label
-open import Vals Label Cast
+open import Values Label Cast
 
 mutual
   -- cast from T1 to T2

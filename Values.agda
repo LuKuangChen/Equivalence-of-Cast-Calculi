@@ -1,6 +1,6 @@
 open import Types
 
-module Vals
+module Values
   (Label : Set)
   (Cast : Type → Type → Set)
   where

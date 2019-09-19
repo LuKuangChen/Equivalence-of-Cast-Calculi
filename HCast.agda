@@ -303,7 +303,7 @@ mutual
   seq'-assoc-U ℓ1 (inj₁ refl) b t | rest U t₁ = refl
   seq'-assoc-U ℓ1 (inj₂ y) b t | rest U t₁ = refl
 
-open import Vals Label Cast
+open import Values Label Cast
 
 apply-tail : ∀ {P T} → Tail P T → Val (` P) → CastResult T
 apply-tail (fail l) v = fail l

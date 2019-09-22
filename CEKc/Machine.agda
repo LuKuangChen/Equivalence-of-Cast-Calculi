@@ -124,38 +124,48 @@ module Progress
   (cast-inr : ∀ {T1 T2 T3 T4} → Cast (` T1 ⊕ T2) (` T3 ⊕ T4) → Cast T2 T4)
   where
 
-  apply-clos : ∀ {T1 T2 Z}
+  do-app : ∀ {T1 T2 Z}
     → Val (` T1 ⇒ T2)
     → Val T1
     → Cont T2 Z
     → State Z
-  apply-clos (cast v ⌣⇒ c) rand κ
+  do-app (cast v ⌣⇒ c) rand κ
     = return rand (cast (cast-dom c) (app₂ v (cast (cast-cod c) κ)))
-  apply-clos (fun env b) rand κ = inspect b (rand ∷ env) κ
+  do-app (fun env b) rand κ
+    = inspect b (rand ∷ env) κ
 
-  apply-car : ∀ {T1 T2 Z}
+  do-car : ∀ {T1 T2 Z}
     → Val (` T1 ⊗ T2)
     → Cont T1 Z
     → State Z
-  apply-car (cast v ⌣⊗ c) κ = return v (car (cast (cast-car c) κ)) 
-  apply-car (cons v v₁) κ = return v κ
+  do-car (cast v ⌣⊗ c) κ = do-car v (cast (cast-car c) κ)
+  do-car (cons v₁ v₂) κ = return v₁ κ
 
-  apply-cdr : ∀ {T1 T2 Z}
+  do-cdr : ∀ {T1 T2 Z}
     → Val (` T1 ⊗ T2)
     → Cont T2 Z
     → State Z
-  apply-cdr (cast v ⌣⊗ c) κ = return v (cdr (cast (cast-cdr c) κ)) 
-  apply-cdr (cons v v₁) κ = return v₁ κ
+  do-cdr (cast v ⌣⊗ c) κ = do-cdr v (cast (cast-cdr c) κ)
+  do-cdr (cons v₁ v₂) κ = return v₂ κ
   
-  apply-case : ∀ {T1 T2 Z}
+  do-case : ∀ {T1 T2 Z}
     → Val (` T1 ⊕ T2)
     → Cont T1 Z
     → Cont T2 Z
     → State Z
-  apply-case (cast v ⌣⊕ c) k1 k2
-    = apply-case v (cast (cast-inl c) k1) (cast (cast-inr c) k2)
-  apply-case (inl v) k1 k2 = return v k1
-  apply-case (inr v) k1 k2 = return v k2
+  do-case (cast v ⌣⊕ c) k1 k2
+    = do-case v (cast (cast-inl c) k1) (cast (cast-inr c) k2)
+  do-case (inl v) k1 k2 = return v k1
+  do-case (inr v) k1 k2 = return v k2
+
+  do-cast : ∀ {T1 T2 Z}
+    → Cast T1 T2
+    → Val T1
+    → Cont T2 Z
+    → State Z
+  do-cast c v k with apply-cast c v
+  ... | succ v₁ = return v₁ k
+  ... | fail l₁ = blame l₁
 
   progress : {T : Type} → State T → State T
   progress (inspect (var x) E κ) = return (E [ x ]) κ
@@ -175,15 +185,13 @@ module Progress
   progress (return v (inl κ)) = return (inl v) κ
   progress (return v (inr κ)) = return (inr v) κ
   progress (return v (app₁ E e2 κ)) = inspect e2 E (app₂ v κ)
-  progress (return v (app₂ v1 κ)) = apply-clos v1 v κ
-  progress (return v (car κ)) = apply-car v κ
-  progress (return v (cdr κ)) = apply-cdr v κ
+  progress (return v (app₂ v1 κ)) = do-app v1 v κ
+  progress (return v (car κ)) = do-car v κ
+  progress (return v (cdr κ)) = do-cdr v κ
   progress (return v (case₁ E e2 e3 κ)) = inspect e2 E (case₂ E v e3 κ)
   progress (return v (case₂ E v1 e3 κ)) = inspect e3 E (case₃ v1 v κ)
-  progress (return v (case₃ v1 v2 κ)) = apply-case v1 (app₂ v2 κ) (app₂ v κ)
-  progress (return v (cast c κ)) with apply-cast c v
-  progress (return v (cast c κ)) | succ v₁ = return v₁ κ
-  progress (return v (cast c κ)) | fail l₁ = blame l₁
+  progress (return v (case₃ v1 v2 κ)) = do-case v1 (app₂ v2 κ) (app₂ v κ)
+  progress (return v (cast c κ)) = do-cast c v κ
   progress (blame l) = blame l
   progress (done v) = done v
   

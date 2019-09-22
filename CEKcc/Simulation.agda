@@ -20,20 +20,9 @@ module TV = CEKcc.Values Label T.Cast
 module TAM = CEKcc.Machine
   Label
   T.Cast
-  T.mk-id T.mk-seq T.mk-cast
+  T.mk-cast
+  T.mk-id T.mk-seq 
 module TM = TAM.Progress T.apply-cast
-
--- -- an abstract machine specialized for Hyper-coercion-based Cast
-
--- import HCast
--- module H = HCast Label
-
--- module HV = Values Label H.Cast
--- module HAM = AbstractMachine
---   Label
---   H.Cast
---   H.mk-id H.mk-seq H.mk-cast
--- module HM = HAM.Machine H.apply-cast
 
 -- an abstract machine specialized for List-of-Casts-based Cast
 
@@ -44,7 +33,8 @@ module HV = CEKcc.Values Label H.Cast
 module HAM = CEKcc.Machine
   Label
   H.Cast
-  H.mk-id H.mk-seq H.mk-cast
+  H.mk-cast
+  H.mk-id H.mk-seq
 module HM = HAM.Progress H.apply-cast
 
 
@@ -163,7 +153,7 @@ mutual
       → {lsnd : TAM.PreCont mid T3}
       → {rsnd : HAM.PreCont mid T3}
       → (snd : PreContRelate lsnd rsnd)
-      → ContRelate record{ fst = lfst ; snd = lsnd} record{ fst = rfst ; snd = rsnd}
+      → ContRelate (TAM.cont lfst lsnd) (HAM.cont rfst rsnd)
 
   data PreContRelate : {T1 T3 : Type} → TAM.PreCont T1 T3 → HAM.PreCont T1 T3 → Set where
   
@@ -282,19 +272,6 @@ mutual
       ----------------
       → PreContRelate (TAM.case₃ lv1 lv2 lκ) (HAM.case₃ rv1 rv2 rκ)
 
-    -- This additional pre-continuation is for function calls
-
-    call : ∀ {Γ T1 T2 Z}
-      → {lE : TV.Env Γ}
-      → {rE : HV.Env Γ}
-      → (E : EnvRelate lE rE)
-      → (e : (Γ , T1) ⊢ T2)
-      → {lκ : TAM.Cont T2 Z}
-      → {rκ : HAM.Cont T2 Z}
-      → (κ : ContRelate lκ rκ)
-      -------------
-      → PreContRelate (TAM.call lE e lκ) (HAM.call rE e rκ)
-
 mk-cont : ∀ {T1 T2}
   → {lκ : TAM.PreCont T1 T2}
   → {rκ : HAM.PreCont T1 T2}
@@ -356,6 +333,13 @@ data StateRelate : {T : Type} → TAM.State T → HAM.State T → Set where
     -------
     → StateRelate (TAM.done lv) (HAM.done rv)
 
+lval : ∀ {T}
+  → {v : TV.Val T}
+  → {u : HV.Val T}
+  → ValRelate v u
+  → TV.Val T
+lval {v = v} vr = v
+
 rval : ∀ {T}
   → {v : TV.Val T}
   → {u : HV.Val T}
@@ -376,6 +360,13 @@ rcast : ∀ {T1 T2}
   → CastRelate c d
   → H.Cast T1 T2
 rcast {d = d} cd = d
+
+lcast : ∀ {T1 T2}
+  → {c : T.Cast T1 T2}
+  → {d : H.Cast T1 T2}
+  → CastRelate c d
+  → T.Cast T1 T2
+lcast {c = c} cd = c
 
 _>>=_ : ∀ {T1 T2}
   → {R : TV.CastResult T1}
@@ -441,6 +432,21 @@ apply-cast (seq {c₁ = c₁}{ç₁ = ç₁} cç1 {c₂ = c₂}{ç₂ = ç₂} c
   = apply-cast cç1 vr >>= λ ur →
     apply-cast cç2 ur
 
+do-app : ∀ {T1 T2 Z}
+  → {lv1 : TV.Val (` T1 ⇒ T2)}
+  → {rv1 : HV.Val (` T1 ⇒ T2)}
+  → ValRelate lv1 rv1
+  → {lv2 : TV.Val T1}
+  → {rv2 : HV.Val T1}
+  → ValRelate lv2 rv2
+  → {lk : TAM.Cont T2 Z}
+  → {rk : HAM.Cont T2 Z}
+  → ContRelate lk rk
+  → StateRelate (TM.do-app lv1 lv2 lk) (HM.do-app rv1 rv2 rk)
+do-app (fun env c₁ b c₂) rand κ with T.apply-cast (lcast c₁) (lval rand) | H.apply-cast (rcast c₁) (rval rand) | apply-cast c₁ rand
+do-app (fun env c₁ b c₂) rand κ | CEKcc.Values.succ _ | CEKcc.Values.succ _ | succ v = inspect b (v ∷ env) (ext-cont c₂ κ)
+do-app (fun env c₁ b c₂) rand κ | CEKcc.Values.fail _ | CEKcc.Values.fail _ | fail l = blame l
+
 progress : ∀ {T}
   → {lS : TAM.State T}
   → {rS : HAM.State T}
@@ -457,8 +463,8 @@ progress (inspect (car e) E κ) = inspect e E (mk-cont (car κ))
 progress (inspect (cdr e) E κ) = inspect e E (mk-cont (cdr κ))
 progress (inspect (case e1 e2 e3) E κ) = inspect e1 E (mk-cont (case₁ E e2 e3 κ))
 progress (inspect (cast l T1 T2 e) E κ) = inspect e E (ext-cont (cast l T1 T2) κ)
-progress (return₁ {lv1 = lv1} {rv1 = rv1} v {record { fst = fst ; snd = snd }} {record { fst = fst₁ ; snd = snd₁ }} (cont fst₂ snd₂))
-  with (T.apply-cast fst lv1) | (H.apply-cast fst₁ rv1) | apply-cast fst₂ v
+progress (return₁ {lv1 = lv1} {rv1 = rv1} v {(TAM.cont lfst lsnd)} {(HAM.cont rfst rsnd)} (cont fst₂ snd₂))
+  with (T.apply-cast lfst lv1) | (H.apply-cast rfst rv1) | apply-cast fst₂ v
 ... | Values.succ _ | (HV.succ _) | succ u = return₂ u snd₂
 ... | Values.fail _ | (HV.fail _) | fail l = blame l
 progress (return₂ v mt) = done v
@@ -467,15 +473,21 @@ progress (return₂ v (cons₂ {T1} {T2} v1 κ)) = return₁ (cons v1 id v id) �
 progress (return₂ v (inl κ)) = return₁ (inl v id) κ
 progress (return₂ v (inr κ)) = return₁ (inr v id) κ
 progress (return₂ v (app₁ E e2 κ)) = inspect e2 E (mk-cont (app₂ v κ))
-progress (return₂ v (app₂ (fun E c₁ b c₂) κ)) =
-  return₁ v (ext-cont c₁ (mk-cont (call E b (ext-cont c₂ κ))))
-progress (return₂ (cons v₁ c₁ v₂ c₂) (car κ)) = return₁ v₁ (ext-cont c₁ κ)
-progress (return₂ (cons v₁ c₁ v₂ c₂) (cdr κ)) = return₁ v₂ (ext-cont c₂ κ)
+progress (return₂ v (app₂ v₁ κ)) = do-app v₁ v κ
+progress (return₂ (cons v₁ c₁ v₂ c₂) (car κ)) with T.apply-cast (lcast c₁) (lval v₁) | H.apply-cast (rcast c₁) (rval v₁) | apply-cast c₁ v₁
+... | Values.succ _ | Values.succ _ | succ u = return₁ u κ
+... | Values.fail _ | Values.fail _ | fail l = blame l
+progress (return₂ (cons v₁ c₁ v₂ c₂) (cdr κ)) with T.apply-cast (lcast c₂) (lval v₂) | H.apply-cast (rcast c₂) (rval v₂) | apply-cast c₂ v₂
+... | Values.succ _ | Values.succ _ | succ u = return₁ u κ
+... | Values.fail _ | Values.fail _ | fail l = blame l
 progress (return₂ v (case₁ E e2 e3 κ)) = inspect e2 E (mk-cont (case₂ E v e3 κ))
 progress (return₂ v (case₂ E v1 e3 κ)) = inspect e3 E (mk-cont (case₃ v1 v κ))
-progress (return₂ v3 (case₃ (inl v1 c) v2 κ)) = return₁ v1 (ext-cont c (mk-cont (app₂ v2 κ)))
-progress (return₂ v3 (case₃ (inr v1 c) v2 κ)) = return₁ v1 (ext-cont c (mk-cont (app₂ v3 κ)))
-progress (return₂ v (call E e κ)) = inspect e (v ∷ E) κ
+progress (return₂ v3 (case₃ (inl v1 c) v2 κ)) with T.apply-cast (lcast c) (lval v1) | H.apply-cast (rcast c) (rval v1) | apply-cast c v1
+... | Values.succ _ | Values.succ _ | succ u = do-app v2 u κ
+... | Values.fail _ | Values.fail _ | fail l = blame l
+progress (return₂ v3 (case₃ (inr v1 c) v2 κ)) with T.apply-cast (lcast c) (lval v1) | H.apply-cast (rcast c) (rval v1) | apply-cast c v1
+... | Values.succ _ | Values.succ _ | succ u = do-app v3 u κ
+... | Values.fail _ | Values.fail _ | fail l = blame l
 progress (blame l) = blame l
 progress (done v) = done v
          

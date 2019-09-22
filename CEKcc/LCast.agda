@@ -146,3 +146,20 @@ lem-cast-⊕-r : ∀ T T11 T12 T21 T22
   → apply-cast (mk-cast l (` (T11 ⊕ T12)) (` (T21 ⊕ T22))) (inr v c) ≡
     succ (inr v (mk-seq c (mk-cast l T12 T22)))
 lem-cast-⊕-r T T11 T12 T21 T22 l v c = refl
+
+-- additional lemmas for bisimulation between CEKcc and CEKc
+
+mk-seq-assoc : ∀ {T1 T2 T3 T4}
+  → (c1 : Cast T1 T2)
+  → (c2 : Cast T2 T3)
+  → (c3 : Cast T3 T4)
+  ---
+  → mk-seq (mk-seq c1 c2) c3 ≡ mk-seq c1 (mk-seq c2 c3)
+mk-seq-assoc [] c2 c3 = refl
+mk-seq-assoc (x ∷ c1) c2 c3 rewrite mk-seq-assoc c1 c2 c3 = refl
+ 
+mk-seq-mk-id-l : ∀ {T1 T2}
+  → (c : Cast T1 T2)
+  ---
+  → mk-seq (mk-id T1) c ≡ c
+mk-seq-mk-id-l c = refl

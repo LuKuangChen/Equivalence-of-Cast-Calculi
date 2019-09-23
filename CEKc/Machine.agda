@@ -148,15 +148,23 @@ module Progress
   do-cdr (cast v ⌣⊗ c) κ = do-cdr v (cast (cast-cdr c) κ)
   do-cdr (cons v₁ v₂) κ = return v₂ κ
   
-  do-case : ∀ {T1 T2 Z}
+  do-case' : ∀ {T1 T2 Z}
     → Val (` T1 ⊕ T2)
     → Cont T1 Z
     → Cont T2 Z
     → State Z
-  do-case (cast v ⌣⊕ c) k1 k2
-    = do-case v (cast (cast-inl c) k1) (cast (cast-inr c) k2)
-  do-case (inl v) k1 k2 = return v k1
-  do-case (inr v) k1 k2 = return v k2
+  do-case' (cast v ⌣⊕ c) k1 k2
+    = do-case' v (cast (cast-inl c) k1) (cast (cast-inr c) k2)
+  do-case' (inl v) k1 k2 = return v k1
+  do-case' (inr v) k1 k2 = return v k2
+
+  do-case : ∀ {T1 T2 T3 Z}
+    → Val (` T1 ⊕ T2)
+    → Val (` T1 ⇒ T3)
+    → Val (` T2 ⇒ T3)
+    → Cont T3 Z
+    → State Z
+  do-case v1 v2 v3 k = do-case' v1 (app₂ v2 k) (app₂ v3 k)
 
   do-cast : ∀ {T1 T2 Z}
     → Cast T1 T2
@@ -190,7 +198,7 @@ module Progress
   progress (return v (cdr κ)) = do-cdr v κ
   progress (return v (case₁ E e2 e3 κ)) = inspect e2 E (case₂ E v e3 κ)
   progress (return v (case₂ E v1 e3 κ)) = inspect e3 E (case₃ v1 v κ)
-  progress (return v (case₃ v1 v2 κ)) = do-case v1 (app₂ v2 κ) (app₂ v κ)
+  progress (return v (case₃ v1 v2 κ)) = do-case v1 v2 v κ
   progress (return v (cast c κ)) = do-cast c v κ
   progress (blame l) = blame l
   progress (done v) = done v

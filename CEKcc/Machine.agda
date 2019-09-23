@@ -153,17 +153,13 @@ module Progress
     → Val (` T1 ⊗ T2)
     → Cont T1 Z
     → State Z
-  do-car (cons v₁ c₁ v₂ c₂) κ with apply-cast c₁ v₁ -- (cont fst k) with apply-cast (mk-seq c₁ fst) v₁
-  ... | succ u = return₁ u κ
-  ... | fail l = blame l
+  do-car (cons v₁ c₁ v₂ c₂) κ = return₁ v₁ (ext-cont c₁ κ)
   
   do-cdr : ∀ {T1 T2 Z}
     → Val (` T1 ⊗ T2)
     → Cont T2 Z
     → State Z
-  do-cdr (cons v₁ c₁ v₂ c₂) κ with apply-cast c₂ v₂
-  ... | succ u = return₁ u κ
-  ... | fail l = blame l
+  do-cdr (cons v₁ c₁ v₂ c₂) κ = return₁ v₂ (ext-cont c₂ κ)
   
   do-case : ∀ {T1 T2 T3 Z}
     → Val (` T1 ⊕ T2)
@@ -171,12 +167,8 @@ module Progress
     → Val (` T2 ⇒ T3)
     → Cont T3 Z
     → State Z
-  do-case (inl v1 c) v2 v3 κ with apply-cast c v1
-  ... | succ u = do-app v2 u κ
-  ... | fail l = blame l
-  do-case (inr v1 c) v2 v3 κ with apply-cast c v1
-  ... | succ u = do-app v3 u κ
-  ... | fail l = blame l
+  do-case (inl v1 c) v2 v3 k = return₁ v1 (ext-cont c (mk-cont (app₂ v2 k)))
+  do-case (inr v1 c) v2 v3 k = return₁ v1 (ext-cont c (mk-cont (app₂ v3 k)))
   
   progress : {T : Type} → State T → State T
   progress (inspect sole E κ) = return₁ sole κ

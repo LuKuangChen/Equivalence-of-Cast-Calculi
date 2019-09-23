@@ -163,3 +163,10 @@ mk-seq-mk-id-l : ∀ {T1 T2}
   ---
   → mk-seq (mk-id T1) c ≡ c
 mk-seq-mk-id-l c = refl
+
+mk-seq-mk-id-r : ∀ {T1 T2}
+  → (c : Cast T1 T2)
+  ---
+  → mk-seq c (mk-id T2) ≡ c
+mk-seq-mk-id-r [] = refl
+mk-seq-mk-id-r (x ∷ c) rewrite mk-seq-mk-id-r c = refl

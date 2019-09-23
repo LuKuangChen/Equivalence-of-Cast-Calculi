@@ -7,7 +7,7 @@ open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Data.Nat using (ℕ; suc; zero)
 open import Data.Product using (Σ; _×_ ; Σ-syntax)
   renaming (_,_ to ⟨_,_⟩)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; sym)
 
 open import Variables
 open import Types
@@ -46,6 +46,42 @@ mutual
       → {E : LV.Env Γ}{F : RV.Env Γ}
       → EnvRelate E F
       → EnvRelate (LV._∷_ v E) (RV._∷_ u F)
+
+  data InlRelate : ∀ {T1 T2} → LV.Val (` T1 ⊕ T2) → RV.Val (` T1 ⊕ T2) → Set where
+    base : ∀ {T1 T2}
+      → {v : LV.Val T1}
+      → {u : RV.Val T1}
+      → ValRelate v u
+      -----------------
+      → InlRelate (LV.inl {T2 = T2} v (LC.mk-id T1)) (RV.inl u)
+
+    cast : ∀ {T1 T3 T4 T5 T6}
+      → (l : Label)
+      → {v : LV.Val T1}
+      → {c : LC.Cast T1 T3}
+      → {u : RV.Val (` T3 ⊕ T4)}
+      → InlRelate (LV.inl v c) u
+      ---------
+      → InlRelate (LV.inl v (LC.mk-seq c (LC.mk-cast l T3 T5)))
+                  (RV.cast u ⌣⊕ (RC.mk-cast l (` T3 ⊕ T4) (` T5 ⊕ T6)))
+
+  data InrRelate : ∀ {T1 T2} → LV.Val (` T1 ⊕ T2) → RV.Val (` T1 ⊕ T2) → Set where
+    base : ∀ {T1 T2}
+      → {v : LV.Val T2}
+      → {u : RV.Val T2}
+      → ValRelate v u
+      -----------------
+      → InrRelate (LV.inr {T1 = T1} v (LC.mk-id T2)) (RV.inr u)
+
+    cast : ∀ {T2 T3 T4 T5 T6}
+      → (l : Label)
+      → {v : LV.Val T2}
+      → {c : LC.Cast T2 T4}
+      → {u : RV.Val (` T3 ⊕ T4)}
+      → InrRelate (LV.inr v c) u
+      ---------
+      → InrRelate (LV.inr v (LC.mk-seq c (LC.mk-cast l T4 T6)))
+                  (RV.cast u ⌣⊕ (RC.mk-cast l (` T3 ⊕ T4) (` T5 ⊕ T6)))
 
   data ValRelate : ∀ {T} → LV.Val T → RV.Val T → Set where
     inj : ∀ {l}
@@ -110,38 +146,18 @@ mutual
                   (RV.cast u ⌣⊗ (RC.mk-cast l (` T3 ⊗ T4) (` T5 ⊗ T6)))
       
     inl : ∀ {T1 T2}
-      → {v : LV.Val T1}
-      → {u : RV.Val T1}
-      → ValRelate v u
+      → {lv : LV.Val (` T1 ⊕ T2)}
+      → {rv : RV.Val (` T1 ⊕ T2)}
+      → InlRelate lv rv
       -----------------
-      → ValRelate (LV.inl {T2 = T2} v (LC.mk-id T1)) (RV.inl u)
-
-    cast-inl : ∀ {T1 T3 T4 T5 T6}
-      → (l : Label)
-      → {v : LV.Val T1}
-      → {c : LC.Cast T1 T3}
-      → {u : RV.Val (` T3 ⊕ T4)}
-      → ValRelate (LV.inl v c) u
-      ---------
-      → ValRelate (LV.inl v (LC.mk-seq c (LC.mk-cast l T3 T5)))
-                  (RV.cast u ⌣⊕ (RC.mk-cast l (` T3 ⊕ T4) (` T5 ⊕ T6)))
+      → ValRelate lv rv
       
     inr : ∀ {T1 T2}
-      → {v : LV.Val T2}
-      → {u : RV.Val T2}
-      → ValRelate v u
+      → {lv : LV.Val (` T1 ⊕ T2)}
+      → {rv : RV.Val (` T1 ⊕ T2)}
+      → InrRelate lv rv
       -----------------
-      → ValRelate (LV.inr {T1 = T1} v (LC.mk-id T2)) (RV.inr u)
-
-    cast-inr : ∀ {T2 T3 T4 T5 T6}
-      → (l : Label)
-      → {v : LV.Val T2}
-      → {c : LC.Cast T2 T4}
-      → {u : RV.Val (` T3 ⊕ T4)}
-      → ValRelate (LV.inr v c) u
-      ---------
-      → ValRelate (LV.inr v (LC.mk-seq c (LC.mk-cast l T4 T6)))
-                  (RV.cast u ⌣⊕ (RC.mk-cast l (` T3 ⊕ T4) (` T5 ⊕ T6)))
+      → ValRelate lv rv
                   
 lenv : ∀ {T}
   → {v : LV.Env T}
@@ -212,14 +228,14 @@ do-cast l (` (T1 ⊗ T2)) (` (T3 ⊗ T4)) (cons v₁ v₂) | yes ⌣⊗
   = succ (cast-cons l _ _ _ _ (cons v₁ v₂))
 do-cast l (` (T1 ⊗ T2)) (` (T3 ⊗ T4)) (cast-cons _ _ _ _ l₁ v) | yes ⌣⊗
   = succ (cast-cons l _ _ _ _ (cast-cons _ _ _ _ l₁ v))
-do-cast l (` (T1 ⊕ T2)) (` (T3 ⊕ T4)) (inl v) | yes ⌣⊕
-  = succ (cast-inl l (inl v))
-do-cast l (` (T1 ⊕ T2)) (` (T3 ⊕ T4)) (cast-inl l₁ v) | yes ⌣⊕
-  = succ (cast-inl l (cast-inl l₁ v))
-do-cast l (` (T1 ⊕ T2)) (` (T3 ⊕ T4)) (inr v) | yes ⌣⊕
-  = succ (cast-inr l (inr v))
-do-cast l (` (T1 ⊕ T2)) (` (T3 ⊕ T4)) (cast-inr l₁ v) | yes ⌣⊕
-  = succ (cast-inr l (cast-inr l₁ v))
+do-cast l (` (T1 ⊕ T2)) (` (T3 ⊕ T4)) (inl (base v)) | yes ⌣⊕
+  = succ (inl (cast l (base v)))
+do-cast l (` (T1 ⊕ T2)) (` (T3 ⊕ T4)) (inl (cast l₁ v)) | yes ⌣⊕
+  = succ (inl (cast l (cast l₁ v)))
+do-cast l (` (T1 ⊕ T2)) (` (T3 ⊕ T4)) (inr (base v)) | yes ⌣⊕
+  = succ (inr (cast l (base v)))
+do-cast l (` (T1 ⊕ T2)) (` (T3 ⊕ T4)) (inr (cast l₁ v)) | yes ⌣⊕
+  = succ (inr (cast l (cast l₁ v)))
 do-cast l T1 T2 v | no ¬p = fail l
 
 apply-cast : ∀ {T1 T2}
@@ -550,6 +566,39 @@ progress-ret v (ext-cont l T1 T2 {lk = (LM.cont fst snd)} k)
     ... | LV.succ _ | RV.succ _ | succ v₁ = progress-ret v₁ k
     ... | LV.fail _ | RV.fail _ | fail l₁ = done (blame l₁)
 
+lem-do-car'' : ∀ {T1 T2 T3 T4 T5 T6 Z}
+  → (l : Label)
+  → (v1   : LV.Val T1)
+  → (c1   : LC.Cast T1 T3)
+  → (v2   : LV.Val T2)
+  → (c2   : LC.Cast T2 T4)
+  → (lk   : LM.Cont T5 Z)
+  → (LP.do-car
+       (LV.cons v1 (LC.mk-seq c1 (LC.mk-cast l T3 T5))
+                v2 (LC.mk-seq c2 (LC.mk-cast l T4 T6)))
+       lk)
+    ≡
+    (LP.do-car
+       (LV.cons v1 c1
+                v2 c2)
+       (LM.ext-cont (LC.mk-cast l T3 T5) lk))
+lem-do-car'' l v1 c1 v2 c2 (LM.cont fst snd)
+  rewrite LC.mk-seq-assoc c1 (LC.mk-cast l _ _) fst
+  = refl
+
+lem-do-car' : ∀ {T1 T2 Z}
+  → {lv : LV.Val (` T1 ⊗ T2)}
+  → {rv : RV.Val (` T1 ⊗ T2)}
+  → ValRelate lv rv
+  → {lk : LM.Cont T1 Z}
+  → {rk : RM.Cont T1 Z}
+  → ContRelate lk rk
+  → StateRelate (LP.do-car lv lk) (RP.do-car rv rk)
+lem-do-car' (cons v v₁) k rewrite ext-cont-id-l (lcont k) = return₁ v k
+lem-do-car' (cast-cons l T3 T4 T5 T6 {v1} {c1} {v2} {c2} v) k
+  rewrite lem-do-car'' {T6 = T6} l v1 c1 v2 c2 (lcont k)
+  = lem-do-car' v (ext-cont l T3 T5 k)
+
 do-car : ∀ {T1 T2 Z}
   → {lv : LV.Val (` T1 ⊗ T2)}
   → {rv : RV.Val (` T1 ⊗ T2)}
@@ -558,8 +607,124 @@ do-car : ∀ {T1 T2 Z}
   → {rk : RM.Cont T1 Z}
   → ContRelate lk rk
   → StateRelate* (LP.do-car lv lk) (RP.do-car rv rk)
-do-car (cons v1 v2) k = done (return₁ v1 k)
-do-car (cast-cons l T1 T2 T3 T4 v) k = step {!!}
+do-car v k = done (lem-do-car' v k)
+
+lem-do-cdr'' : ∀ {T1 T2 T3 T4 T5 T6 Z}
+  → (l : Label)
+  → (v1   : LV.Val T1)
+  → (c1   : LC.Cast T1 T3)
+  → (v2   : LV.Val T2)
+  → (c2   : LC.Cast T2 T4)
+  → (lk   : LM.Cont T6 Z)
+  → (LP.do-cdr
+       (LV.cons v1 (LC.mk-seq c1 (LC.mk-cast l T3 T5))
+                v2 (LC.mk-seq c2 (LC.mk-cast l T4 T6)))
+       lk)
+    ≡
+    (LP.do-cdr
+       (LV.cons v1 c1
+                v2 c2)
+       (LM.ext-cont (LC.mk-cast l T4 T6) lk))
+lem-do-cdr'' l v1 c1 v2 c2 (LM.cont fst snd)
+  rewrite LC.mk-seq-assoc c2 (LC.mk-cast l _ _) fst
+  = refl
+
+lem-do-cdr' : ∀ {T1 T2 Z}
+  → {lv : LV.Val (` T1 ⊗ T2)}
+  → {rv : RV.Val (` T1 ⊗ T2)}
+  → ValRelate lv rv
+  → {lk : LM.Cont T2 Z}
+  → {rk : RM.Cont T2 Z}
+  → ContRelate lk rk
+  → StateRelate (LP.do-cdr lv lk) (RP.do-cdr rv rk)
+lem-do-cdr' (cons v1 v2) k rewrite ext-cont-id-l (lcont k) = return₁ v2 k
+lem-do-cdr' (cast-cons l T3 T4 T5 T6 {v1} {c1} {v2} {c2} v) k
+  rewrite lem-do-cdr'' {T5 = T5} l v1 c1 v2 c2 (lcont k)
+  = lem-do-cdr' v (ext-cont l T4 T6 k)
+
+do-cdr : ∀ {T1 T2 Z}
+  → {lv : LV.Val (` T1 ⊗ T2)}
+  → {rv : RV.Val (` T1 ⊗ T2)}
+  → ValRelate lv rv
+  → {lk : LM.Cont T2 Z}
+  → {rk : RM.Cont T2 Z}
+  → ContRelate lk rk
+  → StateRelate* (LP.do-cdr lv lk) (RP.do-cdr rv rk)
+do-cdr v k = done (lem-do-cdr' v k)
+
+lem-ext-cont : ∀ {T1 T2 T3 T4 Z}
+  → (c1 : LC.Cast T1 T2)
+  → (c2 : LC.Cast T2 T3)
+  → (c3 : LC.Cast T3 T4)
+  → (k : LM.Cont T4 Z)
+  → LM.ext-cont (LC.mk-seq c1 c2) (LM.ext-cont c3 k)
+    ≡
+    LM.ext-cont c1 (LM.ext-cont (LC.mk-seq c2 c3) k)
+lem-ext-cont c1 c2 c3 (LM.cont c4 k)
+  rewrite LC.mk-seq-assoc c1 c2 (LC.mk-seq c3 c4)
+        | LC.mk-seq-assoc c2 c3 c4
+  = refl
+
+do-case-inl : ∀ {T1 T3 T4 T5 Y Z}
+  → (lv : LV.Val T1)
+  → {lc1 : LC.Cast T1 T3}
+  → {rv : RV.Val (` T3 ⊕ T4)}
+  → InlRelate (LV.inl lv lc1) rv
+  → (lc2 : LC.Cast T3 T5)
+  → (lf : LV.Val (` T5 ⇒ Y))
+  → (lk : LM.Cont Y Z)
+  → (rk1 : RM.Cont T3 Z)
+  → {rk2 : RM.Cont T4 Z}
+  → ContRelate (LM.ext-cont lc2 (LM.mk-cont (LM.app₂ lf lk))) rk1
+  → StateRelate (LM.return₁ lv (LM.cont (LC.mk-seq lc1 lc2) (LM.app₂ lf lk)))
+                (RP.do-case' rv rk1 rk2)
+do-case-inl lv (base x) lc2 lf lk rk1 k rewrite LC.mk-seq-mk-id-r lc2 = return₁ x k
+do-case-inl lv (cast l {c = c} v) lc2 lf lk rk1 k
+  rewrite LC.mk-seq-assoc c (LC.mk-cast l _ _) lc2
+  = do-case-inl lv v _ lf lk _ (ext-cont l _ _ k)
+
+do-case-inr : ∀ {T2 T3 T4 T6 Y Z}
+  → (lv : LV.Val T2)
+  → {lc1 : LC.Cast T2 T4}
+  → {rv : RV.Val (` T3 ⊕ T4)}
+  → InrRelate (LV.inr lv lc1) rv
+  → (lc2 : LC.Cast T4 T6)
+  → (lf : LV.Val (` T6 ⇒ Y))
+  → (lk : LM.Cont Y Z)
+  → {rk1 : RM.Cont T3 Z}
+  → (rk2 : RM.Cont T4 Z)
+  → ContRelate (LM.ext-cont lc2 (LM.mk-cont (LM.app₂ lf lk))) rk2
+  → StateRelate (LM.return₁ lv (LM.cont (LC.mk-seq lc1 lc2) (LM.app₂ lf lk)))
+                (RP.do-case' rv rk1 rk2)
+do-case-inr lv (base x) lc2 lf lk rk2 k rewrite LC.mk-seq-mk-id-r lc2 = return₁ x k
+do-case-inr lv (cast l {c = c} v) lc2 lf lk rk2 k
+  rewrite LC.mk-seq-assoc c (LC.mk-cast l _ _) lc2
+  = do-case-inr lv v _ lf lk _ (ext-cont l _ _ k)
+
+
+do-case : ∀ {T1 T2 T3 Z}
+  → {lv1 : LV.Val (` T1 ⊕ T2)}
+  → {rv1 : RV.Val (` T1 ⊕ T2)}
+  → ValRelate lv1 rv1
+  → {lv2 : LV.Val (` T1 ⇒ T3)}
+  → {rv2 : RV.Val (` T1 ⇒ T3)}
+  → ValRelate lv2 rv2
+  → {lv3 : LV.Val (` T2 ⇒ T3)}
+  → {rv3 : RV.Val (` T2 ⇒ T3)}
+  → ValRelate lv3 rv3
+  → {lk : LM.Cont T3 Z}
+  → {rk : RM.Cont T3 Z}
+  → ContRelate lk rk
+  → StateRelate* (LP.do-case lv1 lv2 lv3 lk)
+                 (RP.do-case rv1 rv2 rv3 rk)
+do-case {lv1 = lv1} (inl x) v2 v3 k with lv1
+do-case {lv1 = lv1} (inl ()) v2 v3 k | CEKcc.Values.inr v c
+do-case {lv1 = lv1}{rv1 = rv1} (inl x) v2 v3 k | CEKcc.Values.inl v c
+  = done (do-case-inl v x (LC.mk-id _) (lval v2) (lcont k) (RM.app₂ (rval v2) (rcont k)) (mk-cont (app₂ v2 k)))
+do-case {lv1 = lv1} (inr x) v2 v3 k with lv1
+do-case {lv1 = lv1} (inr ()) v2 v3 k | CEKcc.Values.inl v c
+do-case {lv1 = lv1}{rv1 = rv1} (inr x) v2 v3 k | CEKcc.Values.inr v c
+  = done (do-case-inr v x (LC.mk-id _) (lval v3) (lcont k) (RM.app₂ (rval v3) (rcont k)) (mk-cont (app₂ v3 k)))
 
 progress* : ∀ {T}
   → {lS : LM.State T}
@@ -581,17 +746,17 @@ progress* (return₁ v k) = progress-ret v k
 progress* (return₂ v mt) = step (done (done v))
 progress* (return₂ v (cons₁ E e1 κ)) = step (done (inspect e1 E (mk-cont (cons₂ v κ))))
 progress* (return₂ v (cons₂ v1 κ)) = step (done (return₁ (cons v1 v) κ))
-progress* (return₂ v (inl κ)) = step (done (return₁ (inl v) κ))
-progress* (return₂ v (inr κ)) = step (done (return₁ (inr v) κ))
+progress* (return₂ v (inl κ)) = step (done (return₁ (inl (base v)) κ))
+progress* (return₂ v (inr κ)) = step (done (return₁ (inr (base v)) κ))
 progress* (return₂ v (app₁ E e2 κ)) = step (done (inspect e2 E (mk-cont (app₂ v κ))))
 progress* (return₂ v (app₂ v1 κ)) = step (do-app v1 v κ)
 progress* (return₂ v (car κ)) = step (do-car v κ)
-progress* (return₂ v (cdr κ)) = {!!}
+progress* (return₂ v (cdr κ)) = step (do-cdr v κ)
 progress* (return₂ v (case₁ E e2 e3 κ))
   = step (done (inspect e2 E (mk-cont (case₂ E v e3 κ))))
 progress* (return₂ v (case₂ E v1 e3 κ))
   = step (done (inspect e3 E (mk-cont (case₃ v1 v κ))))
-progress* (return₂ v (case₃ v1 v2 κ)) = {!!}
+progress* (return₂ v (case₃ v1 v2 κ)) = step (do-case v1 v2 v κ)
 progress* (blame l) = done (blame l)
 progress* (done v) = done (done v)
 

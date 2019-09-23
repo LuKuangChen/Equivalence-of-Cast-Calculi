@@ -447,6 +447,44 @@ do-app (fun env c₁ b c₂) rand κ with T.apply-cast (lcast c₁) (lval rand) 
 do-app (fun env c₁ b c₂) rand κ | CEKcc.Values.succ _ | CEKcc.Values.succ _ | succ v = inspect b (v ∷ env) (ext-cont c₂ κ)
 do-app (fun env c₁ b c₂) rand κ | CEKcc.Values.fail _ | CEKcc.Values.fail _ | fail l = blame l
 
+do-car : ∀ {T1 T2 Z}
+  → {lv : TV.Val (` T1 ⊗ T2)}
+  → {rv : HV.Val (` T1 ⊗ T2)}
+  → ValRelate lv rv
+  → {lk : TAM.Cont T1 Z}
+  → {rk : HAM.Cont T1 Z}
+  → ContRelate lk rk
+  → StateRelate (TM.do-car lv lk) (HM.do-car rv rk)
+do-car (cons v1 c1 v2 c2) k = return₁ v1 (ext-cont c1 k)
+
+do-cdr : ∀ {T1 T2 Z}
+  → {lv : TV.Val (` T1 ⊗ T2)}
+  → {rv : HV.Val (` T1 ⊗ T2)}
+  → ValRelate lv rv
+  → {lk : TAM.Cont T2 Z}
+  → {rk : HAM.Cont T2 Z}
+  → ContRelate lk rk
+  → StateRelate (TM.do-cdr lv lk) (HM.do-cdr rv rk)
+do-cdr (cons v1 c1 v2 c2) k = return₁ v2 (ext-cont c2 k)
+
+do-case : ∀ {T1 T2 T3 Z}
+  → {lv1 : TV.Val (` T1 ⊕ T2)}
+  → {rv1 : HV.Val (` T1 ⊕ T2)}
+  → ValRelate lv1 rv1
+  → {lv2 : TV.Val (` T1 ⇒ T3)}
+  → {rv2 : HV.Val (` T1 ⇒ T3)}
+  → ValRelate lv2 rv2
+  → {lv3 : TV.Val (` T2 ⇒ T3)}
+  → {rv3 : HV.Val (` T2 ⇒ T3)}
+  → ValRelate lv3 rv3
+  → {lk : TAM.Cont T3 Z}
+  → {rk : HAM.Cont T3 Z}
+  → ContRelate lk rk
+  → StateRelate (TM.do-case lv1 lv2 lv3 lk)
+                (HM.do-case rv1 rv2 rv3 rk)
+do-case (inl v1 c) v2 v3 k = return₁ v1 (ext-cont c (mk-cont (app₂ v2 k)))
+do-case (inr v1 c) v2 v3 k = return₁ v1 (ext-cont c (mk-cont (app₂ v3 k)))
+
 progress : ∀ {T}
   → {lS : TAM.State T}
   → {rS : HAM.State T}
@@ -474,20 +512,11 @@ progress (return₂ v (inl κ)) = return₁ (inl v id) κ
 progress (return₂ v (inr κ)) = return₁ (inr v id) κ
 progress (return₂ v (app₁ E e2 κ)) = inspect e2 E (mk-cont (app₂ v κ))
 progress (return₂ v (app₂ v₁ κ)) = do-app v₁ v κ
-progress (return₂ (cons v₁ c₁ v₂ c₂) (car κ)) with T.apply-cast (lcast c₁) (lval v₁) | H.apply-cast (rcast c₁) (rval v₁) | apply-cast c₁ v₁
-... | Values.succ _ | Values.succ _ | succ u = return₁ u κ
-... | Values.fail _ | Values.fail _ | fail l = blame l
-progress (return₂ (cons v₁ c₁ v₂ c₂) (cdr κ)) with T.apply-cast (lcast c₂) (lval v₂) | H.apply-cast (rcast c₂) (rval v₂) | apply-cast c₂ v₂
-... | Values.succ _ | Values.succ _ | succ u = return₁ u κ
-... | Values.fail _ | Values.fail _ | fail l = blame l
+progress (return₂ v (car κ)) = do-car v κ
+progress (return₂ v (cdr κ)) = do-cdr v κ
 progress (return₂ v (case₁ E e2 e3 κ)) = inspect e2 E (mk-cont (case₂ E v e3 κ))
 progress (return₂ v (case₂ E v1 e3 κ)) = inspect e3 E (mk-cont (case₃ v1 v κ))
-progress (return₂ v3 (case₃ (inl v1 c) v2 κ)) with T.apply-cast (lcast c) (lval v1) | H.apply-cast (rcast c) (rval v1) | apply-cast c v1
-... | Values.succ _ | Values.succ _ | succ u = do-app v2 u κ
-... | Values.fail _ | Values.fail _ | fail l = blame l
-progress (return₂ v3 (case₃ (inr v1 c) v2 κ)) with T.apply-cast (lcast c) (lval v1) | H.apply-cast (rcast c) (rval v1) | apply-cast c v1
-... | Values.succ _ | Values.succ _ | succ u = do-app v3 u κ
-... | Values.fail _ | Values.fail _ | fail l = blame l
+progress (return₂ v3 (case₃ v1 v2 κ)) = do-case v1 v2 v3 κ
 progress (blame l) = blame l
 progress (done v) = done v
          

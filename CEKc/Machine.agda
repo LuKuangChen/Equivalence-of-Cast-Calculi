@@ -114,6 +114,9 @@ data State : Type → Set where
     -------
     → State T
 
+load : ∀ {T} → ∅ ⊢ T → State T
+load e = inspect e [] mt
+
 module Progress
   (apply-cast : ∀ {T1 T2} → Cast T1 T2 → Val T1 → CastResult T2)
   (cast-dom : ∀ {T1 T2 T3 T4} → Cast (` T1 ⇒ T2) (` T3 ⇒ T4) → Cast T3 T1)

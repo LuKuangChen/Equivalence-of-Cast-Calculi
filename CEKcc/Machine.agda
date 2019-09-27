@@ -134,6 +134,9 @@ data State : Type → Set where
     -------
     → State T
 
+load : ∀ {T} → ∅ ⊢ T → State T
+load e = inspect e [] (mk-cont mt)
+
 module Progress
   (apply-cast : ∀ {T1 T2} → Cast T1 T2 → Val T1 → CastResult T2)
   where

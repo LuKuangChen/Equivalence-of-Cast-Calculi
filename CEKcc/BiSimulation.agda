@@ -1,4 +1,4 @@
-module CEKcc.Simulation
+module CEKcc.BiSimulation
   (Label : Set)
   where
 open import Relation.Nullary using (Dec; yes; no)
@@ -519,4 +519,6 @@ progress (return₂ v (case₂ E v1 e3 κ)) = inspect e3 E (mk-cont (case₃ v1 
 progress (return₂ v3 (case₃ v1 v2 κ)) = do-case v1 v2 v3 κ
 progress (blame l) = blame l
 progress (done v) = done v
-         
+
+load : ∀ {T} → (e : ∅ ⊢ T) → StateRelate (TAM.load e) (HAM.load e)
+load e = inspect e [] (cont id mt)

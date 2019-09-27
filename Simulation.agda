@@ -760,3 +760,11 @@ progress* (return₂ v (case₃ v1 v2 κ)) = step (do-case v1 v2 v κ)
 progress* (blame l) = done (blame l)
 progress* (done v) = done (done v)
 
+
+weak-bisimulation : ∀ {T}
+  → {lS : LM.State T}
+  → {rS : RM.State T}
+  → StateRelate lS rS
+  ---
+  → Σ[ n ∈ ℕ ] StateRelate (LP.progress lS) (repeat n RP.progress rS)
+weak-bisimulation sr = count-steps (progress* sr)

@@ -1,4 +1,4 @@
-module Observations
+module Observe
   (Label : Set)
   where
 
@@ -27,12 +27,12 @@ data Value : Type → Set where
     --------
     → Value (` T1 ⊕ T2)
     
-data Observation : Type → Set where
+data Observe : Type → Set where
   blame : ∀ {T}
     → Label
     ---
-    → Observation T
-  halt : ∀ {T}
+    → Observe T
+  done : ∀ {T}
     → Value T
     ---
-    → Observation T
+    → Observe T

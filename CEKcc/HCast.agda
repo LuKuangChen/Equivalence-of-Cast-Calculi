@@ -2,6 +2,7 @@ module CEKcc.HCast (Label : Set) where
 open import Types
 open import Variables
 open import Terms Label
+open import CEKcc.CastRep Label
 
 open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -539,3 +540,23 @@ lem-cast-⊕-r : ∀ T T11 T12 T21 T22
   → apply-cast (mk-cast l (` (T11 ⊕ T12)) (` (T21 ⊕ T22))) (inr v c) ≡
     succ (inr v (mk-seq c (mk-cast l T12 T22)))
 lem-cast-⊕-r T T11 T12 T21 T22 l v c = refl
+
+cast-rep : CastRep
+cast-rep = record
+             { Cast = Cast
+             ; mk-cast = mk-cast
+             ; mk-seq = mk-seq
+             ; mk-id = mk-id
+             ; apply-cast = apply-cast
+             ; lem-id = lem-id
+             ; lem-seq = lem-seq
+             ; lem-cast-¬⌣ = lem-cast-¬⌣
+             ; lem-cast-id⋆ = lem-cast-id⋆
+             ; lem-cast-inj = lem-cast-inj
+             ; lem-cast-proj = lem-cast-proj
+             ; lem-cast-U = lem-cast-U
+             ; lem-cast-⇒ = lem-cast-⇒
+             ; lem-cast-⊗ = lem-cast-⊗
+             ; lem-cast-⊕-l = lem-cast-⊕-l
+             ; lem-cast-⊕-r = lem-cast-⊕-r
+             }

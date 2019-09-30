@@ -3,6 +3,7 @@ module CEKcc.LCast
   where
 
 open import Types
+open import CEKcc.CastRep Label
 
 open import Relation.Nullary using (Dec; yes; no)
 open import Data.Maybe using (Maybe; just; nothing)
@@ -104,8 +105,7 @@ lem-cast-proj : ∀ l P P₁ v
   → apply-cast (mk-cast l ⋆ (` P)) (inj P₁ v) ≡ apply-cast (mk-cast l (` P₁) (` P)) v
 lem-cast-proj l P P₁ v = refl
 
-lem-cast-U : 
-    (l : Label)
+lem-cast-U : ∀ l
   → apply-cast (mk-cast l (` U) (` U)) sole ≡ succ sole
 lem-cast-U l = refl
 
@@ -147,6 +147,26 @@ lem-cast-⊕-r : ∀ T T11 T12 T21 T22
     succ (inr v (mk-seq c (mk-cast l T12 T22)))
 lem-cast-⊕-r T T11 T12 T21 T22 l v c = refl
 
+cast-rep : CastRep
+cast-rep = record
+             { Cast = Cast
+             ; mk-cast = mk-cast
+             ; mk-seq = mk-seq
+             ; mk-id = mk-id
+             ; apply-cast = apply-cast
+             ; lem-id = lem-id
+             ; lem-seq = lem-seq
+             ; lem-cast-¬⌣ = lem-cast-¬⌣
+             ; lem-cast-id⋆ = lem-cast-id⋆
+             ; lem-cast-inj = lem-cast-inj
+             ; lem-cast-proj = lem-cast-proj
+             ; lem-cast-U = lem-cast-U
+             ; lem-cast-⇒ = lem-cast-⇒
+             ; lem-cast-⊗ = lem-cast-⊗
+             ; lem-cast-⊕-l = lem-cast-⊕-l
+             ; lem-cast-⊕-r = lem-cast-⊕-r
+             }
+             
 -- additional lemmas for bisimulation between CEKcc and CEKc
 
 mk-seq-assoc : ∀ {T1 T2 T3 T4}
@@ -170,3 +190,4 @@ mk-seq-mk-id-r : ∀ {T1 T2}
   → mk-seq c (mk-id T2) ≡ c
 mk-seq-mk-id-r [] = refl
 mk-seq-mk-id-r (x ∷ c) rewrite mk-seq-mk-id-r c = refl
+

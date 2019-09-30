@@ -1,5 +1,9 @@
+open import CEKcc.CastRep
+
 module CEKcc.BiSimulation
   (Label : Set)
+  (LCR : CastRep Label)
+  (RCR : CastRep Label)
   where
 
 open import Utilities using (repeat)
@@ -20,8 +24,8 @@ module Values = CEKcc.Values Label
 
 -- an abstract machine specialized for an representation
 
-import CEKcc.TCast
-module L = CEKcc.TCast Label
+module L where
+  open CastRep LCR public
 
 module LV = CEKcc.Values Label L.Cast
 module LM = CEKcc.Machine
@@ -33,8 +37,8 @@ module LP = LM.Progress L.apply-cast
 
 -- an abstract machine specialized for another representation
 
-import CEKcc.LCast
-module R = CEKcc.LCast Label
+module R where
+  open CastRep RCR public
 
 module RV = CEKcc.Values Label R.Cast
 module RM = CEKcc.Machine
@@ -343,6 +347,13 @@ rval : ∀ {T}
   → RV.Val T
 rval {u = u} vr = u
 
+lenv : ∀ {Γ}
+  → {E : LV.Env Γ}
+  → {F : RV.Env Γ}
+  → EnvRelate E F
+  → LV.Env Γ
+lenv {E = E} vr = E
+
 renv : ∀ {Γ}
   → {E : LV.Env Γ}
   → {F : RV.Env Γ}
@@ -385,31 +396,36 @@ do-cast :
                      (R.apply-cast (R.mk-cast l T1 T2) u)
 do-cast l T1 T2 v with T1 ⌣? T2
 do-cast l .⋆ .⋆ v | yes ⋆⌣⋆
-  rewrite R.lem-cast-id⋆ l (rval v)
+  rewrite L.lem-cast-id⋆ l (lval v) | R.lem-cast-id⋆ l (rval v)
   = succ v
 do-cast l .⋆ .(` P) (inj P₁ v) | yes (⋆⌣P P)
-  rewrite R.lem-cast-proj l P P₁ (rval v)
+  rewrite L.lem-cast-proj l P P₁ (lval v) | R.lem-cast-proj l P P₁ (rval v)
   = do-cast l (` P₁) (` P) v
 do-cast l .(` P) .⋆ v | yes (P⌣⋆ P)
-  rewrite R.lem-cast-inj l (rval v)
+  rewrite L.lem-cast-inj l (lval v) | R.lem-cast-inj l (rval v)
   = succ (inj P v)
 do-cast l .(` U) .(` U) sole | yes ⌣U
-  rewrite R.lem-cast-U l
+  rewrite L.lem-cast-U l | R.lem-cast-U l
   = succ sole
 do-cast l (` (T11 ⇒ T12)) (` (T21 ⇒ T22)) (fun E c₁ b c₂) | yes ⌣⇒
-  rewrite R.lem-cast-⇒ T11 T12 T21 T22 l (renv E) (rcast c₁) b (rcast c₂)
+  rewrite L.lem-cast-⇒ T11 T12 T21 T22 l (lenv E) (lcast c₁) b (lcast c₂)
+    | R.lem-cast-⇒ T11 T12 T21 T22 l (renv E) (rcast c₁) b (rcast c₂)
   = succ (fun E (seq (cast l T21 T11) c₁) b (seq c₂ (cast l T12 T22)))
 do-cast l (` (T11 ⊗ T12)) (` (T21 ⊗ T22)) (cons v c v₁ c₁) | yes ⌣⊗
-  rewrite R.lem-cast-⊗ _ _ T11 T12 T21 T22 l (rval v) (rval v₁) (rcast c) (rcast c₁)
+  rewrite L.lem-cast-⊗ _ _ T11 T12 T21 T22 l (lval v) (lval v₁) (lcast c) (lcast c₁)
+    | R.lem-cast-⊗ _ _ T11 T12 T21 T22 l (rval v) (rval v₁) (rcast c) (rcast c₁)
   = succ (cons v (seq c (cast l T11 T21)) v₁ (seq c₁ (cast l T12 T22)))
 do-cast l (` (T11 ⊕ T12)) (` (T21 ⊕ T22)) (inl v c) | yes ⌣⊕
-  rewrite R.lem-cast-⊕-l _ T11 T12 T21 T22 l (rval v) (rcast c)
+  rewrite L.lem-cast-⊕-l _ T11 T12 T21 T22 l (lval v) (lcast c)
+    | R.lem-cast-⊕-l _ T11 T12 T21 T22 l (rval v) (rcast c)
   = succ (inl v (seq c (cast l T11 T21)))
 do-cast l (` (T11 ⊕ T12)) (` (T21 ⊕ T22)) (inr v c) | yes ⌣⊕
-  rewrite R.lem-cast-⊕-r _ T11 T12 T21 T22 l (rval v) (rcast c)
+  rewrite L.lem-cast-⊕-r _ T11 T12 T21 T22 l (lval v) (lcast c)
+    | R.lem-cast-⊕-r _ T11 T12 T21 T22 l (rval v) (rcast c)
   = succ (inr v (seq c (cast l T12 T22)))
 do-cast l T1 T2 v | no ¬p
-  rewrite R.lem-cast-¬⌣ l ¬p (rval v)
+  rewrite L.lem-cast-¬⌣ l ¬p (lval v)
+    | R.lem-cast-¬⌣ l ¬p (rval v)
   = fail l
 
 apply-cast : ∀ {T1 T2}
@@ -419,12 +435,12 @@ apply-cast : ∀ {T1 T2}
   → ValRelate v u
   ----------------------
   → CastResultRelate (L.apply-cast c v) (R.apply-cast ç u)
-apply-cast (id {T}) {u = u} vr
-  rewrite R.lem-id T u =
+apply-cast (id {T}) vr
+  rewrite L.lem-id T (lval vr) | R.lem-id T (rval vr) =
   succ vr
 apply-cast (cast l T1 T2) vr = do-cast l T1 T2 vr
 apply-cast (seq {c₁ = c₁}{ç₁ = ç₁} cç1 {c₂ = c₂}{ç₂ = ç₂} cç2) {v = v}{u = u} vr
-  rewrite R.lem-seq ç₁ ç₂ u
+  rewrite L.lem-seq c₁ c₂ v | R.lem-seq ç₁ ç₂ u
   = apply-cast cç1 vr >>= λ ur →
     apply-cast cç2 ur
 
@@ -575,17 +591,17 @@ lem-evalo-r zero (halt o) o refl = refl
 lem-evalo-r (suc n) ss o p = lem-evalo-r n (progress ss) o p
 
 thm-evalo-l : ∀ {T}
-  → (e : ∅ ⊢ T)
-  → (o : Observe T)
+  → {e : ∅ ⊢ T}
+  → {o : Observe T}
   → LP.Evalo e o
   ---
   → RP.Evalo e o
-thm-evalo-l e o (LP.evalo n prf) = RP.evalo n (lem-evalo-l n (load e) o prf)
+thm-evalo-l {e = e} {o} (LP.evalo n prf) = RP.evalo n (lem-evalo-l n (load e) o prf)
 
 thm-evalo-r : ∀ {T}
-  → (e : ∅ ⊢ T)
-  → (o : Observe T)
+  → {e : ∅ ⊢ T}
+  → {o : Observe T}
   → RP.Evalo e o
   ---
   → LP.Evalo e o
-thm-evalo-r e o (LP.evalo n prf) = LP.evalo n (lem-evalo-r n (load e) o prf)
+thm-evalo-r {e = e} {o} (LP.evalo n prf) = LP.evalo n (lem-evalo-r n (load e) o prf)

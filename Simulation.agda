@@ -4,7 +4,7 @@ module Simulation
 
 open import Data.Empty using (⊥; ⊥-elim)
 open import Relation.Nullary using (Dec; yes; no; ¬_)
-open import Data.Nat using (ℕ; suc; zero)
+open import Data.Nat using (ℕ; suc; zero; _+_)
 open import Data.Product using (Σ; _×_ ; Σ-syntax)
   renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; sym)
@@ -13,6 +13,8 @@ open import Variables
 open import Types
 open import Terms Label
 open import Observe Label
+
+open import Utilities
 
 import CEKcc.Machine
 import CEKcc.Values
@@ -456,10 +458,6 @@ data StateRelate* : {T : Type} → LM.State T → RM.State T → Set where
     → (ss : StateRelate* lS2 (RP.progress rS1))
     → StateRelate* lS2 rS1
 
-repeat : {A : Set} → ℕ → (A → A) → A → A
-repeat zero f x = x
-repeat (suc n) f x = repeat n f (f x)
-
 count-steps : ∀ {T}
   → {lS : LM.State T}
   → {rS : RM.State T}
@@ -793,3 +791,77 @@ weak-bisimulation : ∀ {T}
   ---
   → Σ[ n ∈ ℕ ] StateRelate (LP.progress lS) (repeat n RP.progress (RP.progress rS))
 weak-bisimulation sr = count-steps (progress* sr)
+
+load : ∀ {T} → (e : ∅ ⊢ T) → StateRelate (LM.load e) (RM.load e)
+load e = inspect e [] (mk-cont mt)
+
+lem-evalo-l : ∀ {T}
+  → (n : ℕ)
+  → {ls : LM.State T}
+  → {rs : RM.State T}
+  → (ss : StateRelate ls rs)
+  → (o : Observe T)
+  → repeat n LP.progress ls ≡ LM.halt o
+  ---
+  → Σ[ m ∈ ℕ ] (repeat m RP.progress rs ≡ RM.halt o)
+lem-evalo-l zero (halt _) o refl = ⟨ zero , refl ⟩
+lem-evalo-l (suc n) ss o p with weak-bisimulation ss
+lem-evalo-l (suc n) ss o p | ⟨ m0 , ss' ⟩ with lem-evalo-l n ss' o p
+lem-evalo-l (suc n) ss o p | ⟨ m0 , ss' ⟩ | ⟨ m1 , prf ⟩
+  rewrite thm-repeat m1 m0 RP.progress (RP.progress (rstate ss))
+  = ⟨ (suc (m1 + m0)) , prf ⟩
+
+thm-evalo-l : ∀ {T}
+  → {e : ∅ ⊢ T}
+  → {o : Observe T}
+  → LP.Evalo e o
+  ---
+  → RP.Evalo e o
+thm-evalo-l {e = e} {o = o} (LP.evalo n prf) with lem-evalo-l n (load e) o prf
+thm-evalo-l (LP.evalo n prf) | ⟨ m , x ⟩ = RP.evalo m x
+
+fast-halt : ∀ {T}
+  → (o : Observe T)
+  → {ls : LM.State T}
+  → (s : StateRelate* ls (RM.halt o))
+  ---
+  → ls ≡ LM.halt o
+fast-halt o (done (halt _)) = refl
+fast-halt o (step s) = fast-halt o s
+
+mutual
+  lem-evalo-r* : ∀ {T}
+    → (n : ℕ)
+    → {ls : LM.State T}
+    → {rs : RM.State T}
+    → (ss : StateRelate* ls rs)
+    → (o : Observe T)
+    → repeat n RP.progress rs ≡ RM.halt o
+    ---
+    → Σ[ m ∈ ℕ ] (repeat m LP.progress ls ≡ LM.halt o)
+  lem-evalo-r* n (done ss) o p = lem-evalo-r n ss o p
+  lem-evalo-r* zero (step ss) o refl with fast-halt o ss
+  ... | refl = ⟨ zero , refl ⟩
+  lem-evalo-r* (suc n) (step ss) o p = lem-evalo-r* n ss o p
+  
+  lem-evalo-r : ∀ {T}
+    → (n : ℕ)
+    → {ls : LM.State T}
+    → {rs : RM.State T}
+    → (ss : StateRelate ls rs)
+    → (o : Observe T)
+    → repeat n RP.progress rs ≡ RM.halt o
+    ---
+    → Σ[ m ∈ ℕ ] (repeat m LP.progress ls ≡ LM.halt o)
+  lem-evalo-r zero (halt _) o refl = ⟨ zero , refl ⟩
+  lem-evalo-r (suc n) ss o p with lem-evalo-r* n (progress* ss) o p
+  lem-evalo-r (suc n) ss o p | ⟨ m , prf ⟩ = ⟨ (suc m) , prf ⟩
+  
+thm-evalo-r : ∀ {T}
+  → {e : ∅ ⊢ T}
+  → {o : Observe T}
+  → RP.Evalo e o
+  ---
+  → LP.Evalo e o
+thm-evalo-r {e = e} {o = o} (RP.evalo n prf) with lem-evalo-r n (load e) o prf
+thm-evalo-r (RP.evalo n prf) | ⟨ m , x ⟩ = LP.evalo m x

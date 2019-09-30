@@ -319,10 +319,15 @@ data StateRelate : {T : Type} → LM.State T → RM.State T → Set where
     → StateRelate (LM.return lv1 lκ) (RM.return rv1 rκ)
 
   halt : ∀ {T}
-    → {lo : Observe T}
-    → {ro : Observe T}
-    → lo ≡ ro
-    → StateRelate (LM.halt lo) (RM.halt ro)
+    → (o : Observe T)
+    → StateRelate (LM.halt o) (RM.halt o)
+
+
+  -- halt : ∀ {T}
+  --   → {lo : Observe T}
+  --   → {ro : Observe T}
+  --   → lo ≡ ro
+  --   → StateRelate (LM.halt lo) (RM.halt ro)
 
 lval : ∀ {T}
   → {v : LV.Val T}
@@ -436,7 +441,7 @@ do-app : ∀ {T1 T2 Z}
   → StateRelate (LP.do-app lv1 lv2 lk) (RP.do-app rv1 rv2 rk)
 do-app (fun env c₁ b c₂) rand κ with L.apply-cast (lcast c₁) (lval rand) | R.apply-cast (rcast c₁) (rval rand) | apply-cast c₁ rand
 do-app (fun env c₁ b c₂) rand κ | CEKcc.Values.succ _ | CEKcc.Values.succ _ | succ v = inspect b (v ∷ env) (ext-cont c₂ κ)
-do-app (fun env c₁ b c₂) rand κ | CEKcc.Values.fail _ | CEKcc.Values.fail _ | fail l = halt refl
+do-app (fun env c₁ b c₂) rand κ | CEKcc.Values.fail _ | CEKcc.Values.fail _ | fail l = halt (blame l)
 
 do-car : ∀ {T1 T2 Z}
   → {lv : LV.Val (` T1 ⊗ T2)}
@@ -498,7 +503,7 @@ progress-return : ∀ {T Z}
   ---
   → StateRelate (LP.progress-return lv lk) (RP.progress-return rv rk) 
 progress-return v mt with LP.observe-val (lval v) | RP.observe-val (rval v) | observe-val v
-... | lo | ro | refl = halt refl
+... | lo | ro | refl = halt (done lo)
 progress-return v (cons₁ E e1 κ) = inspect e1 E (mk-cont (cons₂ v κ))
 progress-return v (cons₂ {T1} {T2} v1 κ) = return (cons v1 id v id) κ
 progress-return v (inl κ) = return (inl v id) κ
@@ -530,7 +535,7 @@ progress (inspect (cast l T1 T2 e) E κ) = inspect e E (ext-cont (cast l T1 T2) 
 progress (return {lv1 = lv1} {rv1 = rv1} v {(LM.cont lfst lsnd)} {(RM.cont rfst rsnd)} (cont fst₂ snd₂))
   with (L.apply-cast lfst lv1) | (R.apply-cast rfst rv1) | apply-cast fst₂ v
 ... | Values.succ _ | (RV.succ _) | succ u = progress-return u snd₂
-... | Values.fail _ | (RV.fail _) | fail l = halt refl
+... | Values.fail _ | (RV.fail _) | fail l = halt (blame l)
 progress (halt o) = halt o
 
 load : ∀ {T} → (e : ∅ ⊢ T) → StateRelate (LM.load e) (RM.load e)
@@ -554,7 +559,7 @@ lem-evalo-l : ∀ {T}
   → repeat n LP.progress ls ≡ LM.halt o
   ---
   → repeat n RP.progress rs ≡ RM.halt o
-lem-evalo-l zero (halt refl) o refl = refl
+lem-evalo-l zero (halt _) o refl = refl
 lem-evalo-l (suc n) ss o p = lem-evalo-l n (progress ss) o p
 
 lem-evalo-r : ∀ {T}
@@ -566,7 +571,7 @@ lem-evalo-r : ∀ {T}
   → repeat n RP.progress rs ≡ RM.halt o
   ---
   → repeat n LP.progress ls ≡ LM.halt o
-lem-evalo-r zero (halt refl) o refl = refl
+lem-evalo-r zero (halt o) o refl = refl
 lem-evalo-r (suc n) ss o p = lem-evalo-r n (progress ss) o p
 
 thm-evalo-l : ∀ {T}

@@ -12,6 +12,8 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; sym)
 open import Variables
 open import Types
 open import Terms Label
+open import Observe Label
+
 import CEKcc.Machine
 import CEKcc.Values
 import CEKc.Machine
@@ -396,7 +398,7 @@ data StateRelate : {T : Type} → LM.State T → RM.State T → Set where
     ------------
     → StateRelate (LM.inspect e lE lκ) (RM.inspect e rE rκ)
     
-  return₁ : ∀ {T1 T2}
+  return : ∀ {T1 T2}
     → {lv1 : LV.Val T1}
     → {rv1 : RV.Val T1}
     → (v1 : ValRelate lv1 rv1)
@@ -404,29 +406,11 @@ data StateRelate : {T : Type} → LM.State T → RM.State T → Set where
     → {rκ : RM.Cont T1 T2}
     → (κ : ContRelate lκ rκ)
     ------------
-    → StateRelate (LM.return₁ lv1 lκ) (RM.return rv1 rκ)
+    → StateRelate (LM.return lv1 lκ) (RM.return rv1 rκ)
 
-  return₂ : ∀ {T1 T2}
-    → {lv1 : LV.Val T1}
-    → {rv1 : RV.Val T1}
-    → (v1 : ValRelate lv1 rv1)
-    → {lκ : LM.PreCont T1 T2}
-    → {rκ : RM.Cont T1 T2}
-    → (κ : PreContRelate lκ rκ)
-    ------------
-    → StateRelate (LM.return₂ lv1 lκ) (RM.return rv1 rκ)
-
-  blame : ∀ {T}
-    → (l : Label)
-    -------
-    → StateRelate (LM.blame {T} l) (RM.blame {T} l)
-
-  done : ∀ {T}
-    → {lv : LV.Val T}
-    → {rv : RV.Val T}
-    → (v : ValRelate lv rv)
-    -------
-    → StateRelate (LM.done lv) (RM.done rv)
+  halt : ∀ {T}
+    → (o : Observe T)
+    → StateRelate (LM.halt o) (RM.halt o)
 
 lcont : ∀ {T1 T2}
   → {lk : LM.Cont T1 T2}
@@ -542,29 +526,7 @@ do-app (cast-fun l T3 T4 T5 T6 {E = E} c₁ {b = b} c₂ {g = g} rator) rand {lk
       rewrite lem-do-app E (LC.mk-seq (LC.mk-cast l T5 T3) c₁) b c₂ (LC.mk-cast l T4 T6) (lval rand) (lcont κ)
       with (LC.do-cast l T5 T3 (lval rand)) | (RC.do-cast l T5 T3 (rval rand)) | p
     ... | LV.succ _ | RV.succ _ | succ v₁ = do-app rator v₁ (ext-cont l _ _ κ)
-    ... | LV.fail _ | RV.fail _ | fail l₁ = done (blame l₁)
-
-
-progress-ret : ∀ {T1 Z}
-  → {lv : LV.Val T1}
-  → {rv : RV.Val T1}
-  → ValRelate lv rv
-  → {lk : LM.Cont T1 Z}
-  → {rk : RM.Cont T1 Z}
-  → ContRelate lk rk
-  → StateRelate* (LP.progress (LM.return₁ lv lk))
-                 (RM.return rv rk)
-progress-ret v (mk-cont k) = done (return₂ v k)
-progress-ret v (ext-cont l T1 T2 {lk = (LM.cont fst snd)} k)
-  = step (prf (do-cast l T1 T2 v))
-  where
-    prf : CastResultRelate (LC.do-cast l T1 T2 (lval v))
-                           (RC.do-cast l T1 T2 (rval v))
-      → StateRelate* (LP.progress (LM.return₁ (lval v) (LM.ext-cont (LC.mk-cast l T1 T2) (lcont k))))
-                     (RP.progress (RM.return (rval v) (RM.cast (RC.mk-cast l T1 T2) (rcont k))))
-    prf p with (LC.do-cast l T1 T2 (lval v)) | (RC.do-cast l T1 T2 (rval v)) | p
-    ... | LV.succ _ | RV.succ _ | succ v₁ = progress-ret v₁ k
-    ... | LV.fail _ | RV.fail _ | fail l₁ = done (blame l₁)
+    ... | LV.fail _ | RV.fail _ | fail l₁ = done (halt (blame l₁))
 
 lem-do-car'' : ∀ {T1 T2 T3 T4 T5 T6 Z}
   → (l : Label)
@@ -594,7 +556,7 @@ lem-do-car' : ∀ {T1 T2 Z}
   → {rk : RM.Cont T1 Z}
   → ContRelate lk rk
   → StateRelate (LP.do-car lv lk) (RP.do-car rv rk)
-lem-do-car' (cons v v₁) k rewrite ext-cont-id-l (lcont k) = return₁ v k
+lem-do-car' (cons v v₁) k rewrite ext-cont-id-l (lcont k) = return v k
 lem-do-car' (cast-cons l T3 T4 T5 T6 {v1} {c1} {v2} {c2} v) k
   rewrite lem-do-car'' {T6 = T6} l v1 c1 v2 c2 (lcont k)
   = lem-do-car' v (ext-cont l T3 T5 k)
@@ -637,7 +599,7 @@ lem-do-cdr' : ∀ {T1 T2 Z}
   → {rk : RM.Cont T2 Z}
   → ContRelate lk rk
   → StateRelate (LP.do-cdr lv lk) (RP.do-cdr rv rk)
-lem-do-cdr' (cons v1 v2) k rewrite ext-cont-id-l (lcont k) = return₁ v2 k
+lem-do-cdr' (cons v1 v2) k rewrite ext-cont-id-l (lcont k) = return v2 k
 lem-do-cdr' (cast-cons l T3 T4 T5 T6 {v1} {c1} {v2} {c2} v) k
   rewrite lem-do-cdr'' {T5 = T5} l v1 c1 v2 c2 (lcont k)
   = lem-do-cdr' v (ext-cont l T4 T6 k)
@@ -676,9 +638,9 @@ do-case-inl : ∀ {T1 T3 T4 T5 Y Z}
   → (rk1 : RM.Cont T3 Z)
   → {rk2 : RM.Cont T4 Z}
   → ContRelate (LM.ext-cont lc2 (LM.mk-cont (LM.app₂ lf lk))) rk1
-  → StateRelate (LM.return₁ lv (LM.cont (LC.mk-seq lc1 lc2) (LM.app₂ lf lk)))
+  → StateRelate (LM.return lv (LM.cont (LC.mk-seq lc1 lc2) (LM.app₂ lf lk)))
                 (RP.do-case' rv rk1 rk2)
-do-case-inl lv (base x) lc2 lf lk rk1 k rewrite LC.mk-seq-mk-id-r lc2 = return₁ x k
+do-case-inl lv (base x) lc2 lf lk rk1 k rewrite LC.mk-seq-mk-id-r lc2 = return x k
 do-case-inl lv (cast l {c = c} v) lc2 lf lk rk1 k
   rewrite LC.mk-seq-assoc c (LC.mk-cast l _ _) lc2
   = do-case-inl lv v _ lf lk _ (ext-cont l _ _ k)
@@ -694,9 +656,9 @@ do-case-inr : ∀ {T2 T3 T4 T6 Y Z}
   → {rk1 : RM.Cont T3 Z}
   → (rk2 : RM.Cont T4 Z)
   → ContRelate (LM.ext-cont lc2 (LM.mk-cont (LM.app₂ lf lk))) rk2
-  → StateRelate (LM.return₁ lv (LM.cont (LC.mk-seq lc1 lc2) (LM.app₂ lf lk)))
+  → StateRelate (LM.return lv (LM.cont (LC.mk-seq lc1 lc2) (LM.app₂ lf lk)))
                 (RP.do-case' rv rk1 rk2)
-do-case-inr lv (base x) lc2 lf lk rk2 k rewrite LC.mk-seq-mk-id-r lc2 = return₁ x k
+do-case-inr lv (base x) lc2 lf lk rk2 k rewrite LC.mk-seq-mk-id-r lc2 = return x k
 do-case-inr lv (cast l {c = c} v) lc2 lf lk rk2 k
   rewrite LC.mk-seq-assoc c (LC.mk-cast l _ _) lc2
   = do-case-inr lv v _ lf lk _ (ext-cont l _ _ k)
@@ -726,45 +688,108 @@ do-case {lv1 = lv1} (inr ()) v2 v3 k | CEKcc.Values.inl v c
 do-case {lv1 = lv1}{rv1 = rv1} (inr x) v2 v3 k | CEKcc.Values.inr v c
   = done (do-case-inr v x (LC.mk-id _) (lval v3) (lcont k) (RM.app₂ (rval v3) (rcont k)) (mk-cont (app₂ v3 k)))
 
+observe-inl : ∀ {T1 T2}
+  → {lv : LV.Val (` T1 ⊕ T2)}
+  → {rv : RV.Val (` T1 ⊕ T2)}
+  → InlRelate lv rv
+  → LP.observe-val lv ≡ RP.observe-val rv
+observe-inl (base x) = refl
+observe-inl (cast l {u = u} r) with RP.observe-val u | observe-inl r
+... | rr | refl = refl
+
+observe-inr : ∀ {T1 T2}
+  → {lv : LV.Val (` T1 ⊕ T2)}
+  → {rv : RV.Val (` T1 ⊕ T2)}
+  → InrRelate lv rv
+  → LP.observe-val lv ≡ RP.observe-val rv
+observe-inr (base x) = refl
+observe-inr (cast l {u = u} r) with RP.observe-val u | observe-inr r
+... | rr | refl = refl
+
+observe-val : ∀ {T}
+  → {lv : LV.Val T}
+  → {rv : RV.Val T}
+  → ValRelate lv rv
+  → LP.observe-val lv ≡ RP.observe-val rv
+observe-val (inj P v) = refl
+observe-val (fun E b) = refl
+observe-val (cast-fun l T3 T4 T5 T6 c1 c2 v) = refl
+observe-val sole = refl
+observe-val (cast-sole {lv = LV.sole} v) = refl
+observe-val (cons v v₁) = refl
+observe-val (cast-cons l T3 T4 T5 T6 v) = refl
+observe-val (inl x) = observe-inl x
+observe-val (inr x) = observe-inr x
+  
+progress*-return : ∀ {T Z}
+  → {lv : LV.Val T}
+  → {rv : RV.Val T}
+  → ValRelate lv rv
+  → {lk : LM.PreCont T Z}
+  → {rk : RM.Cont T Z}
+  → PreContRelate lk rk
+  ---
+  → StateRelate* (LP.progress-return lv lk) (RP.progress (RM.return rv rk))
+progress*-return v mt with LP.observe-val (lval v) | RP.observe-val (rval v) | observe-val v
+... | _ | _ | refl = done (halt (done _))
+progress*-return v (cons₁ E e1 κ) = done (inspect e1 E (mk-cont (cons₂ v κ)))
+progress*-return v (cons₂ v1 κ) = done (return (cons v1 v) κ)
+progress*-return v (inl κ) = done (return (inl (base v)) κ)
+progress*-return v (inr κ) = done (return (inr (base v)) κ)
+progress*-return v (app₁ E e2 κ) = done (inspect e2 E (mk-cont (app₂ v κ)))
+progress*-return v (app₂ v1 κ) = do-app v1 v κ
+progress*-return v (car κ) = do-car v κ
+progress*-return v (cdr κ) = do-cdr v κ
+progress*-return v (case₁ E e2 e3 κ)
+  = done (inspect e2 E (mk-cont (case₂ E v e3 κ)))
+progress*-return v (case₂ E v1 e3 κ)
+  = done (inspect e3 E (mk-cont (case₃ v1 v κ)))
+progress*-return v (case₃ v1 v2 κ) = do-case v1 v2 v κ
+
+progress-ret : ∀ {T1 Z}
+  → {lv : LV.Val T1}
+  → {rv : RV.Val T1}
+  → ValRelate lv rv
+  → {lk : LM.Cont T1 Z}
+  → {rk : RM.Cont T1 Z}
+  → ContRelate lk rk
+  → StateRelate* (LP.progress (LM.return lv lk))
+                 (RP.progress (RM.return rv rk))
+progress-ret v (mk-cont k) = progress*-return v k
+progress-ret v (ext-cont l T1 T2 {lk = (LM.cont fst snd)} k)
+  = prf (do-cast l T1 T2 v)
+  where
+    prf : CastResultRelate (LC.do-cast l T1 T2 (lval v))
+                           (RC.do-cast l T1 T2 (rval v))
+      → StateRelate* (LP.progress (LM.return (lval v) (LM.ext-cont (LC.mk-cast l T1 T2) (lcont k))))
+                     (RP.progress (RM.return (rval v) (RM.cast (RC.mk-cast l T1 T2) (rcont k))))
+    prf p with (LC.do-cast l T1 T2 (lval v)) | (RC.do-cast l T1 T2 (rval v)) | p
+    ... | LV.succ _ | RV.succ _ | succ v₁ = step (progress-ret v₁ k)
+    ... | LV.fail _ | RV.fail _ | fail l₁ = done (halt (blame l₁))
+
 progress* : ∀ {T}
   → {lS : LM.State T}
   → {rS : RM.State T}
   → StateRelate lS rS
-  → StateRelate* (LP.progress lS) rS
-progress* (inspect (var x) E κ) = step (done (return₁ (E [ x ]) κ))
-progress* (inspect sole E κ) = step (done (return₁ sole κ))
-progress* (inspect (lam T1 T2 e) E κ) = step (done (return₁ (fun E e) κ))
-progress* (inspect (cons e e₁) E κ) = step (done (inspect e E (mk-cont (cons₁ E e₁ κ))))
-progress* (inspect (inl e) E κ) = step (done (inspect e E (mk-cont (inl κ))))
-progress* (inspect (inr e) E κ) = step (done (inspect e E (mk-cont (inr κ))))
-progress* (inspect (app e e₁) E κ) = step (done (inspect e E (mk-cont (app₁ E e₁ κ))))
-progress* (inspect (car e) E κ) = step (done (inspect e E (mk-cont (car κ))))
-progress* (inspect (cdr e) E κ) = step (done (inspect e E (mk-cont (cdr κ))))
-progress* (inspect (case e e₁ e₂) E κ) = step (done (inspect e E (mk-cont (case₁ E e₁ e₂ κ))))
-progress* (inspect (cast l T1 T2 e) E κ) = step (done (inspect e E (ext-cont l _ _ κ)))
-progress* (return₁ v k) = progress-ret v k
-progress* (return₂ v mt) = step (done (done v))
-progress* (return₂ v (cons₁ E e1 κ)) = step (done (inspect e1 E (mk-cont (cons₂ v κ))))
-progress* (return₂ v (cons₂ v1 κ)) = step (done (return₁ (cons v1 v) κ))
-progress* (return₂ v (inl κ)) = step (done (return₁ (inl (base v)) κ))
-progress* (return₂ v (inr κ)) = step (done (return₁ (inr (base v)) κ))
-progress* (return₂ v (app₁ E e2 κ)) = step (done (inspect e2 E (mk-cont (app₂ v κ))))
-progress* (return₂ v (app₂ v1 κ)) = step (do-app v1 v κ)
-progress* (return₂ v (car κ)) = step (do-car v κ)
-progress* (return₂ v (cdr κ)) = step (do-cdr v κ)
-progress* (return₂ v (case₁ E e2 e3 κ))
-  = step (done (inspect e2 E (mk-cont (case₂ E v e3 κ))))
-progress* (return₂ v (case₂ E v1 e3 κ))
-  = step (done (inspect e3 E (mk-cont (case₃ v1 v κ))))
-progress* (return₂ v (case₃ v1 v2 κ)) = step (do-case v1 v2 v κ)
-progress* (blame l) = done (blame l)
-progress* (done v) = done (done v)
-
+  → StateRelate* (LP.progress lS) (RP.progress rS)
+progress* (inspect (var x) E κ) = done (return (E [ x ]) κ)
+progress* (inspect sole E κ) = done (return sole κ)
+progress* (inspect (lam T1 T2 e) E κ) = done (return (fun E e) κ)
+progress* (inspect (cons e e₁) E κ) = done (inspect e E (mk-cont (cons₁ E e₁ κ)))
+progress* (inspect (inl e) E κ) = done (inspect e E (mk-cont (inl κ)))
+progress* (inspect (inr e) E κ) = done (inspect e E (mk-cont (inr κ)))
+progress* (inspect (app e e₁) E κ) = done (inspect e E (mk-cont (app₁ E e₁ κ)))
+progress* (inspect (car e) E κ) = done (inspect e E (mk-cont (car κ)))
+progress* (inspect (cdr e) E κ) = done (inspect e E (mk-cont (cdr κ)))
+progress* (inspect (case e e₁ e₂) E κ) = done (inspect e E (mk-cont (case₁ E e₁ e₂ κ)))
+progress* (inspect (cast l T1 T2 e) E κ) = done (inspect e E (ext-cont l _ _ κ))
+progress* (return v k) = progress-ret v k
+progress* (halt o) = done (halt o)
 
 weak-bisimulation : ∀ {T}
   → {lS : LM.State T}
   → {rS : RM.State T}
   → StateRelate lS rS
   ---
-  → Σ[ n ∈ ℕ ] StateRelate (LP.progress lS) (repeat n RP.progress rS)
+  → Σ[ n ∈ ℕ ] StateRelate (LP.progress lS) (repeat n RP.progress (RP.progress rS))
 weak-bisimulation sr = count-steps (progress* sr)

@@ -26,8 +26,7 @@ import CEKc.Values
 import CEKcc.LCast
 module LC = CEKcc.LCast Label
 module LV = CEKcc.Values Label LC.Cast
-module LM = CEKcc.Machine Label LC.Cast LC.mk-cast LC.mk-id LC.mk-seq
-module LP = LM.Progress LC.apply-cast
+module LM = CEKcc.Machine Label LC.cast-rep
 
 -- instantiate CEKc
 
@@ -483,9 +482,9 @@ lem-do-app : ∀ {Γ T1 T2 T3 T4 T5 T6}
   → (c₃ : LC.Cast T4 T5)
   → (rand : LV.Val T3)
   → (k : LM.Cont T5 T6)
-  → LP.do-app (LV.fun E c₁ b (LC.mk-seq c₂ c₃)) rand k
+  → LM.do-app (LV.fun E c₁ b (LC.mk-seq c₂ c₃)) rand k
     ≡
-    LP.do-app (LV.fun E c₁ b c₂) rand (LM.ext-cont c₃ k)
+    LM.do-app (LV.fun E c₁ b c₂) rand (LM.ext-cont c₃ k)
 lem-do-app E c₁ b c₂ c₃ rand k with LC.apply-cast c₁ rand
 lem-do-app E c₁ b c₂ c₃ rand (LM.cont fst snd) | LV.succ v
   rewrite LC.mk-seq-assoc c₂ c₃ fst
@@ -502,7 +501,7 @@ do-app : ∀ {T1 T2 Z}
   → {lk : LM.Cont T2 Z}
   → {rk : RM.Cont T2 Z}
   → ContRelate lk rk
-  → StateRelate* (LP.do-app lv1 lv2 lk)
+  → StateRelate* (LM.do-app lv1 lv2 lk)
                  (RP.do-app rv1 rv2 rk)
 do-app (fun E b) rand k
   rewrite ext-cont-id-l (lcont k)
@@ -512,7 +511,7 @@ do-app (cast-fun l T3 T4 T5 T6 {E = E} c₁ {b = b} c₂ {g = g} rator) rand {lk
   where
     prf : CastResultRelate (LC.do-cast l T5 T3 (lval rand))
                            (RC.do-cast l T5 T3 (rval rand))
-      → StateRelate* (LP.do-app
+      → StateRelate* (LM.do-app
                         (LV.fun E (LC.mk-seq (LC.mk-cast l T5 T3) c₁) b (LC.mk-seq c₂ (LC.mk-cast l T4 T6)))
                         (lval rand)
                         (LM.cont fst snd))
@@ -533,12 +532,12 @@ lem-do-car'' : ∀ {T1 T2 T3 T4 T5 T6 Z}
   → (v2   : LV.Val T2)
   → (c2   : LC.Cast T2 T4)
   → (lk   : LM.Cont T5 Z)
-  → (LP.do-car
+  → (LM.do-car
        (LV.cons v1 (LC.mk-seq c1 (LC.mk-cast l T3 T5))
                 v2 (LC.mk-seq c2 (LC.mk-cast l T4 T6)))
        lk)
     ≡
-    (LP.do-car
+    (LM.do-car
        (LV.cons v1 c1
                 v2 c2)
        (LM.ext-cont (LC.mk-cast l T3 T5) lk))
@@ -553,7 +552,7 @@ lem-do-car' : ∀ {T1 T2 Z}
   → {lk : LM.Cont T1 Z}
   → {rk : RM.Cont T1 Z}
   → ContRelate lk rk
-  → StateRelate (LP.do-car lv lk) (RP.do-car rv rk)
+  → StateRelate (LM.do-car lv lk) (RP.do-car rv rk)
 lem-do-car' (cons v v₁) k rewrite ext-cont-id-l (lcont k) = return v k
 lem-do-car' (cast-cons l T3 T4 T5 T6 {v1} {c1} {v2} {c2} v) k
   rewrite lem-do-car'' {T6 = T6} l v1 c1 v2 c2 (lcont k)
@@ -566,7 +565,7 @@ do-car : ∀ {T1 T2 Z}
   → {lk : LM.Cont T1 Z}
   → {rk : RM.Cont T1 Z}
   → ContRelate lk rk
-  → StateRelate* (LP.do-car lv lk) (RP.do-car rv rk)
+  → StateRelate* (LM.do-car lv lk) (RP.do-car rv rk)
 do-car v k = done (lem-do-car' v k)
 
 lem-do-cdr'' : ∀ {T1 T2 T3 T4 T5 T6 Z}
@@ -576,12 +575,12 @@ lem-do-cdr'' : ∀ {T1 T2 T3 T4 T5 T6 Z}
   → (v2   : LV.Val T2)
   → (c2   : LC.Cast T2 T4)
   → (lk   : LM.Cont T6 Z)
-  → (LP.do-cdr
+  → (LM.do-cdr
        (LV.cons v1 (LC.mk-seq c1 (LC.mk-cast l T3 T5))
                 v2 (LC.mk-seq c2 (LC.mk-cast l T4 T6)))
        lk)
     ≡
-    (LP.do-cdr
+    (LM.do-cdr
        (LV.cons v1 c1
                 v2 c2)
        (LM.ext-cont (LC.mk-cast l T4 T6) lk))
@@ -596,7 +595,7 @@ lem-do-cdr' : ∀ {T1 T2 Z}
   → {lk : LM.Cont T2 Z}
   → {rk : RM.Cont T2 Z}
   → ContRelate lk rk
-  → StateRelate (LP.do-cdr lv lk) (RP.do-cdr rv rk)
+  → StateRelate (LM.do-cdr lv lk) (RP.do-cdr rv rk)
 lem-do-cdr' (cons v1 v2) k rewrite ext-cont-id-l (lcont k) = return v2 k
 lem-do-cdr' (cast-cons l T3 T4 T5 T6 {v1} {c1} {v2} {c2} v) k
   rewrite lem-do-cdr'' {T5 = T5} l v1 c1 v2 c2 (lcont k)
@@ -609,7 +608,7 @@ do-cdr : ∀ {T1 T2 Z}
   → {lk : LM.Cont T2 Z}
   → {rk : RM.Cont T2 Z}
   → ContRelate lk rk
-  → StateRelate* (LP.do-cdr lv lk) (RP.do-cdr rv rk)
+  → StateRelate* (LM.do-cdr lv lk) (RP.do-cdr rv rk)
 do-cdr v k = done (lem-do-cdr' v k)
 
 lem-ext-cont : ∀ {T1 T2 T3 T4 Z}
@@ -675,7 +674,7 @@ do-case : ∀ {T1 T2 T3 Z}
   → {lk : LM.Cont T3 Z}
   → {rk : RM.Cont T3 Z}
   → ContRelate lk rk
-  → StateRelate* (LP.do-case lv1 lv2 lv3 lk)
+  → StateRelate* (LM.do-case lv1 lv2 lv3 lk)
                  (RP.do-case rv1 rv2 rv3 rk)
 do-case {lv1 = lv1} (inl x) v2 v3 k with lv1
 do-case {lv1 = lv1} (inl ()) v2 v3 k | CEKcc.Values.inr v c
@@ -690,7 +689,7 @@ observe-inl : ∀ {T1 T2}
   → {lv : LV.Val (` T1 ⊕ T2)}
   → {rv : RV.Val (` T1 ⊕ T2)}
   → InlRelate lv rv
-  → LP.observe-val lv ≡ RP.observe-val rv
+  → LM.observe-val lv ≡ RP.observe-val rv
 observe-inl (base x) = refl
 observe-inl (cast l {u = u} r) with RP.observe-val u | observe-inl r
 ... | rr | refl = refl
@@ -699,7 +698,7 @@ observe-inr : ∀ {T1 T2}
   → {lv : LV.Val (` T1 ⊕ T2)}
   → {rv : RV.Val (` T1 ⊕ T2)}
   → InrRelate lv rv
-  → LP.observe-val lv ≡ RP.observe-val rv
+  → LM.observe-val lv ≡ RP.observe-val rv
 observe-inr (base x) = refl
 observe-inr (cast l {u = u} r) with RP.observe-val u | observe-inr r
 ... | rr | refl = refl
@@ -708,7 +707,7 @@ observe-val : ∀ {T}
   → {lv : LV.Val T}
   → {rv : RV.Val T}
   → ValRelate lv rv
-  → LP.observe-val lv ≡ RP.observe-val rv
+  → LM.observe-val lv ≡ RP.observe-val rv
 observe-val (inj P v) = refl
 observe-val (fun E b) = refl
 observe-val (cast-fun l T3 T4 T5 T6 c1 c2 v) = refl
@@ -727,8 +726,8 @@ progress*-return : ∀ {T Z}
   → {rk : RM.Cont T Z}
   → PreContRelate lk rk
   ---
-  → StateRelate* (LP.progress-return lv lk) (RP.progress (RM.return rv rk))
-progress*-return v mt with LP.observe-val (lval v) | RP.observe-val (rval v) | observe-val v
+  → StateRelate* (LM.progress-return lv lk) (RP.progress (RM.return rv rk))
+progress*-return v mt with LM.observe-val (lval v) | RP.observe-val (rval v) | observe-val v
 ... | _ | _ | refl = done (halt (done _))
 progress*-return v (cons₁ E e1 κ) = done (inspect e1 E (mk-cont (cons₂ v κ)))
 progress*-return v (cons₂ v1 κ) = done (return (cons v1 v) κ)
@@ -751,7 +750,7 @@ progress-ret : ∀ {T1 Z}
   → {lk : LM.Cont T1 Z}
   → {rk : RM.Cont T1 Z}
   → ContRelate lk rk
-  → StateRelate* (LP.progress (LM.return lv lk))
+  → StateRelate* (LM.progress (LM.return lv lk))
                  (RP.progress (RM.return rv rk))
 progress-ret v (mk-cont k) = progress*-return v k
 progress-ret v (ext-cont l T1 T2 {lk = (LM.cont fst snd)} k)
@@ -759,7 +758,7 @@ progress-ret v (ext-cont l T1 T2 {lk = (LM.cont fst snd)} k)
   where
     prf : CastResultRelate (LC.do-cast l T1 T2 (lval v))
                            (RC.do-cast l T1 T2 (rval v))
-      → StateRelate* (LP.progress (LM.return (lval v) (LM.ext-cont (LC.mk-cast l T1 T2) (lcont k))))
+      → StateRelate* (LM.progress (LM.return (lval v) (LM.ext-cont (LC.mk-cast l T1 T2) (lcont k))))
                      (RP.progress (RM.return (rval v) (RM.cast (RC.mk-cast l T1 T2) (rcont k))))
     prf p with (LC.do-cast l T1 T2 (lval v)) | (RC.do-cast l T1 T2 (rval v)) | p
     ... | LV.succ _ | RV.succ _ | succ v₁ = step (progress-ret v₁ k)
@@ -769,7 +768,7 @@ progress* : ∀ {T}
   → {lS : LM.State T}
   → {rS : RM.State T}
   → StateRelate lS rS
-  → StateRelate* (LP.progress lS) (RP.progress rS)
+  → StateRelate* (LM.progress lS) (RP.progress rS)
 progress* (inspect (var x) E κ) = done (return (E [ x ]) κ)
 progress* (inspect sole E κ) = done (return sole κ)
 progress* (inspect (lam T1 T2 e) E κ) = done (return (fun E e) κ)
@@ -789,7 +788,7 @@ weak-bisimulation : ∀ {T}
   → {rS : RM.State T}
   → StateRelate lS rS
   ---
-  → Σ[ n ∈ ℕ ] StateRelate (LP.progress lS) (repeat n RP.progress (RP.progress rS))
+  → Σ[ n ∈ ℕ ] StateRelate (LM.progress lS) (repeat n RP.progress (RP.progress rS))
 weak-bisimulation sr = count-steps (progress* sr)
 
 load : ∀ {T} → (e : ∅ ⊢ T) → StateRelate (LM.load e) (RM.load e)
@@ -801,7 +800,7 @@ lem-evalo-l : ∀ {T}
   → {rs : RM.State T}
   → (ss : StateRelate ls rs)
   → (o : Observe T)
-  → repeat n LP.progress ls ≡ LM.halt o
+  → repeat n LM.progress ls ≡ LM.halt o
   ---
   → Σ[ m ∈ ℕ ] (repeat m RP.progress rs ≡ RM.halt o)
 lem-evalo-l zero (halt _) o refl = ⟨ zero , refl ⟩
@@ -814,11 +813,11 @@ lem-evalo-l (suc n) ss o p | ⟨ m0 , ss' ⟩ | ⟨ m1 , prf ⟩
 thm-evalo-l : ∀ {T}
   → {e : ∅ ⊢ T}
   → {o : Observe T}
-  → LP.Evalo e o
+  → LM.Evalo e o
   ---
   → RP.Evalo e o
-thm-evalo-l {e = e} {o = o} (LP.evalo n prf) with lem-evalo-l n (load e) o prf
-thm-evalo-l (LP.evalo n prf) | ⟨ m , x ⟩ = RP.evalo m x
+thm-evalo-l {e = e} {o = o} (LM.evalo n prf) with lem-evalo-l n (load e) o prf
+thm-evalo-l (LM.evalo n prf) | ⟨ m , x ⟩ = RP.evalo m x
 
 fast-halt : ∀ {T}
   → (o : Observe T)
@@ -838,7 +837,7 @@ mutual
     → (o : Observe T)
     → repeat n RP.progress rs ≡ RM.halt o
     ---
-    → Σ[ m ∈ ℕ ] (repeat m LP.progress ls ≡ LM.halt o)
+    → Σ[ m ∈ ℕ ] (repeat m LM.progress ls ≡ LM.halt o)
   lem-evalo-r* n (done ss) o p = lem-evalo-r n ss o p
   lem-evalo-r* zero (step ss) o refl with fast-halt o ss
   ... | refl = ⟨ zero , refl ⟩
@@ -852,7 +851,7 @@ mutual
     → (o : Observe T)
     → repeat n RP.progress rs ≡ RM.halt o
     ---
-    → Σ[ m ∈ ℕ ] (repeat m LP.progress ls ≡ LM.halt o)
+    → Σ[ m ∈ ℕ ] (repeat m LM.progress ls ≡ LM.halt o)
   lem-evalo-r zero (halt _) o refl = ⟨ zero , refl ⟩
   lem-evalo-r (suc n) ss o p with lem-evalo-r* n (progress* ss) o p
   lem-evalo-r (suc n) ss o p | ⟨ m , prf ⟩ = ⟨ (suc m) , prf ⟩
@@ -862,6 +861,6 @@ thm-evalo-r : ∀ {T}
   → {o : Observe T}
   → RP.Evalo e o
   ---
-  → LP.Evalo e o
+  → LM.Evalo e o
 thm-evalo-r {e = e} {o = o} (RP.evalo n prf) with lem-evalo-r n (load e) o prf
-thm-evalo-r (RP.evalo n prf) | ⟨ m , x ⟩ = LP.evalo m x
+thm-evalo-r (RP.evalo n prf) | ⟨ m , x ⟩ = LM.evalo m x

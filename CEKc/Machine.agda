@@ -8,6 +8,7 @@ module CEKc.Machine
 
 open import Variables
 open import Terms Label
+open import Observe Label
 open import CEKc.Values Label Cast
 
 data Cont : Type → Type → Set where
@@ -104,14 +105,8 @@ data State : Type → Set where
     ------------
     → State T2
 
-  blame : ∀ {T}
-    → (l : Label)
-    -------
-    → State T
-
-  done : ∀ {T}
-    → (v : Val T)
-    -------
+  halt : ∀ {T}
+    → Observe T
     → State T
 
 load : ∀ {T} → ∅ ⊢ T → State T
@@ -176,7 +171,21 @@ module Progress
     → State Z
   do-cast c v k with apply-cast c v
   ... | succ v₁ = return v₁ k
-  ... | fail l₁ = blame l₁
+  ... | fail l₁ = halt (blame l₁)
+
+  observe-val : ∀ {T} → Val T → Value T
+  observe-val (cast v (P⌣⋆ P) c) = inj
+  observe-val (cast v ⌣U c) = sole
+  observe-val (cast v ⌣⇒ c) = fun
+  observe-val (cast v ⌣⊗ c) = cons
+  observe-val (cast v ⌣⊕ c) with observe-val v
+  ... | inl = inl
+  ... | inr = inr
+  observe-val (fun env b) = fun
+  observe-val sole = sole
+  observe-val (cons v₁ v₂) = cons
+  observe-val (inl v) = inl
+  observe-val (inr v) = inr
 
   progress : {T : Type} → State T → State T
   progress (inspect (var x) E κ) = return (E [ x ]) κ
@@ -190,7 +199,7 @@ module Progress
   progress (inspect (cdr e) E κ) = inspect e E (cdr κ)
   progress (inspect (case e e₁ e₂) E κ) = inspect e E (case₁ E e₁ e₂ κ)
   progress (inspect (cast l T1 T2 e) E κ) = inspect e E (cast (mk-cast l T1 T2) κ)
-  progress (return v mt) = done v
+  progress (return v mt) = halt (done (observe-val v))
   progress (return v (cons₁ E e1 κ)) = inspect e1 E (cons₂ v κ)
   progress (return v (cons₂ v1 κ)) = return (cons v1 v) κ
   progress (return v (inl κ)) = return (inl v) κ
@@ -203,6 +212,16 @@ module Progress
   progress (return v (case₂ E v1 e3 κ)) = inspect e3 E (case₃ v1 v κ)
   progress (return v (case₃ v1 v2 κ)) = do-case v1 v2 v κ
   progress (return v (cast c κ)) = do-cast c v κ
-  progress (blame l) = blame l
-  progress (done v) = done v
+  progress (halt o) = halt o
   
+  open import Utilities
+  
+  open import Data.Nat using (ℕ)
+  open import Relation.Binary.PropositionalEquality using (_≡_)
+  open import Data.Product using (Σ-syntax)
+  
+  record Evalo {T : Type} (e : ∅ ⊢ T) (o : Observe T) : Set where
+    constructor evalo
+    field
+      n : ℕ
+      prf : repeat n progress (load e) ≡ halt o

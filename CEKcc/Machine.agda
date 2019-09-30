@@ -208,7 +208,7 @@ module Progress
 
   open import Utilities
   
-  open import Data.Nat using (ℕ; suc; zero)
+  open import Data.Nat using (ℕ)
   open import Relation.Binary.PropositionalEquality using (_≡_)
   open import Data.Product using (Σ-syntax)
   

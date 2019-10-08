@@ -560,3 +560,133 @@ cast-rep = record
              ; lem-cast-⊕-l = lem-cast-⊕-l
              ; lem-cast-⊕-r = lem-cast-⊕-r
              }
+
+
+
+-- --- Theorems about the correctness of KC's type inference
+
+-- mutual
+--   data Cast≈ : {T1 T2 : Type}(c1 c2 : Cast T1 T2) → Set where
+--     refl : ∀ {T1 T2}
+--       → {c : Cast T1 T2}
+--       → Cast≈ c c
+--     ext : ∀ {T1 T2}
+--       → (c1 c2 : Cast T1 T2)
+--       → (prf : {v : Val T1} → CastResult≈ (apply-cast c1 v) (apply-cast c2 v))
+--       → Cast≈ c1 c2
+
+--   data CastResult≈ {T : Type} : CastResult T → CastResult T → Set where
+--     succ : {v : Val T}{u : Val T}
+--       → Val≈ v u
+--       → CastResult≈ (succ v) (succ u)
+--     fail : (l : Label)
+--       → CastResult≈ (fail l) (fail l)
+
+--   data Env≈ : ∀ {Γ} → Env Γ → Env Γ → Set where
+--     []  : Env≈ [] []
+--     _∷_ : ∀ {Γ T}
+--       → {v : Val T}{u : Val T}
+--       → Val≈ v u
+--       → {E : Env Γ}{F : Env Γ}
+--       → Env≈ E F
+--       → Env≈ (_∷_ v E) (_∷_ u F)
+
+--   data Val≈ : ∀ {T} → Val T → Val T → Set where
+--     inj : ∀ P
+--       → {lv : Val (` P)}
+--       → {rv : Val (` P)}
+--       → Val≈ lv rv
+--       ----------------
+--       → Val≈ (inj _ lv) (inj _ rv)
+      
+--     fun : ∀ {Γ T1 T2 T3 T4}
+--       → {E : Env Γ}{F : Env Γ}
+--       → Env≈ E F
+--       → {c1 : Cast T3 T1}{ç1 : Cast T3 T1}
+--       → Cast≈ c1 ç1
+--       → (b : Γ , T1 ⊢ T2)
+--       → {c2 : Cast T2 T4}{ç2 : Cast T2 T4}
+--       → Cast≈ c2 ç2
+--       -------------
+--       → Val≈ (fun E c1 b c2) (fun F ç1 b ç2)
+
+--     sole :
+--       --------
+--         Val≈ sole sole
+
+--     cons : ∀ {T1 T2 T3 T4}
+--       → {v1 : Val T1}
+--       → {u1 : Val T1}
+--       → Val≈ v1 u1
+--       → {c1 : Cast T1 T3}
+--       → {ç1 : Cast T1 T3}
+--       → Cast≈ c1 ç1
+--       → {v2 : Val T2}
+--       → {u2 : Val T2}
+--       → Val≈ v2 u2
+--       → {c2 : Cast T2 T4}
+--       → {ç2 : Cast T2 T4}
+--       → Cast≈ c2 ç2
+--       ------------------
+--       → Val≈ (cons v1 c1 v2 c2) (cons u1 ç1 u2 ç2)
+
+--     inl : ∀ {T1 T2 T3}
+--       → {v : Val T1}
+--       → {u : Val T1}
+--       → Val≈ v u
+--       → {c : Cast T1 T3}
+--       → {ç : Cast T1 T3}
+--       → Cast≈ c ç
+--       -----------------
+--       → Val≈ (inl {T2 = T2} v c) (inl u ç)
+      
+--     inr : ∀ {T1 T2 T4}
+--       → {v : Val T2}
+--       → {u : Val T2}
+--       → Val≈ v u
+--       → {c : Cast T2 T4}
+--       → {ç : Cast T2 T4}
+--       → Cast≈ c ç
+--       -----------------
+--       → Val≈ (inr {T1 = T1} v c) (inr u ç)
+
+-- mutual
+--   val≈refl : ∀ {T}
+--     → (v : Val T)
+--     → Val≈ v v
+--   val≈refl (inj P v) = inj P (val≈refl v)
+--   val≈refl (fun env c₁ b c₂) = fun {!!} {!!} b {!cast≈refl _!}
+--   val≈refl sole = sole
+--   val≈refl (cons v c₁ v₁ c₂) = cons (val≈refl _) {!!} (val≈refl _) {!!}
+--   val≈refl (inl v c) = {!!}
+--   val≈refl (inr v c) = {!!}
+  
+--   castresult≈refl : ∀ {T}
+--     → (r : CastResult T)
+--     → CastResult≈ r r
+--   castresult≈refl (succ v) = succ (val≈refl _)
+--   castresult≈refl (fail l) = fail l
+  
+--   cast≈refl : ∀ {T1 T2}
+--     → (c : Cast T1 T2)
+--     → Cast≈ c c
+--   cast≈refl c = it (castresult≈refl _)
+  
+-- thm-ti-1 : ∀ {l1 l2}
+--   → ∀ P1 M P2
+--   → (` P1) ≤ M
+--   → (` P1) ⊑ M
+--   ---
+--   → Cast≈ (mk-seq (mk-cast l1 (` P1) ⋆) (mk-cast l2 ⋆ (` P2)))
+--           (mk-seq (mk-cast l1 (` P1) M) (mk-cast l2 M (` P2)))
+-- thm-ti-1 P1 .⋆ P2 (P≤⋆ .P1) p2 = it {!!}
+-- thm-ti-1 .U .(` U) U ≤U p2 = {!!}
+-- thm-ti-1 .U .(` U) (T₁ ⇒ T₂) ≤U p2 = {!!}
+-- thm-ti-1 .U .(` U) (T₁ ⊗ T₂) ≤U p2 = {!!}
+-- thm-ti-1 .U .(` U) (T₁ ⊕ T₂) ≤U p2 = {!!}
+-- thm-ti-1 .(_ ⇒ _) .(` (_ ⇒ _)) U (≤⇒ p1 p3) p2 = {!!}
+-- thm-ti-1 .(_ ⇒ _) .(` (_ ⇒ _)) (T₁ ⇒ T₂) (≤⇒ p1 p3) p2 = {!!}
+-- thm-ti-1 .(_ ⇒ _) .(` (_ ⇒ _)) (T₁ ⊗ T₂) (≤⇒ p1 p3) p2 = {!!}
+-- thm-ti-1 .(_ ⇒ _) .(` (_ ⇒ _)) (T₁ ⊕ T₂) (≤⇒ p1 p3) p2 = {!!}
+-- thm-ti-1 .(_ ⊗ _) .(` (_ ⊗ _)) P2 (≤⊗ p1 p3) p2 = {!!}
+-- thm-ti-1 .(_ ⊕ _) .(` (_ ⊕ _)) P2 (≤⊕ p1 p3) p2 = {!!}

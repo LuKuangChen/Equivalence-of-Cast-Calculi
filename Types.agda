@@ -16,6 +16,8 @@ mutual
     _⊗_ : (T₁ T₂ : Type) → PreType
     _⊕_ : (T₁ T₂ : Type) → PreType
 
+-- shallow consistency
+
 data _⌣_ : (T1 T2 : Type) → Set where
   ⋆⌣⋆ : ⋆ ⌣ ⋆
   ⋆⌣P : ∀ P → ⋆ ⌣ (` P)
@@ -52,3 +54,61 @@ _⌣?_ : ∀ T1 T2 → Dec (T1 ⌣ T2)
 ⌣refl (` (T₁ ⇒ T₂)) = ⌣⇒
 ⌣refl (` (T₁ ⊗ T₂)) = ⌣⊗
 ⌣refl (` (T₁ ⊕ T₂)) = ⌣⊕
+
+-- subtype
+
+data _≤_ : Type → Type → Set where
+
+  ⋆≤⋆ : ⋆ ≤ ⋆
+  
+  P≤⋆ : ∀ P → (` P) ≤ ⋆
+  
+  ≤U : (` U) ≤ (` U)
+  
+  ≤⇒ : ∀ {T1 T2 T3 T4}
+    → T3 ≤ T1
+    → T2 ≤ T4
+    ---
+    → (` T1 ⇒ T2) ≤ (` T3 ⇒ T4)
+    
+  ≤⊗ : ∀ {T1 T2 T3 T4}
+    → T1 ≤ T3
+    → T2 ≤ T4
+    ---
+    → (` T1 ⊗ T2) ≤ (` T3 ⊗ T4)
+    
+  ≤⊕ : ∀ {T1 T2 T3 T4}
+    → T1 ≤ T3
+    → T2 ≤ T4
+    ---
+    → (` T1 ⊕ T2) ≤ (` T3 ⊕ T4)
+
+-- imprecise
+
+data _⊑_ : Type → Type → Set where
+
+  ⋆⊑⋆ : ⋆ ⊑ ⋆
+  
+  P⊑⋆ : ∀ P → (` P) ⊑ ⋆
+  
+  ⊑U : (` U) ⊑ (` U)
+  
+  ⊑⇒ : ∀ {T1 T2 T3 T4}
+    → T1 ⊑ T3
+    → T2 ⊑ T4
+    ---
+    → (` T1 ⇒ T2) ⊑ (` T3 ⇒ T4)
+    
+  ⊑⊗ : ∀ {T1 T2 T3 T4}
+    → T1 ⊑ T3
+    → T2 ⊑ T4
+    ---
+    → (` T1 ⊗ T2) ⊑ (` T3 ⊗ T4)
+    
+  ⊑⊕ : ∀ {T1 T2 T3 T4}
+    → T1 ⊑ T3
+    → T2 ⊑ T4
+    ---
+    → (` T1 ⊕ T2) ⊑ (` T3 ⊕ T4)
+
+  

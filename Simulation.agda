@@ -525,7 +525,7 @@ do-app (cast-fun l T3 T4 T5 T6 {E = E} c₁ {b = b} c₂ {g = g} rator) rand {lk
     ... | LV.succ _ | RV.succ _ | succ v₁ = do-app rator v₁ (ext-cont l _ _ κ)
     ... | LV.fail _ | RV.fail _ | fail l₁ = done (halt (blame l₁))
 
-lem-do-car'' : ∀ {T1 T2 T3 T4 T5 T6 Z}
+lem-do-car : ∀ {T1 T2 T3 T4 T5 T6 Z}
   → (l : Label)
   → (v1   : LV.Val T1)
   → (c1   : LC.Cast T1 T3)
@@ -541,22 +541,9 @@ lem-do-car'' : ∀ {T1 T2 T3 T4 T5 T6 Z}
        (LV.cons v1 c1
                 v2 c2)
        (LM.ext-cont (LC.mk-cast l T3 T5) lk))
-lem-do-car'' l v1 c1 v2 c2 (LM.cont fst snd)
+lem-do-car l v1 c1 v2 c2 (LM.cont fst snd)
   rewrite LC.mk-seq-assoc c1 (LC.mk-cast l _ _) fst
   = refl
-
-lem-do-car' : ∀ {T1 T2 Z}
-  → {lv : LV.Val (` T1 ⊗ T2)}
-  → {rv : RV.Val (` T1 ⊗ T2)}
-  → ValRelate lv rv
-  → {lk : LM.Cont T1 Z}
-  → {rk : RM.Cont T1 Z}
-  → ContRelate lk rk
-  → StateRelate (LM.do-car lv lk) (RP.do-car rv rk)
-lem-do-car' (cons v v₁) k rewrite ext-cont-id-l (lcont k) = return v k
-lem-do-car' (cast-cons l T3 T4 T5 T6 {v1} {c1} {v2} {c2} v) k
-  rewrite lem-do-car'' {T6 = T6} l v1 c1 v2 c2 (lcont k)
-  = lem-do-car' v (ext-cont l T3 T5 k)
 
 do-car : ∀ {T1 T2 Z}
   → {lv : LV.Val (` T1 ⊗ T2)}
@@ -566,9 +553,12 @@ do-car : ∀ {T1 T2 Z}
   → {rk : RM.Cont T1 Z}
   → ContRelate lk rk
   → StateRelate* (LM.do-car lv lk) (RP.do-car rv rk)
-do-car v k = done (lem-do-car' v k)
+do-car (cons v v₁) k rewrite ext-cont-id-l (lcont k) = done (return v k)
+do-car (cast-cons l T3 T4 T5 T6 {v1} {c1} {v2} {c2} v) k
+  rewrite lem-do-car {T6 = T6} l v1 c1 v2 c2 (lcont k)
+  = step (do-car v (ext-cont l T3 T5 k))
 
-lem-do-cdr'' : ∀ {T1 T2 T3 T4 T5 T6 Z}
+lem-do-cdr : ∀ {T1 T2 T3 T4 T5 T6 Z}
   → (l : Label)
   → (v1   : LV.Val T1)
   → (c1   : LC.Cast T1 T3)
@@ -584,22 +574,9 @@ lem-do-cdr'' : ∀ {T1 T2 T3 T4 T5 T6 Z}
        (LV.cons v1 c1
                 v2 c2)
        (LM.ext-cont (LC.mk-cast l T4 T6) lk))
-lem-do-cdr'' l v1 c1 v2 c2 (LM.cont fst snd)
+lem-do-cdr l v1 c1 v2 c2 (LM.cont fst snd)
   rewrite LC.mk-seq-assoc c2 (LC.mk-cast l _ _) fst
   = refl
-
-lem-do-cdr' : ∀ {T1 T2 Z}
-  → {lv : LV.Val (` T1 ⊗ T2)}
-  → {rv : RV.Val (` T1 ⊗ T2)}
-  → ValRelate lv rv
-  → {lk : LM.Cont T2 Z}
-  → {rk : RM.Cont T2 Z}
-  → ContRelate lk rk
-  → StateRelate (LM.do-cdr lv lk) (RP.do-cdr rv rk)
-lem-do-cdr' (cons v1 v2) k rewrite ext-cont-id-l (lcont k) = return v2 k
-lem-do-cdr' (cast-cons l T3 T4 T5 T6 {v1} {c1} {v2} {c2} v) k
-  rewrite lem-do-cdr'' {T5 = T5} l v1 c1 v2 c2 (lcont k)
-  = lem-do-cdr' v (ext-cont l T4 T6 k)
 
 do-cdr : ∀ {T1 T2 Z}
   → {lv : LV.Val (` T1 ⊗ T2)}
@@ -609,7 +586,10 @@ do-cdr : ∀ {T1 T2 Z}
   → {rk : RM.Cont T2 Z}
   → ContRelate lk rk
   → StateRelate* (LM.do-cdr lv lk) (RP.do-cdr rv rk)
-do-cdr v k = done (lem-do-cdr' v k)
+do-cdr (cons v1 v2) k rewrite ext-cont-id-l (lcont k) = done (return v2 k)
+do-cdr (cast-cons l T3 T4 T5 T6 {v1} {c1} {v2} {c2} v) k
+  rewrite lem-do-cdr {T5 = T5} l v1 c1 v2 c2 (lcont k)
+  = step (do-cdr v (ext-cont l T4 T6 k))
 
 lem-ext-cont : ∀ {T1 T2 T3 T4 Z}
   → (c1 : LC.Cast T1 T2)

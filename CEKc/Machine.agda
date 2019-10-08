@@ -136,14 +136,14 @@ module Progress
     → Val (` T1 ⊗ T2)
     → Cont T1 Z
     → State Z
-  do-car (cast v ⌣⊗ c) κ = do-car v (cast (cast-car c) κ)
+  do-car (cast v ⌣⊗ c) κ = return v (car (cast (cast-car c) κ))
   do-car (cons v₁ v₂) κ = return v₁ κ
 
   do-cdr : ∀ {T1 T2 Z}
     → Val (` T1 ⊗ T2)
     → Cont T2 Z
     → State Z
-  do-cdr (cast v ⌣⊗ c) κ = do-cdr v (cast (cast-cdr c) κ)
+  do-cdr (cast v ⌣⊗ c) κ = return v (cdr (cast (cast-cdr c) κ))
   do-cdr (cons v₁ v₂) κ = return v₂ κ
   
   do-case' : ∀ {T1 T2 Z}

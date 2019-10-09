@@ -562,6 +562,53 @@ cast-rep = record
              }
 
 
+-- alternative apply-cast
+applyCast : ∀ {T1 T2}
+  → Cast T1 T2
+  → Val T1
+  ---
+  → CastResult T2
+applyCast id⋆ v = succ v
+applyCast (↷ (⁇ l) r) (inj P v) = apply-rest (ext-rest (inj₂ l) (mk-id-body P) r) v
+applyCast (↷ ε r) v = apply-rest r v
+
+lem-apply-cast-eqv : ∀ {T1 T2}
+  → (c : Cast T1 T2)
+  → (v : Val T1)
+  ---
+  → apply-cast c v ≡ applyCast c v
+lem-apply-cast-eqv id⋆ v = refl
+lem-apply-cast-eqv (↷ {P = P2} (⁇ l) r) (inj P1 v) with (` P1) ⌣? (` P2)
+lem-apply-cast-eqv (↷ {P = .U} (⁇ l) (rest U t)) (inj .U sole) | yes ⌣U = refl
+lem-apply-cast-eqv (↷ {P = .(_ ⇒ _)} (⁇ l) (rest (c₃ ⇒ c₄) t)) (inj .(_ ⇒ _) (fun env c₁ b₁ c₂)) | yes ⌣⇒
+  rewrite seq-assoc c₃ (inj₂ l) (mk-id _) (inj₁ refl) c₁ | seq-id-l c₁
+        | sym (seq-assoc c₃ (inj₁ refl) (mk-id _) (inj₂ l) c₁) | seq-id-r c₃
+        | seq-assoc c₂ (inj₂ l) (mk-id _) (inj₁ refl) c₄ | seq-id-l c₄
+        | sym (seq-assoc c₂ (inj₁ refl) (mk-id _) (inj₂ l) c₄) | seq-id-r c₂
+  = refl
+lem-apply-cast-eqv (↷ (⁇ l) (rest (c₃ ⊗ c₄) t)) (inj (T1 ⊗ T2) (cons v₁ c₁ v₂ c₂)) | yes ⌣⊗
+  rewrite seq-assoc c₁ (inj₁ refl) (seq (mk-id _) (inj₂ l) (mk-id _)) (inj₁ refl) c₃
+        | seq-assoc (mk-id T1) (inj₂ l) (mk-id _) (inj₁ refl) c₃
+        | seq-id-l c₃
+        | seq-assoc c₂ (inj₁ refl) (seq (mk-id _) (inj₂ l) (mk-id _)) (inj₁ refl) c₄
+        | seq-assoc (mk-id T2) (inj₂ l) (mk-id _) (inj₁ refl) c₄
+        | seq-id-l c₄
+  = refl
+lem-apply-cast-eqv (↷ {P = .(_ ⊕ _)} (⁇ l) (rest (c₃ ⊕ c₄) t)) (inj (T1 ⊕ T2) (inl v₁ c₁)) | yes ⌣⊕
+  rewrite seq-assoc c₁ (inj₁ refl) (seq (mk-id _) (inj₂ l) (mk-id _)) (inj₁ refl) c₃
+        | seq-assoc (mk-id T1) (inj₂ l) (mk-id _) (inj₁ refl) c₃
+        | seq-id-l c₃
+  = refl
+lem-apply-cast-eqv (↷ {P = .(_ ⊕ _)} (⁇ l) (rest (c₃ ⊕ c₄) t)) (inj (T1 ⊕ T2) (inr v₂ c₂)) | yes ⌣⊕
+  rewrite seq-assoc c₂ (inj₁ refl) (seq (mk-id _) (inj₂ l) (mk-id _)) (inj₁ refl) c₄
+        | seq-assoc (mk-id T2) (inj₂ l) (mk-id _) (inj₁ refl) c₄
+        | seq-id-l c₄
+  = refl
+lem-apply-cast-eqv (↷ {P = P2} (⁇ l) (rest b t)) (inj P1 v) | no ¬p
+  rewrite lem-id-body P1 v
+  = refl
+lem-apply-cast-eqv (↷ ε r) v = refl
+
 
 -- --- Theorems about the correctness of KC's type inference
 

@@ -2,7 +2,6 @@ module CEKcc.CastRep
   (Label : Set)
   where
 
-
 open import Types
 open import Variables
 open import Terms Label

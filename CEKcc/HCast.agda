@@ -62,8 +62,7 @@ mutual
     → Cast T3 T4
   ----------------
     → Cast T1 T4
-  seq id⋆ (inj₁ refl) id⋆ = id⋆
-  seq id⋆ (inj₁ refl) (↷ (⁇ l) r) = ↷ (⁇ l) r
+  seq id⋆ (inj₁ refl) c2 = c2
   seq id⋆ (inj₂ l') id⋆ = id⋆
   seq id⋆ (inj₂ l') (↷ (⁇ l) r) = ↷ (⁇ l) r
   seq id⋆ (inj₂ l') (↷ ε r) = ↷ (⁇ l') r
@@ -304,51 +303,180 @@ mutual
   seq'-assoc-U ℓ1 (inj₁ refl) b t | rest U t₁ = refl
   seq'-assoc-U ℓ1 (inj₂ y) b t | rest U t₁ = refl
 
+
 open import CEKcc.Values Label Cast
+  
+module AlternativeApplyCast where
+
+  GapP : PreType → PreType → Set
+  GapP P1 P2 = P1 ≡ P2 ⊎ Label
+  
+  GapT : Type → Type → Set
+  GapT T1 T2 = T1 ≡ T2 ⊎ Label
+  
+  ℓ-dom : ∀ {T1 T2 T3 T4}
+    → GapP (T1 ⇒ T2) (T3 ⇒ T4)
+    → GapT T3 T1
+  ℓ-dom (inj₁ refl) = inj₁ refl
+  ℓ-dom (inj₂ l) = inj₂ l
+  
+  ℓ-cod : ∀ {T1 T2 T3 T4}
+    → GapP (T1 ⇒ T2) (T3 ⇒ T4)
+    → GapT T2 T4
+  ℓ-cod (inj₁ refl) = inj₁ refl
+  ℓ-cod (inj₂ l) = inj₂ l
+  
+  ℓ-car : ∀ {T1 T2 T3 T4}
+    → GapP (T1 ⊗ T2) (T3 ⊗ T4)
+    → GapT T1 T3
+  ℓ-car (inj₁ refl) = inj₁ refl
+  ℓ-car (inj₂ l) = inj₂ l
+ 
+  ℓ-cdr : ∀ {T1 T2 T3 T4}
+    → GapP (T1 ⊗ T2) (T3 ⊗ T4)
+    → GapT T2 T4
+  ℓ-cdr (inj₁ refl) = inj₁ refl
+  ℓ-cdr (inj₂ l) = inj₂ l
+  
+  ℓ-inl : ∀ {T1 T2 T3 T4}
+    → GapP (T1 ⊕ T2) (T3 ⊕ T4)
+    → GapT T1 T3
+  ℓ-inl (inj₁ refl) = inj₁ refl
+  ℓ-inl (inj₂ l) = inj₂ l
+ 
+  ℓ-inr : ∀ {T1 T2 T3 T4}
+    → GapP (T1 ⊕ T2) (T3 ⊕ T4)
+    → GapT T2 T4
+  ℓ-inr (inj₁ refl) = inj₁ refl
+  ℓ-inr (inj₂ l) = inj₂ l
+ 
+  apply-body : ∀ {P1 P2 P3}
+    → P1 ≡ P2 ⊎ Label
+    → Body P2 P3
+    → Val (` P1)
+    → CastResult (` P3)
+  apply-body {P1} {P2} ℓ b v with (` P1) ⌣? (` P2)
+  apply-body {.U} {.U} ℓ U sole | yes ⌣U = succ sole
+  apply-body {.(_ ⇒ _)} {.(_ ⇒ _)} ℓ (c₃ ⇒ c₄) (fun env c₁ b₁ c₂) | yes ⌣⇒ = succ (fun env (seq c₃ (ℓ-dom ℓ) c₁) b₁ (seq c₂ (ℓ-cod ℓ) c₄))
+  apply-body {.(_ ⊗ _)} {.(_ ⊗ _)} ℓ (c₃ ⊗ c₄) (cons v₁ c₁ v₂ c₂) | yes ⌣⊗ = succ (cons v₁ (seq c₁ (ℓ-car ℓ) c₃) v₂ (seq c₂ (ℓ-cdr ℓ) c₄))
+  apply-body {.(_ ⊕ _)} {.(_ ⊕ _)} ℓ (c₃ ⊕ c₄) (inl v c) | yes ⌣⊕ = succ (inl v (seq c (ℓ-inl ℓ) c₃))
+  apply-body {.(_ ⊕ _)} {.(_ ⊕ _)} ℓ (c₃ ⊕ c₄) (inr v c) | yes ⌣⊕ = succ (inr v (seq c (ℓ-inr ℓ) c₄))
+  apply-body {P1} {.P1} (inj₁ refl) b v | no ¬p = ⊥-elim (¬p (⌣refl (` P1)))
+  apply-body {P1} {P2} (inj₂ l) b v | no ¬p = fail l
+  
+  apply-tail : ∀ {P T} → Tail P T → Val (` P) → CastResult T
+  apply-tail (fail l) v = fail l
+  apply-tail (last ‼) v = succ (inj _ v)
+  apply-tail (last ε) v = succ v
+
+  apply-rest : ∀ {P1 P2 T}
+    → GapP P1 P2
+    → Rest P2 T
+    → Val (` P1)
+    ---
+    → CastResult T
+  apply-rest ℓ (rest b t) v = apply-body ℓ b v >>= apply-tail t
+  
+  apply-cast : ∀ {T1 T2}
+    → Cast T1 T2
+    → Val T1
+    ---
+    → CastResult T2
+  apply-cast id⋆ v = succ v
+  apply-cast (↷ (⁇ l) r) (inj _ v) = apply-rest (inj₂ l) r v
+  apply-cast (↷ ε r) v = apply-rest (inj₁ refl) r v
 
 apply-tail : ∀ {P T} → Tail P T → Val (` P) → CastResult T
 apply-tail (fail l) v = fail l
 apply-tail (last ‼) v = succ (inj _ v)
 apply-tail (last ε) v = succ v
 
-mutual
-  apply-body : ∀ {P Q} → Body P Q → Val (` P) → CastResult (` Q)
-  apply-body U sole
-    = succ sole
-  apply-body (c₁ ⇒ c₂) (fun E c₃ b c₄)
-    = succ (fun E (mk-seq c₁ c₃) b (mk-seq c₄ c₂))
-  apply-body (c₁ ⊗ c₂) (cons v₁ c₃ v₂ c₄)
-    = succ (cons v₁ (mk-seq c₃ c₁) v₂ (mk-seq c₄ c₂))
-  apply-body (c₁ ⊕ c₂) (inl v c)
-    = succ (inl v (mk-seq c c₁))
-  apply-body (c₁ ⊕ c₂) (inr v c)
-    = succ (inr v (mk-seq c c₂))
-    
-  apply-rest : ∀ {P T} → Rest P T → Val (` P) → CastResult T
-  apply-rest (rest b t) v
-    = apply-body b v >>= λ u →
-      apply-tail t u
-
-  apply-head : ∀ {P T} → Head P T → Val T → CastResult (` P)
-  apply-head {P = Q} (⁇ l) (inj P v) with (` P) ⌣? (` Q)
-  apply-head {.U} (⁇ l) (inj .U sole) | yes ⌣U = succ sole
-  apply-head {(T1 ⇒ T2)} (⁇ l) (inj _ (fun env c₁ b c₂)) | yes ⌣⇒
-    = succ (fun env (seq (mk-id T1) (inj₂ l) c₁) b (seq c₂ (inj₂ l) (mk-id T2)))
-  apply-head {.(_ ⊗ _)} (⁇ l) (inj _ (cons v₁ c₁ v₂ c₂)) | yes ⌣⊗
-    = succ (cons v₁ (mk-seq c₁ (mk-cast l _ _)) v₂ (mk-seq c₂ (mk-cast l _ _)))
-  apply-head {.(_ ⊕ _)} (⁇ l) (inj _ (inl v c)) | yes ⌣⊕
-    = succ (inl v (mk-seq c (mk-cast l _ _)))
-  apply-head {.(_ ⊕ _)} (⁇ l) (inj _ (inr v c)) | yes ⌣⊕
-    = succ (inr v (mk-seq c (mk-cast l _ _)))
-  apply-head {Q} (⁇ l) (inj P v) | no ¬p = fail l
-  apply-head ε v = succ v
+apply-body : ∀ {P Q} → Body P Q → Val (` P) → CastResult (` Q)
+apply-body U v
+  = succ v
+apply-body (c₁ ⇒ c₂) (fun E c₃ b c₄)
+  = succ (fun E (mk-seq c₁ c₃) b (mk-seq c₄ c₂))
+apply-body (c₁ ⊗ c₂) (cons v₁ c₃ v₂ c₄)
+  = succ (cons v₁ (mk-seq c₃ c₁) v₂ (mk-seq c₄ c₂))
+apply-body (c₁ ⊕ c₂) (inl v c)
+  = succ (inl v (mk-seq c c₁))
+apply-body (c₁ ⊕ c₂) (inr v c)
+  = succ (inr v (mk-seq c c₂))
   
-  apply-cast : ∀ {T1 T2} → Cast T1 T2 → Val T1 → CastResult T2
-  apply-cast id⋆ v
-    = succ v
-  apply-cast (↷ h r) v
-    = apply-head h v >>= λ u →
-      apply-rest r u
+apply-rest : ∀ {P T} → Rest P T → Val (` P) → CastResult T
+apply-rest (rest b t) v
+  = apply-body b v >>= λ u →
+    apply-tail t u
+                 
+apply-head : ∀ {P T} → Head P T → Val T → CastResult (` P)
+apply-head {P = Q} (⁇ l) (inj P v) with (` P) ⌣? (` Q)
+apply-head {.U} (⁇ l) (inj .U sole) | yes ⌣U = succ sole
+apply-head {(T1 ⇒ T2)} (⁇ l) (inj _ (fun env c₁ b c₂)) | yes ⌣⇒
+  = succ (fun env (seq (mk-id T1) (inj₂ l) c₁) b (seq c₂ (inj₂ l) (mk-id T2)))
+apply-head {.(_ ⊗ _)} (⁇ l) (inj _ (cons v₁ c₁ v₂ c₂)) | yes ⌣⊗
+  = succ (cons v₁ (mk-seq c₁ (mk-cast l _ _)) v₂ (mk-seq c₂ (mk-cast l _ _)))
+apply-head {.(_ ⊕ _)} (⁇ l) (inj _ (inl v c)) | yes ⌣⊕
+  = succ (inl v (mk-seq c (mk-cast l _ _)))
+apply-head {.(_ ⊕ _)} (⁇ l) (inj _ (inr v c)) | yes ⌣⊕
+  = succ (inr v (mk-seq c (mk-cast l _ _)))
+apply-head {Q} (⁇ l) (inj P v) | no ¬p = fail l
+apply-head ε v = succ v
+  
+apply-cast : ∀ {T1 T2} → Cast T1 T2 → Val T1 → CastResult T2
+apply-cast id⋆ v
+  = succ v
+apply-cast (↷ h r) v
+  = apply-head h v >>= λ u →
+    apply-rest r u
+
+module ApplyEqv where
+  lem-apply-tail : ∀ {P T}
+    → (t : Tail P T)
+    → (v : Val (` P))
+    → apply-tail t v ≡ AlternativeApplyCast.apply-tail t v
+  lem-apply-tail (fail l) v = refl
+  lem-apply-tail (last ‼) v = refl
+  lem-apply-tail (last ε) v = refl
+
+  thm-eqv : ∀ {T1 T2}
+    → (c : Cast T1 T2)
+    → (v : Val T1)
+    → apply-cast c v ≡ AlternativeApplyCast.apply-cast c v
+  thm-eqv id⋆ v = refl
+  thm-eqv (↷ {P = P2} (⁇ l) (rest b t)) (inj P1 v) with (` P1) ⌣? (` P2)
+  thm-eqv (↷ {P = .U} (⁇ l) (rest U t)) (inj .U sole) | yes ⌣U = lem-apply-tail t sole
+  thm-eqv (↷ {P = .(_ ⇒ _)} (⁇ l) (rest (c₃ ⇒ c₄) t)) (inj .(_ ⇒ _) (fun env c₁ b₁ c₂)) | yes ⌣⇒
+    rewrite sym (seq-assoc c₃ (inj₁ refl) (mk-id _) (inj₂ l) c₁) | seq-id-r c₃
+          | seq-assoc c₂ (inj₂ l) (mk-id _) (inj₁ refl) c₄ | seq-id-l c₄
+    = lem-apply-tail t _
+  thm-eqv (↷ {P = .(_ ⊗ _)} (⁇ l) (rest (c₃ ⊗ c₄) t)) (inj (T1 ⊗ T2) (cons v c₁ v₁ c₂)) | yes ⌣⊗
+    rewrite seq-assoc c₁ (inj₁ refl) (mk-cast l _ _) (inj₁ refl) c₃
+          | seq-assoc (mk-id T1) (inj₂ l) (mk-id _) (inj₁ refl) c₃
+          | seq-id-l c₃
+          | sym (seq-assoc c₁ (inj₁ refl) (mk-id T1) (inj₂ l) c₃) | seq-id-r c₁
+          | seq-assoc c₂ (inj₁ refl) (mk-cast l _ _) (inj₁ refl) c₄
+          | seq-assoc (mk-id T2) (inj₂ l) (mk-id _) (inj₁ refl) c₄
+          | seq-id-l c₄
+          | sym (seq-assoc c₂ (inj₁ refl) (mk-id T2) (inj₂ l) c₄) | seq-id-r c₂
+    = lem-apply-tail _ _
+  thm-eqv (↷ {P = .(_ ⊕ _)} (⁇ l) (rest (c₃ ⊕ c₄) t)) (inj (T1 ⊕ T2) (inl v₁ c₁)) | yes ⌣⊕
+    rewrite seq-assoc c₁ (inj₁ refl) (mk-cast l _ _) (inj₁ refl) c₃
+          | seq-assoc (mk-id T1) (inj₂ l) (mk-id _) (inj₁ refl) c₃
+          | seq-id-l c₃
+          | sym (seq-assoc c₁ (inj₁ refl) (mk-id T1) (inj₂ l) c₃) | seq-id-r c₁
+    = lem-apply-tail _ _
+  thm-eqv (↷ {P = .(_ ⊕ _)} (⁇ l) (rest (c₃ ⊕ c₄) t)) (inj (T1 ⊕ T2) (inr v₂ c₂)) | yes ⌣⊕
+    rewrite seq-assoc c₂ (inj₁ refl) (mk-cast l _ _) (inj₁ refl) c₄
+          | seq-assoc (mk-id T2) (inj₂ l) (mk-id _) (inj₁ refl) c₄
+          | seq-id-l c₄
+          | sym (seq-assoc c₂ (inj₁ refl) (mk-id T2) (inj₂ l) c₄) | seq-id-r c₂
+    = lem-apply-tail _ _
+  thm-eqv (↷ {P = P2} (⁇ l) (rest b t)) (inj P1 v) | no ¬p = refl
+  thm-eqv (↷ ε (rest U t)) sole = lem-apply-tail _ _
+  thm-eqv (↷ ε (rest (c₃ ⇒ c₄) t)) (fun env c₁ b₁ c₂) = lem-apply-tail _ _
+  thm-eqv (↷ ε (rest (c₃ ⊗ c₄) t)) (cons v c₁ v₁ c₂) = lem-apply-tail _ _
+  thm-eqv (↷ ε (rest (c₁ ⊕ c₂) t)) (inl v c) = lem-apply-tail _ _
+  thm-eqv (↷ ε (rest (c₁ ⊕ c₂) t)) (inr v c) = lem-apply-tail _ _
 
 mutual
   lem-id-body : ∀ P
@@ -498,8 +626,7 @@ lem-cast-proj l (T1 ⊕ T2) (T3 ⊕ T4) (inr v c₂) | yes ⌣⊕
   = refl
 lem-cast-proj l P P₁ v | no ¬p rewrite lem-id-body P₁ v = refl
 
-lem-cast-U : 
-    (l : Label)
+lem-cast-U : ∀ l
   → apply-cast (mk-cast l (` U) (` U)) sole ≡ succ sole
 lem-cast-U l = refl
 
@@ -542,198 +669,48 @@ lem-cast-⊕-r : ∀ T T11 T12 T21 T22
 lem-cast-⊕-r T T11 T12 T21 T22 l v c = refl
 
 cast-rep : CastRep
-cast-rep = record
-             { Cast = Cast
-             ; mk-cast = mk-cast
-             ; mk-seq = mk-seq
-             ; mk-id = mk-id
-             ; apply-cast = apply-cast
-             ; lem-id = lem-id
-             ; lem-seq = lem-seq
-             ; lem-cast-¬⌣ = lem-cast-¬⌣
-             ; lem-cast-id⋆ = lem-cast-id⋆
-             ; lem-cast-inj = lem-cast-inj
-             ; lem-cast-proj = lem-cast-proj
-             ; lem-cast-U = lem-cast-U
-             ; lem-cast-⇒ = lem-cast-⇒
-             ; lem-cast-⊗ = lem-cast-⊗
-             ; lem-cast-⊕-l = lem-cast-⊕-l
-             ; lem-cast-⊕-r = lem-cast-⊕-r
-             }
+cast-rep
+  = record
+    { Cast = Cast
+    ; mk-cast = mk-cast
+    ; mk-seq = mk-seq
+    ; mk-id = mk-id
+    ; apply-cast = apply-cast
+    }
+cast-rep-surely-lazyD : SurelyLazyD cast-rep
+cast-rep-surely-lazyD
+  = record
+    { lem-id = lem-id
+    ; lem-seq = lem-seq
+    ; lem-cast-¬⌣ = lem-cast-¬⌣
+    ; lem-cast-id⋆ = lem-cast-id⋆
+    ; lem-cast-inj = lem-cast-inj
+    ; lem-cast-proj = lem-cast-proj
+    ; lem-cast-U = lem-cast-U
+    ; lem-cast-⇒ = lem-cast-⇒
+    ; lem-cast-⊗ = lem-cast-⊗
+    ; lem-cast-⊕-l = lem-cast-⊕-l
+    ; lem-cast-⊕-r = lem-cast-⊕-r
+    }
+cast-rep-monoid : Monoid cast-rep
+cast-rep-monoid
+  = record
+    { lem-id-l = seq-id-l
+    ; lem-id-r = seq-id-r
+    ; lem-assoc = λ c1 c2 c3 → seq-assoc c1 _ c2 _ c3
+    }
 
+lem-cast-id-is-id : ∀ l T →
+  mk-cast l T T ≡ mk-id T
+lem-cast-id-is-id l ⋆ = refl
+lem-cast-id-is-id l (` U) = refl
+lem-cast-id-is-id l (` (T₁ ⇒ T₂))
+  rewrite lem-cast-id-is-id l T₁ | lem-cast-id-is-id l T₂ = refl
+lem-cast-id-is-id l (` (T₁ ⊗ T₂))
+  rewrite lem-cast-id-is-id l T₁ | lem-cast-id-is-id l T₂ = refl
+lem-cast-id-is-id l (` (T₁ ⊕ T₂))
+  rewrite lem-cast-id-is-id l T₁ | lem-cast-id-is-id l T₂ = refl
 
--- alternative apply-cast
-applyCast : ∀ {T1 T2}
-  → Cast T1 T2
-  → Val T1
-  ---
-  → CastResult T2
-applyCast id⋆ v = succ v
-applyCast (↷ (⁇ l) r) (inj P v) = apply-rest (ext-rest (inj₂ l) (mk-id-body P) r) v
-applyCast (↷ ε r) v = apply-rest r v
-
-lem-apply-cast-eqv : ∀ {T1 T2}
-  → (c : Cast T1 T2)
-  → (v : Val T1)
-  ---
-  → apply-cast c v ≡ applyCast c v
-lem-apply-cast-eqv id⋆ v = refl
-lem-apply-cast-eqv (↷ {P = P2} (⁇ l) r) (inj P1 v) with (` P1) ⌣? (` P2)
-lem-apply-cast-eqv (↷ {P = .U} (⁇ l) (rest U t)) (inj .U sole) | yes ⌣U = refl
-lem-apply-cast-eqv (↷ {P = .(_ ⇒ _)} (⁇ l) (rest (c₃ ⇒ c₄) t)) (inj .(_ ⇒ _) (fun env c₁ b₁ c₂)) | yes ⌣⇒
-  rewrite seq-assoc c₃ (inj₂ l) (mk-id _) (inj₁ refl) c₁ | seq-id-l c₁
-        | sym (seq-assoc c₃ (inj₁ refl) (mk-id _) (inj₂ l) c₁) | seq-id-r c₃
-        | seq-assoc c₂ (inj₂ l) (mk-id _) (inj₁ refl) c₄ | seq-id-l c₄
-        | sym (seq-assoc c₂ (inj₁ refl) (mk-id _) (inj₂ l) c₄) | seq-id-r c₂
-  = refl
-lem-apply-cast-eqv (↷ (⁇ l) (rest (c₃ ⊗ c₄) t)) (inj (T1 ⊗ T2) (cons v₁ c₁ v₂ c₂)) | yes ⌣⊗
-  rewrite seq-assoc c₁ (inj₁ refl) (seq (mk-id _) (inj₂ l) (mk-id _)) (inj₁ refl) c₃
-        | seq-assoc (mk-id T1) (inj₂ l) (mk-id _) (inj₁ refl) c₃
-        | seq-id-l c₃
-        | seq-assoc c₂ (inj₁ refl) (seq (mk-id _) (inj₂ l) (mk-id _)) (inj₁ refl) c₄
-        | seq-assoc (mk-id T2) (inj₂ l) (mk-id _) (inj₁ refl) c₄
-        | seq-id-l c₄
-  = refl
-lem-apply-cast-eqv (↷ {P = .(_ ⊕ _)} (⁇ l) (rest (c₃ ⊕ c₄) t)) (inj (T1 ⊕ T2) (inl v₁ c₁)) | yes ⌣⊕
-  rewrite seq-assoc c₁ (inj₁ refl) (seq (mk-id _) (inj₂ l) (mk-id _)) (inj₁ refl) c₃
-        | seq-assoc (mk-id T1) (inj₂ l) (mk-id _) (inj₁ refl) c₃
-        | seq-id-l c₃
-  = refl
-lem-apply-cast-eqv (↷ {P = .(_ ⊕ _)} (⁇ l) (rest (c₃ ⊕ c₄) t)) (inj (T1 ⊕ T2) (inr v₂ c₂)) | yes ⌣⊕
-  rewrite seq-assoc c₂ (inj₁ refl) (seq (mk-id _) (inj₂ l) (mk-id _)) (inj₁ refl) c₄
-        | seq-assoc (mk-id T2) (inj₂ l) (mk-id _) (inj₁ refl) c₄
-        | seq-id-l c₄
-  = refl
-lem-apply-cast-eqv (↷ {P = P2} (⁇ l) (rest b t)) (inj P1 v) | no ¬p
-  rewrite lem-id-body P1 v
-  = refl
-lem-apply-cast-eqv (↷ ε r) v = refl
-
-
--- --- Theorems about the correctness of KC's type inference
-
--- mutual
---   data Cast≈ : {T1 T2 : Type}(c1 c2 : Cast T1 T2) → Set where
---     refl : ∀ {T1 T2}
---       → {c : Cast T1 T2}
---       → Cast≈ c c
---     ext : ∀ {T1 T2}
---       → (c1 c2 : Cast T1 T2)
---       → (prf : {v : Val T1} → CastResult≈ (apply-cast c1 v) (apply-cast c2 v))
---       → Cast≈ c1 c2
-
---   data CastResult≈ {T : Type} : CastResult T → CastResult T → Set where
---     succ : {v : Val T}{u : Val T}
---       → Val≈ v u
---       → CastResult≈ (succ v) (succ u)
---     fail : (l : Label)
---       → CastResult≈ (fail l) (fail l)
-
---   data Env≈ : ∀ {Γ} → Env Γ → Env Γ → Set where
---     []  : Env≈ [] []
---     _∷_ : ∀ {Γ T}
---       → {v : Val T}{u : Val T}
---       → Val≈ v u
---       → {E : Env Γ}{F : Env Γ}
---       → Env≈ E F
---       → Env≈ (_∷_ v E) (_∷_ u F)
-
---   data Val≈ : ∀ {T} → Val T → Val T → Set where
---     inj : ∀ P
---       → {lv : Val (` P)}
---       → {rv : Val (` P)}
---       → Val≈ lv rv
---       ----------------
---       → Val≈ (inj _ lv) (inj _ rv)
-      
---     fun : ∀ {Γ T1 T2 T3 T4}
---       → {E : Env Γ}{F : Env Γ}
---       → Env≈ E F
---       → {c1 : Cast T3 T1}{ç1 : Cast T3 T1}
---       → Cast≈ c1 ç1
---       → (b : Γ , T1 ⊢ T2)
---       → {c2 : Cast T2 T4}{ç2 : Cast T2 T4}
---       → Cast≈ c2 ç2
---       -------------
---       → Val≈ (fun E c1 b c2) (fun F ç1 b ç2)
-
---     sole :
---       --------
---         Val≈ sole sole
-
---     cons : ∀ {T1 T2 T3 T4}
---       → {v1 : Val T1}
---       → {u1 : Val T1}
---       → Val≈ v1 u1
---       → {c1 : Cast T1 T3}
---       → {ç1 : Cast T1 T3}
---       → Cast≈ c1 ç1
---       → {v2 : Val T2}
---       → {u2 : Val T2}
---       → Val≈ v2 u2
---       → {c2 : Cast T2 T4}
---       → {ç2 : Cast T2 T4}
---       → Cast≈ c2 ç2
---       ------------------
---       → Val≈ (cons v1 c1 v2 c2) (cons u1 ç1 u2 ç2)
-
---     inl : ∀ {T1 T2 T3}
---       → {v : Val T1}
---       → {u : Val T1}
---       → Val≈ v u
---       → {c : Cast T1 T3}
---       → {ç : Cast T1 T3}
---       → Cast≈ c ç
---       -----------------
---       → Val≈ (inl {T2 = T2} v c) (inl u ç)
-      
---     inr : ∀ {T1 T2 T4}
---       → {v : Val T2}
---       → {u : Val T2}
---       → Val≈ v u
---       → {c : Cast T2 T4}
---       → {ç : Cast T2 T4}
---       → Cast≈ c ç
---       -----------------
---       → Val≈ (inr {T1 = T1} v c) (inr u ç)
-
--- mutual
---   val≈refl : ∀ {T}
---     → (v : Val T)
---     → Val≈ v v
---   val≈refl (inj P v) = inj P (val≈refl v)
---   val≈refl (fun env c₁ b c₂) = fun {!!} {!!} b {!cast≈refl _!}
---   val≈refl sole = sole
---   val≈refl (cons v c₁ v₁ c₂) = cons (val≈refl _) {!!} (val≈refl _) {!!}
---   val≈refl (inl v c) = {!!}
---   val≈refl (inr v c) = {!!}
-  
---   castresult≈refl : ∀ {T}
---     → (r : CastResult T)
---     → CastResult≈ r r
---   castresult≈refl (succ v) = succ (val≈refl _)
---   castresult≈refl (fail l) = fail l
-  
---   cast≈refl : ∀ {T1 T2}
---     → (c : Cast T1 T2)
---     → Cast≈ c c
---   cast≈refl c = it (castresult≈refl _)
-  
--- thm-ti-1 : ∀ {l1 l2}
---   → ∀ P1 M P2
---   → (` P1) ≤ M
---   → (` P1) ⊑ M
---   ---
---   → Cast≈ (mk-seq (mk-cast l1 (` P1) ⋆) (mk-cast l2 ⋆ (` P2)))
---           (mk-seq (mk-cast l1 (` P1) M) (mk-cast l2 M (` P2)))
--- thm-ti-1 P1 .⋆ P2 (P≤⋆ .P1) p2 = it {!!}
--- thm-ti-1 .U .(` U) U ≤U p2 = {!!}
--- thm-ti-1 .U .(` U) (T₁ ⇒ T₂) ≤U p2 = {!!}
--- thm-ti-1 .U .(` U) (T₁ ⊗ T₂) ≤U p2 = {!!}
--- thm-ti-1 .U .(` U) (T₁ ⊕ T₂) ≤U p2 = {!!}
--- thm-ti-1 .(_ ⇒ _) .(` (_ ⇒ _)) U (≤⇒ p1 p3) p2 = {!!}
--- thm-ti-1 .(_ ⇒ _) .(` (_ ⇒ _)) (T₁ ⇒ T₂) (≤⇒ p1 p3) p2 = {!!}
--- thm-ti-1 .(_ ⇒ _) .(` (_ ⇒ _)) (T₁ ⊗ T₂) (≤⇒ p1 p3) p2 = {!!}
--- thm-ti-1 .(_ ⇒ _) .(` (_ ⇒ _)) (T₁ ⊕ T₂) (≤⇒ p1 p3) p2 = {!!}
--- thm-ti-1 .(_ ⊗ _) .(` (_ ⊗ _)) P2 (≤⊗ p1 p3) p2 = {!!}
--- thm-ti-1 .(_ ⊕ _) .(` (_ ⊕ _)) P2 (≤⊕ p1 p3) p2 = {!!}
+cast-rep-cast-id-is-id : CastIdIsId cast-rep
+cast-rep-cast-id-is-id
+  = record { lem-cast-id-is-id = lem-cast-id-is-id }

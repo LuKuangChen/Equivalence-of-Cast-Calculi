@@ -1,5 +1,11 @@
+open import CEKcc.CastRep
+
 module Simulation
   (Label : Set)
+  (LCR : CastRep Label)
+  (LCM : Monoid Label LCR)
+  (LCS : SurelyLazyD Label LCR)
+  (Extras : CastIdIsId Label LCR)
   where
 
 open import Data.Empty using (⊥; ⊥-elim)
@@ -7,7 +13,7 @@ open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Data.Nat using (ℕ; suc; zero; _+_)
 open import Data.Product using (Σ; _×_ ; Σ-syntax)
   renaming (_,_ to ⟨_,_⟩)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; sym)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; sym; subst)
 
 open import Variables
 open import Types
@@ -23,17 +29,23 @@ import CEKc.Values
 
 -- instantiate CEKcc
 
-import CEKcc.LCast
-module LC = CEKcc.LCast Label
-module LV = CEKcc.Values Label LC.Cast
-module LM = CEKcc.Machine Label LC.cast-rep
+module L where
+  open CastRep LCR public
+  open SurelyLazyD LCS public
+  open Monoid LCM
+    renaming (lem-id-l to monoid-id-l; lem-id-r to monoid-id-r; lem-assoc to monoid-assoc)
+    public
+  open CastIdIsId Extras public
+
+module LV = CEKcc.Values Label L.Cast
+module LM = CEKcc.Machine Label LCR
 
 -- instantiate CEKc
 
 import CEKc.TCast
 module RC = CEKc.TCast Label
 module RV = CEKc.Values Label RC.Cast
-module RM = CEKc.Machine Label RC.Cast RC.mk-cast
+module RM = CEKc.Machine Label -- RC.Cast -- RC.cast
 module RP = RM.Progress RC.apply-cast
                         RC.cast-dom RC.cast-cod
                         RC.cast-car RC.cast-cdr
@@ -50,42 +62,42 @@ mutual
       → EnvRelate E F
       → EnvRelate (LV._∷_ v E) (RV._∷_ u F)
 
-  data InlRelate : ∀ {T1 T2} → LV.Val (` T1 ⊕ T2) → RV.Val (` T1 ⊕ T2) → Set where
-    base : ∀ {T1 T2}
-      → {v : LV.Val T1}
-      → {u : RV.Val T1}
-      → ValRelate v u
-      -----------------
-      → InlRelate (LV.inl {T2 = T2} v (LC.mk-id T1)) (RV.inl u)
+  -- data InlRelate : ∀ {T1 T3 T4} → LV.Val T1 → L.Cast T1 T3 → RV.Val (` T3 ⊕ T4) → Set where
+  --   base : ∀ {T1 T2}
+  --     → {v : LV.Val T1}
+  --     → {u : RV.Val T1}
+  --     → ValRelate v u
+  --     -----------------
+  --     → InlRelate {T4 = T2} v (L.mk-id T1) (RV.inl u)
 
-    cast : ∀ {T1 T3 T4 T5 T6}
-      → (l : Label)
-      → {v : LV.Val T1}
-      → {c : LC.Cast T1 T3}
-      → {u : RV.Val (` T3 ⊕ T4)}
-      → InlRelate (LV.inl v c) u
-      ---------
-      → InlRelate (LV.inl v (LC.mk-seq c (LC.mk-cast l T3 T5)))
-                  (RV.cast u ⌣⊕ (RC.mk-cast l (` T3 ⊕ T4) (` T5 ⊕ T6)))
+  --   cast : ∀ {T1 T3 T4 T5 T6}
+  --     → (l : Label)
+  --     → {v : LV.Val T1}
+  --     → {c : L.Cast T1 T3}
+  --     → {u : RV.Val (` T3 ⊕ T4)}
+  --     → InlRelate v c u
+  --     ---------
+  --     → InlRelate v (L.mk-seq c (L.mk-cast l T3 T5))
+  --                 (RV.cast u ⌣⊕ (RC.mk-cast l (` T3 ⊕ T4) (` T5 ⊕ T6)))
 
-  data InrRelate : ∀ {T1 T2} → LV.Val (` T1 ⊕ T2) → RV.Val (` T1 ⊕ T2) → Set where
-    base : ∀ {T1 T2}
-      → {v : LV.Val T2}
-      → {u : RV.Val T2}
-      → ValRelate v u
-      -----------------
-      → InrRelate (LV.inr {T1 = T1} v (LC.mk-id T2)) (RV.inr u)
+--   data InrRelate : ∀ {T2 T3 T4} → LV.Val T2 → L.Cast T2 T4 → RV.Val (` T3 ⊕ T4) → Set where
+--     base : ∀ {T1 T2}
+--       → {v : LV.Val T2}
+--       → {u : RV.Val T2}
+--       → ValRelate v u
+--       -----------------
+--       → InrRelate {T3 = T1} v (L.mk-id T2) (RV.inr u)
 
-    cast : ∀ {T2 T3 T4 T5 T6}
-      → (l : Label)
-      → {v : LV.Val T2}
-      → {c : LC.Cast T2 T4}
-      → {u : RV.Val (` T3 ⊕ T4)}
-      → InrRelate (LV.inr v c) u
-      ---------
-      → InrRelate (LV.inr v (LC.mk-seq c (LC.mk-cast l T4 T6)))
-                  (RV.cast u ⌣⊕ (RC.mk-cast l (` T3 ⊕ T4) (` T5 ⊕ T6)))
-
+--     cast : ∀ {T2 T3 T4 T5 T6}
+--       → (l : Label)
+--       → {v : LV.Val T2}
+--       → {c : L.Cast T2 T4}
+--       → {u : RV.Val (` T3 ⊕ T4)}
+--       → InrRelate v c u
+--       ---------
+--       → InrRelate v (L.mk-seq c (L.mk-cast l T4 T6))
+--                   (RV.cast u ⌣⊕ (RC.mk-cast l (` T3 ⊕ T4) (` T5 ⊕ T6))
+-- )
   data ValRelate : ∀ {T} → LV.Val T → RV.Val T → Set where
     inj : ∀ {l}
       → (P : PreType)
@@ -101,28 +113,27 @@ mutual
       → (E : EnvRelate lE rE)
       → (b : Γ , T1 ⊢ T2)
       ----
-      → ValRelate (LV.fun lE (LC.mk-id T1) b (LC.mk-id T2)) (RV.fun rE b)
+      → ValRelate (LV.fun lE (L.mk-id T1) b (L.mk-id T2)) (RV.fun rE b)
       
     cast-fun : ∀ {Γ T1 T2}
       → ∀ l T3 T4 T5 T6
-      → {E : LV.Env Γ}
-      → (c1 : LC.Cast T3 T1)
-      → {b  : Γ , T1 ⊢ T2}
-      → (c2 : LC.Cast T2 T4)
+      → (E : LV.Env Γ)
+      → (c1 : L.Cast T3 T1)
+      → (b  : Γ , T1 ⊢ T2)
+      → (c2 : L.Cast T2 T4)
       → {g : RV.Val (` T3 ⇒ T4)}
       → ValRelate (LV.fun E c1 b c2) g
-      → ValRelate (LV.fun E (LC.mk-seq (LC.mk-cast l T5 T3) c1) b (LC.mk-seq c2 (LC.mk-cast l T4 T6)))
+      ---
+      → ValRelate (LV.fun E (L.mk-seq (L.mk-cast l T5 T3) c1) b (L.mk-seq c2 (L.mk-cast l T4 T6)))
                   (RV.cast g ⌣⇒ (RC.mk-cast l (` T3 ⇒ T4) (` T5 ⇒ T6)))      
     sole :
       --------
         ValRelate LV.sole RV.sole
 
     cast-sole : ∀ {l}
-      → {lv : LV.Val (` U)}
       → {rv : RV.Val (` U)}
-      → ValRelate lv rv
       -------
-      → ValRelate lv (RV.cast rv ⌣U (RC.mk-cast l (` U) (` U)))
+      → ValRelate LV.sole (RV.cast rv ⌣U (RC.mk-cast l (` U) (` U)))
 
     cons : ∀ {T1 T2}
       → {v1 : LV.Val T1}
@@ -132,36 +143,64 @@ mutual
       → {u2 : RV.Val T2}
       → ValRelate v2 u2
       ------------------
-      → ValRelate (LV.cons v1 (LC.mk-id T1) v2 (LC.mk-id T2)) (RV.cons u1 u2)
+      → ValRelate (LV.cons v1 (L.mk-id T1) v2 (L.mk-id T2)) (RV.cons u1 u2)
 
     cast-cons : ∀ {T1 T2}
       → (l : Label)
       → ∀ T3 T4 T5 T6
-      → {v1 : LV.Val T1}
-      → {c1 : LC.Cast T1 T3}
-      → {v2 : LV.Val T2}
-      → {c2 : LC.Cast T2 T4}
+      → (v1 : LV.Val T1)
+      → (c1 : L.Cast T1 T3)
+      → (v2 : LV.Val T2)
+      → (c2 : L.Cast T2 T4)
       → {u : RV.Val (` T3 ⊗ T4)}
       → ValRelate (LV.cons v1 c1 v2 c2) u
       ------------------
-      → ValRelate (LV.cons v1 (LC.mk-seq c1 (LC.mk-cast l T3 T5))
-                           v2 (LC.mk-seq c2 (LC.mk-cast l T4 T6)))
+      → ValRelate (LV.cons v1 (L.mk-seq c1 (L.mk-cast l T3 T5))
+                           v2 (L.mk-seq c2 (L.mk-cast l T4 T6)))
                   (RV.cast u ⌣⊗ (RC.mk-cast l (` T3 ⊗ T4) (` T5 ⊗ T6)))
       
     inl : ∀ {T1 T2}
-      → {lv : LV.Val (` T1 ⊕ T2)}
-      → {rv : RV.Val (` T1 ⊕ T2)}
-      → InlRelate lv rv
-      -----------------
+      → {lv : LV.Val T1}
+      → {rv : RV.Val T1}
       → ValRelate lv rv
+      -----------------
+      → ValRelate (LV.inl {T2 = T2} lv (L.mk-id T1)) (RV.inl rv)
+
+    cast-inl : ∀ {T1 T3 T4 T5 T6}
+      → (lv : LV.Val T1)
+      → (lc : L.Cast T1 T3)
+      → {rv : RV.Val (` T3 ⊕ T4)}
+      → ValRelate (LV.inl lv lc) rv
+      → (l : Label)
+      -----------------
+      → ValRelate (LV.inl lv (L.mk-seq lc (L.mk-cast l T3 T5)))
+                  (RV.cast rv ⌣⊕ (RC.mk-cast l (` T3 ⊕ T4) (` T5 ⊕ T6)))
       
     inr : ∀ {T1 T2}
-      → {lv : LV.Val (` T1 ⊕ T2)}
-      → {rv : RV.Val (` T1 ⊕ T2)}
-      → InrRelate lv rv
-      -----------------
+      → {lv : LV.Val T2}
+      → {rv : RV.Val T2}
       → ValRelate lv rv
-                  
+      -----------------
+      → ValRelate (LV.inr {T1 = T1} lv (L.mk-id T2)) (RV.inr rv)
+
+    cast-inr : ∀ {T2 T3 T4 T5 T6}
+      → (lv : LV.Val T2)
+      → (lc : L.Cast T2 T4)
+      → {rv : RV.Val (` T3 ⊕ T4)}
+      → ValRelate (LV.inr lv lc) rv
+      → (l : Label)
+      -----------------
+      → ValRelate (LV.inr lv (L.mk-seq lc (L.mk-cast l T4 T6)))
+                  (RV.cast rv ⌣⊕ (RC.mk-cast l (` T3 ⊕ T4) (` T5 ⊕ T6)))
+      
+    -- inr : ∀ {T2 T3 T4}
+    --   → {lv : LV.Val T2}
+    --   → {lc : L.Cast T2 T4}
+    --   → {rv : RV.Val (` T3 ⊕ T4)}
+    --   → InrRelate lv lc rv
+    --   -----------------
+    --   → ValRelate (LV.inr lv lc) rv 
+                 
 lenv : ∀ {T}
   → {v : LV.Env T}
   → {u : RV.Env T}
@@ -199,9 +238,9 @@ _[_] : ∀ {Γ T}
 (c ∷ E) [ Z ] = c
 (c ∷ E) [ S x ] = E [ x ]
 
-data CastRelate : {T1 T2 : Type} → LC.Cast T1 T2 → RC.Cast T1 T2 → Set where
+data CastRelate : {T1 T2 : Type} → L.Cast T1 T2 → RC.Cast T1 T2 → Set where
   cast : ∀ l T1 T2
-    → CastRelate (LC.mk-cast l T1 T2) (RC.mk-cast l T1 T2)
+    → CastRelate (L.mk-cast l T1 T2) (RC.mk-cast l T1 T2)
 
 data CastResultRelate {T : Type} : LV.CastResult T → RV.CastResult T → Set where
   succ :
@@ -217,40 +256,55 @@ do-cast :
   → {lv : LV.Val T1}
   → {rv : RV.Val T1}
   → ValRelate lv rv
-  → CastResultRelate (LC.do-cast l T1 T2 lv) (RC.do-cast l T1 T2 rv)
+  → CastResultRelate (L.apply-cast (L.mk-cast l T1 T2) lv) (RC.do-cast l T1 T2 rv)
 do-cast l T1 T2 v with T1 ⌣? T2
-do-cast l .⋆ .⋆ v | yes ⋆⌣⋆ = succ v
-do-cast l .⋆ .(` P) (inj P₁ v) | yes (⋆⌣P P) = do-cast l (` P₁) (` P) v
-do-cast l .(` P) .⋆ v | yes (P⌣⋆ P) = succ (inj P v)
-do-cast l .(` U) .(` U) v | yes ⌣U = succ (cast-sole v)
+do-cast l .⋆ .⋆ v | yes ⋆⌣⋆
+  rewrite L.lem-cast-id⋆ l (lval v)
+  = succ v
+do-cast l .⋆ .(` P) (inj P₁ v) | yes (⋆⌣P P)
+  rewrite L.lem-cast-proj l P P₁ (lval v)
+  = do-cast l (` P₁) (` P) v
+do-cast l .(` P) .⋆ v | yes (P⌣⋆ P)
+  rewrite L.lem-cast-inj l (lval v)
+  = succ (inj P v)
+do-cast l .(` U) .(` U) sole | yes ⌣U
+  rewrite L.lem-cast-U l
+  = succ cast-sole
+do-cast l .(` U) .(` U) cast-sole | yes ⌣U
+  rewrite L.lem-cast-U l
+  = succ cast-sole
 do-cast l (` T1 ⇒ T2) (` T3 ⇒ T4) (fun E b) | yes ⌣⇒
-  = succ (cast-fun l T1 T2 T3 T4 _ _ (fun E b))
-do-cast l (` T1 ⇒ T2) (` T3 ⇒ T4) (cast-fun l₁ T5 T6 _ _ _ _ f) | yes ⌣⇒
-  = succ (cast-fun l T1 T2 T3 T4 _ _ (cast-fun l₁ T5 T6 _ _ _ _ f))
-do-cast l (` (T1 ⊗ T2)) (` (T3 ⊗ T4)) (cons v₁ v₂) | yes ⌣⊗
-  = succ (cast-cons l _ _ _ _ (cons v₁ v₂))
-do-cast l (` (T1 ⊗ T2)) (` (T3 ⊗ T4)) (cast-cons _ _ _ _ l₁ v) | yes ⌣⊗
-  = succ (cast-cons l _ _ _ _ (cast-cons _ _ _ _ l₁ v))
-do-cast l (` (T1 ⊕ T2)) (` (T3 ⊕ T4)) (inl (base v)) | yes ⌣⊕
-  = succ (inl (cast l (base v)))
-do-cast l (` (T1 ⊕ T2)) (` (T3 ⊕ T4)) (inl (cast l₁ v)) | yes ⌣⊕
-  = succ (inl (cast l (cast l₁ v)))
-do-cast l (` (T1 ⊕ T2)) (` (T3 ⊕ T4)) (inr (base v)) | yes ⌣⊕
-  = succ (inr (cast l (base v)))
-do-cast l (` (T1 ⊕ T2)) (` (T3 ⊕ T4)) (inr (cast l₁ v)) | yes ⌣⊕
-  = succ (inr (cast l (cast l₁ v)))
-do-cast l T1 T2 v | no ¬p = fail l
+  rewrite L.lem-cast-⇒ T1 T2 T3 T4 l (lenv E) (L.mk-id _) b (L.mk-id _)
+  = succ (cast-fun l T1 T2 T3 T4 _ _ _ _ (fun E b))
+do-cast l (` T1 ⇒ T2) (` T3 ⇒ T4) (cast-fun l₁ T5 T6 _ _ lE c1 b c2 f) | yes ⌣⇒
+  rewrite L.lem-cast-⇒ T1 T2 T3 T4 l lE
+                       (L.mk-seq (L.mk-cast l₁ _ _) c1) b (L.mk-seq c2 (L.mk-cast l₁ _ _))
+  = succ (cast-fun l T1 T2 T3 T4 lE _ b _ (cast-fun l₁ T5 T6 _ _ lE _ b _ f))
+do-cast l (` (T1 ⊗ T2)) (` (T3 ⊗ T4)) v | yes ⌣⊗ with (lval v)
+... | (LV.cons v1 c1 v2 c2)
+  rewrite L.lem-cast-⊗ _ _ T1 T2 T3 T4 l v1 v2 c1 c2
+  = succ (cast-cons l _ _ _ _ _ _ _ _ v)
+do-cast l (` (T1 ⊕ T2)) (` (T3 ⊕ T4)) v | yes ⌣⊕ with (lval v)
+... | LV.inl lv lc
+  rewrite L.lem-cast-⊕-l _ T1 T2 T3 T4 l lv lc
+  = succ (cast-inl _ _ v l)
+... | LV.inr lv lc
+  rewrite L.lem-cast-⊕-r _ T1 T2 T3 T4 l lv lc
+  = succ (cast-inr _ _ v l)
+do-cast l T1 T2 v | no ¬p
+  rewrite L.lem-cast-¬⌣ l ¬p (lval v)
+   = fail l
 
 apply-cast : ∀ {T1 T2}
-  → {lc : LC.Cast T1 T2}
+  → {lc : L.Cast T1 T2}
   → {rc : RC.Cast T1 T2}
   → CastRelate lc rc
   → {lv : LV.Val T1}
   → {rv : RV.Val T1}
   → ValRelate lv rv
-  → CastResultRelate (LC.apply-cast lc lv) (RC.apply-cast rc rv)
+  → CastResultRelate (L.apply-cast lc lv) (RC.apply-cast rc rv)
 apply-cast (cast l T1 T2) v
-  with LC.do-cast l T1 T2 (lval v) | RC.do-cast l T1 T2 (rval v) | do-cast l T1 T2 v
+  with L.apply-cast (L.mk-cast l T1 T2) (lval v) | RC.do-cast l T1 T2 (rval v) | do-cast l T1 T2 v
 ... | LV.succ _ | RV.succ _ | succ u = succ u
 ... | LV.fail _ | RV.fail _ | fail l₁ = fail l₁
 
@@ -270,7 +324,7 @@ mutual
       → {rk : RM.Cont T1 T2}
       → (k : ContRelate lk rk)
       ---
-      → ContRelate (LM.ext-cont (LC.mk-cast l T0 T1) lk)
+      → ContRelate (LM.ext-cont (L.mk-cast l T0 T1) lk)
                    (RM.cast (RC.mk-cast l T0 T1) rk)
   
   data PreContRelate : {T1 T3 : Type} → LM.PreCont T1 T3 → RM.Cont T1 T3 → Set where
@@ -466,29 +520,38 @@ count-steps (done ss) = ⟨ 0 , ss ⟩
 count-steps (step ss) with count-steps ss
 count-steps (step ss) | ⟨ n , prf ⟩ = ⟨ (suc n) , prf ⟩
 
-ext-cont-id-l : ∀ {T1 T2}
-  → (k : LM.Cont T1 T2)
+ext-cont-id : ∀ {T1 T2}
+  → {lk : LM.Cont T1 T2}
+  → {rk : RM.Cont T1 T2}
+  → (k : ContRelate lk rk)
   ---
-  → LM.ext-cont (LC.mk-id T1) k ≡ k
-ext-cont-id-l (LM.cont fst snd)
-  rewrite LC.mk-seq-mk-id-l fst
+  → ContRelate (LM.ext-cont (L.mk-id T1) lk) rk
+ext-cont-id {lk = LM.cont fst snd} k rewrite L.monoid-id-l fst
+  = k
+
+ext-cont-seq : ∀ {T1 T2 T3 T4}
+  → (c1 : L.Cast T1 T2)
+  → (c2 : L.Cast T2 T3)
+  → (k : LM.Cont T3 T4)
+  ---
+  → LM.ext-cont (L.mk-seq c1 c2) k ≡ LM.ext-cont c1 (LM.ext-cont c2 k)
+ext-cont-seq c1 c2 (LM.cont fst snd)
+  rewrite L.monoid-assoc c1 c2 fst
   = refl
 
 lem-do-app : ∀ {Γ T1 T2 T3 T4 T5 T6}
   → (E : LV.Env Γ)
-  → (c₁ : LC.Cast T3 T1)
+  → (c₁ : L.Cast T3 T1)
   → (b : Γ , T1 ⊢ T2)
-  → (c₂ : LC.Cast T2 T4)
-  → (c₃ : LC.Cast T4 T5)
+  → (c₂ : L.Cast T2 T4)
+  → (c₃ : L.Cast T4 T5)
   → (rand : LV.Val T3)
   → (k : LM.Cont T5 T6)
-  → LM.do-app (LV.fun E c₁ b (LC.mk-seq c₂ c₃)) rand k
+  → LM.do-app (LV.fun E c₁ b (L.mk-seq c₂ c₃)) rand k
     ≡
     LM.do-app (LV.fun E c₁ b c₂) rand (LM.ext-cont c₃ k)
-lem-do-app E c₁ b c₂ c₃ rand k with LC.apply-cast c₁ rand
-lem-do-app E c₁ b c₂ c₃ rand (LM.cont fst snd) | LV.succ v
-  rewrite LC.mk-seq-assoc c₂ c₃ fst
-  = refl
+lem-do-app E c₁ b c₂ c₃ rand k with L.apply-cast c₁ rand
+lem-do-app E c₁ b c₂ c₃ rand k | LV.succ v rewrite ext-cont-seq c₂ c₃ k = refl
 lem-do-app E c₁ b c₂ c₃ rand k | LV.fail l = refl
 
 do-app : ∀ {T1 T2 Z}
@@ -504,45 +567,44 @@ do-app : ∀ {T1 T2 Z}
   → StateRelate* (LM.do-app lv1 lv2 lk)
                  (RP.do-app rv1 rv2 rk)
 do-app (fun E b) rand k
-  rewrite ext-cont-id-l (lcont k)
-  = done (inspect b (rand ∷ E) k)
-do-app (cast-fun l T3 T4 T5 T6 {E = E} c₁ {b = b} c₂ {g = g} rator) rand {lk = (LM.cont fst snd)} κ
-  = step (step (prf (do-cast l T5 T3 rand)))
+  rewrite L.lem-id _ (lval rand)
+  = done (inspect b (rand ∷ E) (ext-cont-id k))
+do-app (cast-fun l T3 T4 T5 T6 E c1 b c2 {g = g} rator) rand k
+  rewrite lem-do-app E (L.mk-seq (L.mk-cast l T5 T3) c1) b c2 (L.mk-cast l T4 T6) (lval rand) (lcont k)
+  = step (helper (apply-cast (cast l T5 T3) rand))
   where
-    prf : CastResultRelate (LC.do-cast l T5 T3 (lval rand))
-                           (RC.do-cast l T5 T3 (rval rand))
-      → StateRelate* (LM.do-app
-                        (LV.fun E (LC.mk-seq (LC.mk-cast l T5 T3) c₁) b (LC.mk-seq c₂ (LC.mk-cast l T4 T6)))
-                        (lval rand)
-                        (LM.cont fst snd))
+    helper : CastResultRelate (L.apply-cast (L.mk-cast l T5 T3) (lval rand)) (RC.apply-cast (RC.mk-cast l T5 T3) (rval rand))
+      → StateRelate* (LM.do-app (LV.fun E (L.mk-seq (L.mk-cast l T5 T3) c1) b c2)
+                                (lval rand)
+                                (LM.ext-cont (L.mk-cast l T4 T6) (lcont k)))
                      (RP.progress
-                       (RP.do-cast (RC.cast l T5 T3)
-                                   (rval rand)
-                                   (RM.app₂ g (RM.cast (RC.cast l T4 T6) (rcont κ)))))
-    prf p
-      rewrite lem-do-app E (LC.mk-seq (LC.mk-cast l T5 T3) c₁) b c₂ (LC.mk-cast l T4 T6) (lval rand) (lcont κ)
-      with (LC.do-cast l T5 T3 (lval rand)) | (RC.do-cast l T5 T3 (rval rand)) | p
-    ... | LV.succ _ | RV.succ _ | succ v₁ = do-app rator v₁ (ext-cont l _ _ κ)
+                        (RM.return (rval rand)
+                          (RM.cast (RC.cast l T5 T3)
+                          (RM.app₂ g (RM.cast (RC.cast l T4 T6) (rcont k))))))
+    helper p
+      rewrite L.lem-seq (L.mk-cast l T5 T3) c1 (lval rand)
+      with L.apply-cast (L.mk-cast l T5 T3) (lval rand) | RC.apply-cast (RC.mk-cast l T5 T3) (rval rand) | p
+    ... | LV.succ _ | RV.succ _ | succ rand₁ = step (do-app rator rand₁ (ext-cont l T4 T6 k))
     ... | LV.fail _ | RV.fail _ | fail l₁ = done (halt (blame l₁))
 
 lem-do-car : ∀ {T1 T2 T3 T4 T5 T6 Z}
   → (l : Label)
   → (v1   : LV.Val T1)
-  → (c1   : LC.Cast T1 T3)
+  → (c1   : L.Cast T1 T3)
   → (v2   : LV.Val T2)
-  → (c2   : LC.Cast T2 T4)
+  → (c2   : L.Cast T2 T4)
   → (lk   : LM.Cont T5 Z)
   → (LM.do-car
-       (LV.cons v1 (LC.mk-seq c1 (LC.mk-cast l T3 T5))
-                v2 (LC.mk-seq c2 (LC.mk-cast l T4 T6)))
+       (LV.cons v1 (L.mk-seq c1 (L.mk-cast l T3 T5))
+                v2 (L.mk-seq c2 (L.mk-cast l T4 T6)))
        lk)
     ≡
     (LM.do-car
        (LV.cons v1 c1
                 v2 c2)
-       (LM.ext-cont (LC.mk-cast l T3 T5) lk))
+       (LM.ext-cont (L.mk-cast l T3 T5) lk))
 lem-do-car l v1 c1 v2 c2 (LM.cont fst snd)
-  rewrite LC.mk-seq-assoc c1 (LC.mk-cast l _ _) fst
+  rewrite L.monoid-assoc c1 (L.mk-cast l _ _) fst
   = refl
 
 do-car : ∀ {T1 T2 Z}
@@ -553,29 +615,29 @@ do-car : ∀ {T1 T2 Z}
   → {rk : RM.Cont T1 Z}
   → ContRelate lk rk
   → StateRelate* (LM.do-car lv lk) (RP.do-car rv rk)
-do-car (cons v v₁) k rewrite ext-cont-id-l (lcont k) = done (return v k)
-do-car (cast-cons l T3 T4 T5 T6 {v1} {c1} {v2} {c2} v) k
+do-car (cons v v₁) k = done (return v (ext-cont-id k))
+do-car (cast-cons l T3 T4 T5 T6 v1 c1 v2 c2 v) k
   rewrite lem-do-car {T6 = T6} l v1 c1 v2 c2 (lcont k)
   = step (do-car v (ext-cont l T3 T5 k))
 
 lem-do-cdr : ∀ {T1 T2 T3 T4 T5 T6 Z}
   → (l : Label)
   → (v1   : LV.Val T1)
-  → (c1   : LC.Cast T1 T3)
+  → (c1   : L.Cast T1 T3)
   → (v2   : LV.Val T2)
-  → (c2   : LC.Cast T2 T4)
+  → (c2   : L.Cast T2 T4)
   → (lk   : LM.Cont T6 Z)
   → (LM.do-cdr
-       (LV.cons v1 (LC.mk-seq c1 (LC.mk-cast l T3 T5))
-                v2 (LC.mk-seq c2 (LC.mk-cast l T4 T6)))
+       (LV.cons v1 (L.mk-seq c1 (L.mk-cast l T3 T5))
+                v2 (L.mk-seq c2 (L.mk-cast l T4 T6)))
        lk)
     ≡
     (LM.do-cdr
        (LV.cons v1 c1
                 v2 c2)
-       (LM.ext-cont (LC.mk-cast l T4 T6) lk))
+       (LM.ext-cont (L.mk-cast l T4 T6) lk))
 lem-do-cdr l v1 c1 v2 c2 (LM.cont fst snd)
-  rewrite LC.mk-seq-assoc c2 (LC.mk-cast l _ _) fst
+  rewrite L.monoid-assoc c2 (L.mk-cast l _ _) fst
   = refl
 
 do-cdr : ∀ {T1 T2 Z}
@@ -586,60 +648,99 @@ do-cdr : ∀ {T1 T2 Z}
   → {rk : RM.Cont T2 Z}
   → ContRelate lk rk
   → StateRelate* (LM.do-cdr lv lk) (RP.do-cdr rv rk)
-do-cdr (cons v1 v2) k rewrite ext-cont-id-l (lcont k) = done (return v2 k)
-do-cdr (cast-cons l T3 T4 T5 T6 {v1} {c1} {v2} {c2} v) k
+do-cdr (cons v1 v2) k = done (return v2 (ext-cont-id k))
+do-cdr (cast-cons l T3 T4 T5 T6 v1 c1 v2 c2 v) k
   rewrite lem-do-cdr {T5 = T5} l v1 c1 v2 c2 (lcont k)
   = step (do-cdr v (ext-cont l T4 T6 k))
 
 lem-ext-cont : ∀ {T1 T2 T3 T4 Z}
-  → (c1 : LC.Cast T1 T2)
-  → (c2 : LC.Cast T2 T3)
-  → (c3 : LC.Cast T3 T4)
+  → (c1 : L.Cast T1 T2)
+  → (c2 : L.Cast T2 T3)
+  → (c3 : L.Cast T3 T4)
   → (k : LM.Cont T4 Z)
-  → LM.ext-cont (LC.mk-seq c1 c2) (LM.ext-cont c3 k)
+  → LM.ext-cont (L.mk-seq c1 c2) (LM.ext-cont c3 k)
     ≡
-    LM.ext-cont c1 (LM.ext-cont (LC.mk-seq c2 c3) k)
+    LM.ext-cont c1 (LM.ext-cont (L.mk-seq c2 c3) k)
 lem-ext-cont c1 c2 c3 (LM.cont c4 k)
-  rewrite LC.mk-seq-assoc c1 c2 (LC.mk-seq c3 c4)
-        | LC.mk-seq-assoc c2 c3 c4
+  rewrite L.monoid-assoc c1 c2 (L.mk-seq c3 c4)
+        | L.monoid-assoc c2 c3 c4
   = refl
 
-do-case-inl : ∀ {T1 T3 T4 T5 Y Z}
-  → (lv : LV.Val T1)
-  → {lc1 : LC.Cast T1 T3}
-  → {rv : RV.Val (` T3 ⊕ T4)}
-  → InlRelate (LV.inl lv lc1) rv
-  → (lc2 : LC.Cast T3 T5)
-  → (lf : LV.Val (` T5 ⇒ Y))
-  → (lk : LM.Cont Y Z)
-  → (rk1 : RM.Cont T3 Z)
-  → {rk2 : RM.Cont T4 Z}
-  → ContRelate (LM.ext-cont lc2 (LM.mk-cont (LM.app₂ lf lk))) rk1
-  → StateRelate (LM.return lv (LM.cont (LC.mk-seq lc1 lc2) (LM.app₂ lf lk)))
-                (RP.do-case' rv rk1 rk2)
-do-case-inl lv (base x) lc2 lf lk rk1 k rewrite LC.mk-seq-mk-id-r lc2 = return x k
-do-case-inl lv (cast l {c = c} v) lc2 lf lk rk1 k
-  rewrite LC.mk-seq-assoc c (LC.mk-cast l _ _) lc2
-  = do-case-inl lv v _ lf lk _ (ext-cont l _ _ k)
+-- do-case-inl : ∀ {T1 T3 T4 T5 Y Z}
+--   → {lv : LV.Val T1}
+--   → {lc1 : L.Cast T1 T3}
+--   → {rv : RV.Val (` T3 ⊕ T4)}
+--   → InlRelate lv lc1 rv
+--   → (lc2 : L.Cast T3 T5)
+--   → (lf : LV.Val (` T5 ⇒ Y))
+--   → (lk : LM.Cont Y Z)
+--   → (rk1 : RM.Cont T3 Z)
+--   → {rk2 : RM.Cont T4 Z}
+--   → ContRelate (LM.ext-cont lc2 (LM.mk-cont (LM.app₂ lf lk))) rk1
+--   → StateRelate (LM.return lv (LM.cont (L.mk-seq lc1 lc2) (LM.app₂ lf lk)))
+--                 (RP.do-case' rv rk1 rk2)
+-- do-case-inl (base x) lc2 lf lk rk1 k
+--   rewrite L.monoid-id-l lc2 | L.monoid-id-r lc2
+--   = return x k
+-- do-case-inl (cast {T3 = T3} l {c = c} v) lc2 lf lk rk1 k
+--   rewrite L.monoid-assoc c (L.mk-cast l _ _) lc2
+--   = do-case-inl v _ lf lk _ rel
+--   where
+--     rel : ContRelate
+--       (LM.ext-cont (L.mk-seq (L.mk-cast l T3 _) lc2)
+--        (LM.mk-cont (LM.app₂ lf lk)))
+--       (RM.cast (RC.cast l T3 _) rk1)
+--     rel rewrite ext-cont-seq (L.mk-cast l T3 _) lc2 (LM.mk-cont (LM.app₂ lf lk))
+--       = ext-cont l T3 _ k
 
-do-case-inr : ∀ {T2 T3 T4 T6 Y Z}
-  → (lv : LV.Val T2)
-  → {lc1 : LC.Cast T2 T4}
-  → {rv : RV.Val (` T3 ⊕ T4)}
-  → InrRelate (LV.inr lv lc1) rv
-  → (lc2 : LC.Cast T4 T6)
-  → (lf : LV.Val (` T6 ⇒ Y))
-  → (lk : LM.Cont Y Z)
-  → {rk1 : RM.Cont T3 Z}
-  → (rk2 : RM.Cont T4 Z)
-  → ContRelate (LM.ext-cont lc2 (LM.mk-cont (LM.app₂ lf lk))) rk2
-  → StateRelate (LM.return lv (LM.cont (LC.mk-seq lc1 lc2) (LM.app₂ lf lk)))
-                (RP.do-case' rv rk1 rk2)
-do-case-inr lv (base x) lc2 lf lk rk2 k rewrite LC.mk-seq-mk-id-r lc2 = return x k
-do-case-inr lv (cast l {c = c} v) lc2 lf lk rk2 k
-  rewrite LC.mk-seq-assoc c (LC.mk-cast l _ _) lc2
-  = do-case-inr lv v _ lf lk _ (ext-cont l _ _ k)
+-- do-case-inr : ∀ {T2 T3 T4 T6 Y Z}
+--   → {lv : LV.Val T2}
+--   → {lc1 : L.Cast T2 T4}
+--   → {rv : RV.Val (` T3 ⊕ T4)}
+--   → InrRelate lv lc1 rv
+--   → (lc2 : L.Cast T4 T6)
+--   → (lf : LV.Val (` T6 ⇒ Y))
+--   → (lk : LM.Cont Y Z)
+--   → {rk1 : RM.Cont T3 Z}
+--   → (rk2 : RM.Cont T4 Z)
+--   → ContRelate (LM.ext-cont lc2 (LM.mk-cont (LM.app₂ lf lk))) rk2
+--   → StateRelate (LM.return lv (LM.cont (L.mk-seq lc1 lc2) (LM.app₂ lf lk)))
+--                 (RP.do-case' rv rk1 rk2)
+-- do-case-inr (base x) lc2 lf lk rk2 k
+--   rewrite  L.monoid-id-l lc2 | L.monoid-id-r lc2
+--   = return x k
+-- do-case-inr (cast {T4 = T4} l {c = c} v) lc2 lf lk rk2 k
+--   rewrite L.monoid-assoc c (L.mk-cast l _ _) lc2
+--   = do-case-inr v _ lf lk _ rel
+--   where
+--     rel : ContRelate
+--       (LM.ext-cont (L.mk-seq (L.mk-cast l T4 _) lc2)
+--        (LM.mk-cont (LM.app₂ lf lk)))
+--       (RM.cast (RC.cast l T4 _) rk2)
+--     rel rewrite ext-cont-seq (L.mk-cast l T4 _) lc2 (LM.mk-cont (LM.app₂ lf lk))
+--       = ext-cont l T4 _ k
 
+cap-fun : ∀ {Γ T1 T2 T3 T4}
+  → {env : LV.Env Γ}
+  → {c1 : L.Cast T3 T1}
+  → {e : Γ , T1 ⊢ T2}
+  → {c2 : L.Cast T2 T4}
+  → {rv : RV.Val (` T3 ⇒ T4)}
+  → (v : ValRelate (LV.fun env c1 e c2) rv)
+  → (l : Label)
+  → ∀ T5
+  ---
+  → ValRelate (LV.fun env
+                      (L.mk-seq (L.mk-cast l T5 T3) c1)
+                      e
+                      c2)
+              (RV.cast rv ⌣⇒ (RC.cast l (` T3 ⇒ T4) (` T5 ⇒ T4)))
+cap-fun {T4 = T4} {c2 = c2} v l T5 with cast-fun l _ _ T5 T4 _ _ _ _ v
+... | r
+  rewrite L.lem-cast-id-is-id l T4
+        | L.monoid-id-r c2
+  = r              
+  
 
 do-case : ∀ {T1 T2 T3 Z}
   → {lv1 : LV.Val (` T1 ⊕ T2)}
@@ -656,32 +757,12 @@ do-case : ∀ {T1 T2 T3 Z}
   → ContRelate lk rk
   → StateRelate* (LM.do-case lv1 lv2 lv3 lk)
                  (RP.do-case rv1 rv2 rv3 rk)
-do-case {lv1 = lv1} (inl x) v2 v3 k with lv1
-do-case {lv1 = lv1} (inl ()) v2 v3 k | CEKcc.Values.inr v c
-do-case {lv1 = lv1}{rv1 = rv1} (inl x) v2 v3 k | CEKcc.Values.inl v c
-  = done (do-case-inl v x (LC.mk-id _) (lval v2) (lcont k) (RM.app₂ (rval v2) (rcont k)) (mk-cont (app₂ v2 k)))
-do-case {lv1 = lv1} (inr x) v2 v3 k with lv1
-do-case {lv1 = lv1} (inr ()) v2 v3 k | CEKcc.Values.inl v c
-do-case {lv1 = lv1}{rv1 = rv1} (inr x) v2 v3 k | CEKcc.Values.inr v c
-  = done (do-case-inr v x (LC.mk-id _) (lval v3) (lcont k) (RM.app₂ (rval v3) (rcont k)) (mk-cont (app₂ v3 k)))
-
-observe-inl : ∀ {T1 T2}
-  → {lv : LV.Val (` T1 ⊕ T2)}
-  → {rv : RV.Val (` T1 ⊕ T2)}
-  → InlRelate lv rv
-  → LM.observe-val lv ≡ RP.observe-val rv
-observe-inl (base x) = refl
-observe-inl (cast l {u = u} r) with RP.observe-val u | observe-inl r
-... | rr | refl = refl
-
-observe-inr : ∀ {T1 T2}
-  → {lv : LV.Val (` T1 ⊕ T2)}
-  → {rv : RV.Val (` T1 ⊕ T2)}
-  → InrRelate lv rv
-  → LM.observe-val lv ≡ RP.observe-val rv
-observe-inr (base x) = refl
-observe-inr (cast l {u = u} r) with RP.observe-val u | observe-inr r
-... | rr | refl = refl
+do-case (inl v1) {lv2 = LV.fun env c1 b c2} v2 v3 k rewrite L.monoid-id-l c1 = done (return v1 (mk-cont (app₂ v2 k)))
+do-case (inr v1) v2 {lv3 = LV.fun env c1 b c2} v3 k rewrite L.monoid-id-l c1 = done (return v1 (mk-cont (app₂ v3 k)))
+do-case (cast-inl lv lc v1 l) {lv2 = LV.fun _ c _ _} v2 {lv3 = LV.fun _ _ _ _} v3 k with do-case v1 (cap-fun v2 l _) (cap-fun v3 l _) k
+... | tmp rewrite L.monoid-assoc lc (L.mk-cast l _ _) c = step tmp
+do-case (cast-inr lv lc v1 l) {lv2 = LV.fun _ _ _ _} v2 {lv3 = LV.fun _ c _ _} v3 k with do-case v1 (cap-fun v2 l _) (cap-fun v3 l _) k
+... | tmp rewrite L.monoid-assoc lc (L.mk-cast l _ _) c = step tmp
 
 observe-val : ∀ {T}
   → {lv : LV.Val T}
@@ -690,13 +771,17 @@ observe-val : ∀ {T}
   → LM.observe-val lv ≡ RP.observe-val rv
 observe-val (inj P v) = refl
 observe-val (fun E b) = refl
-observe-val (cast-fun l T3 T4 T5 T6 c1 c2 v) = refl
+observe-val (cast-fun l T3 T4 T5 T6 lE c1 b c2 v) = refl
 observe-val sole = refl
-observe-val (cast-sole {lv = LV.sole} v) = refl
+observe-val cast-sole = refl
 observe-val (cons v v₁) = refl
-observe-val (cast-cons l T3 T4 T5 T6 v) = refl
-observe-val (inl x) = observe-inl x
-observe-val (inr x) = observe-inr x
+observe-val (cast-cons l T3 T4 T5 T6 v1 c1 v2 c2 v) = refl
+observe-val (inl x) = refl
+observe-val (cast-inl lv lc v l) with RP.observe-val (rval v) | observe-val v
+... | inl | refl = refl
+observe-val (inr x) = refl
+observe-val (cast-inr lv lc v l) with RP.observe-val (rval v) | observe-val v
+... | inr | refl = refl
   
 progress*-return : ∀ {T Z}
   → {lv : LV.Val T}
@@ -711,8 +796,8 @@ progress*-return v mt with LM.observe-val (lval v) | RP.observe-val (rval v) | o
 ... | _ | _ | refl = done (halt (done _))
 progress*-return v (cons₁ E e1 κ) = done (inspect e1 E (mk-cont (cons₂ v κ)))
 progress*-return v (cons₂ v1 κ) = done (return (cons v1 v) κ)
-progress*-return v (inl κ) = done (return (inl (base v)) κ)
-progress*-return v (inr κ) = done (return (inr (base v)) κ)
+progress*-return v (inl κ) = done (return (inl v) κ)
+progress*-return v (inr κ) = done (return (inr v) κ)
 progress*-return v (app₁ E e2 κ) = done (inspect e2 E (mk-cont (app₂ v κ)))
 progress*-return v (app₂ v1 κ) = do-app v1 v κ
 progress*-return v (car κ) = do-car v κ
@@ -732,15 +817,19 @@ progress-ret : ∀ {T1 Z}
   → ContRelate lk rk
   → StateRelate* (LM.progress (LM.return lv lk))
                  (RP.progress (RM.return rv rk))
-progress-ret v (mk-cont k) = progress*-return v k
+progress-ret v (mk-cont k)
+  rewrite L.lem-id _ (lval v)
+  = progress*-return v k
 progress-ret v (ext-cont l T1 T2 {lk = (LM.cont fst snd)} k)
   = prf (do-cast l T1 T2 v)
   where
-    prf : CastResultRelate (LC.do-cast l T1 T2 (lval v))
+    prf : CastResultRelate (L.apply-cast (L.mk-cast l T1 T2) (lval v))
                            (RC.do-cast l T1 T2 (rval v))
-      → StateRelate* (LM.progress (LM.return (lval v) (LM.ext-cont (LC.mk-cast l T1 T2) (lcont k))))
+      → StateRelate* (LM.progress (LM.return (lval v) (LM.ext-cont (L.mk-cast l T1 T2) (lcont k))))
                      (RP.progress (RM.return (rval v) (RM.cast (RC.mk-cast l T1 T2) (rcont k))))
-    prf p with (LC.do-cast l T1 T2 (lval v)) | (RC.do-cast l T1 T2 (rval v)) | p
+    prf p
+      rewrite L.lem-seq (L.mk-cast l T1 T2) fst (lval v)
+      with (L.apply-cast (L.mk-cast l T1 T2) (lval v)) | (RC.do-cast l T1 T2 (rval v)) | p
     ... | LV.succ _ | RV.succ _ | succ v₁ = step (progress-ret v₁ k)
     ... | LV.fail _ | RV.fail _ | fail l₁ = done (halt (blame l₁))
 

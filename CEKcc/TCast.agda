@@ -138,21 +138,26 @@ lem-cast-⊕-r : ∀ T T11 T12 T21 T22
 lem-cast-⊕-r T T11 T12 T21 T22 l v c = refl
 
 cast-rep : CastRep
-cast-rep = record
-             { Cast = Cast
-             ; mk-cast = mk-cast
-             ; mk-seq = mk-seq
-             ; mk-id = mk-id
-             ; apply-cast = apply-cast
-             ; lem-id = lem-id
-             ; lem-seq = lem-seq
-             ; lem-cast-¬⌣ = lem-cast-¬⌣
-             ; lem-cast-id⋆ = lem-cast-id⋆
-             ; lem-cast-inj = lem-cast-inj
-             ; lem-cast-proj = lem-cast-proj
-             ; lem-cast-U = lem-cast-U
-             ; lem-cast-⇒ = lem-cast-⇒
-             ; lem-cast-⊗ = lem-cast-⊗
-             ; lem-cast-⊕-l = lem-cast-⊕-l
-             ; lem-cast-⊕-r = lem-cast-⊕-r
-             }
+cast-rep
+  = record
+    { Cast = Cast
+    ; mk-cast = mk-cast
+    ; mk-seq = mk-seq
+    ; mk-id = mk-id
+    ; apply-cast = apply-cast
+    }
+cast-rep-surely-lazyD : SurelyLazyD cast-rep
+cast-rep-surely-lazyD
+  = record
+    { lem-id = lem-id
+    ; lem-seq = lem-seq
+    ; lem-cast-¬⌣ = lem-cast-¬⌣
+    ; lem-cast-id⋆ = lem-cast-id⋆
+    ; lem-cast-inj = lem-cast-inj
+    ; lem-cast-proj = lem-cast-proj
+    ; lem-cast-U = lem-cast-U
+    ; lem-cast-⇒ = lem-cast-⇒
+    ; lem-cast-⊗ = lem-cast-⊗
+    ; lem-cast-⊕-l = lem-cast-⊕-l
+    ; lem-cast-⊕-r = lem-cast-⊕-r
+    }

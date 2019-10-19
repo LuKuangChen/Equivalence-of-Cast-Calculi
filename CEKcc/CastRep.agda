@@ -15,15 +15,42 @@ record CastRep : Set₁ where
     Cast : Type → Type → Set
 
     mk-cast : Label → (T1 T2 : Type) → Cast T1 T2
+    mk-id : (T : Type) → Cast T T
     mk-seq : ∀ {T1 T2 T3}
       → Cast T1 T2
       → Cast T2 T3
       -----
       → Cast T1 T3
-    mk-id : (T : Type) → Cast T T
-    
     apply-cast : ∀ {T1 T2} → Cast T1 T2 → Val Cast T1 → CastResult Cast T2
-    
+
+-- only required for the bisim between D and S(C)
+record CastIdIsId (CR : CastRep) : Set where
+  open CastRep CR
+  field
+    lem-cast-id-is-id : ∀ l T →
+      mk-cast l T T ≡ mk-id T
+
+record Monoid (CR : CastRep) : Set where
+  open CastRep CR
+  field
+    lem-id-l : ∀ {T1 T2}
+      → (c : Cast T1 T2)
+      ---
+      → mk-seq (mk-id T1) c ≡ c
+    lem-id-r : ∀ {T1 T2}
+      → (c : Cast T1 T2)
+      ---
+      → mk-seq c (mk-id T2) ≡ c
+    lem-assoc : ∀ {T1 T2 T3 T4}
+      → (c1 : Cast T1 T2)
+      → (c2 : Cast T2 T3)
+      → (c3 : Cast T3 T4)
+      ---
+      → mk-seq (mk-seq c1 c2) c3 ≡ mk-seq c1 (mk-seq c2 c3)
+
+record SurelyLazyD (CR : CastRep) : Set where
+  open CastRep CR
+  field
     lem-id : ∀ T
       → (v : Val Cast T)  
       -----------------------------
@@ -91,3 +118,4 @@ record CastRep : Set₁ where
       → (c : Cast T T12)
       → apply-cast (mk-cast l (` (T11 ⊕ T12)) (` (T21 ⊕ T22))) (inr v c) ≡
         succ (inr v (mk-seq c (mk-cast l T12 T22)))
+

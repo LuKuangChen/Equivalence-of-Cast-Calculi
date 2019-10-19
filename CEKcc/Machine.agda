@@ -4,10 +4,6 @@ open import CEKcc.CastRep
 module CEKcc.Machine
   (Label : Set)
   (cast-rep : CastRep Label)
-  -- (Cast : Type → Type → Set)
-  -- (mk-cast : Label → ∀ T1 T2 → Cast T1 T2)
-  -- (mk-id : ∀ T → Cast T T)
-  -- (mk-seq : ∀ {T1 T2 T3} → Cast T1 T2 → Cast T2 T3 → Cast T1 T3)
   where
 
 open CastRep cast-rep using (Cast; mk-cast; mk-id; mk-seq; apply-cast)
@@ -160,8 +156,8 @@ do-case : ∀ {T1 T2 T3 Z}
   → Val (` T2 ⇒ T3)
   → Cont T3 Z
   → State Z
-do-case (inl v1 c) v2 v3 k = return v1 (ext-cont c (mk-cont (app₂ v2 k)))
-do-case (inr v1 c) v2 v3 k = return v1 (ext-cont c (mk-cont (app₂ v3 k)))
+do-case (inl v1 c) (fun env c₁ b c₂) v3 k = return v1 (mk-cont (app₂ (fun env (mk-seq c c₁) b c₂) k))
+do-case (inr v1 c) v2 (fun env c₁ b c₂) k = return v1 (mk-cont (app₂ (fun env (mk-seq c c₁) b c₂) k))
 
 observe-val : ∀ {T} → Val T → Value T
 observe-val (inj P v) = inj

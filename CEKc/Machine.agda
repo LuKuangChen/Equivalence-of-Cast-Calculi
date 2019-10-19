@@ -2,10 +2,9 @@ open import Types
 
 module CEKc.Machine
   (Label : Set)
-  (Cast : Type → Type → Set)
-  (mk-cast : Label → ∀ T1 T2 → Cast T1 T2)
   where
 
+open import CEKc.TCast Label using (apply-cast; mk-cast; Cast; cast)
 open import Variables
 open import Terms Label
 open import Observe Label
@@ -145,16 +144,6 @@ module Progress
     → State Z
   do-cdr (cast v ⌣⊗ c) κ = return v (cdr (cast (cast-cdr c) κ))
   do-cdr (cons v₁ v₂) κ = return v₂ κ
-  
-  do-case' : ∀ {T1 T2 Z}
-    → Val (` T1 ⊕ T2)
-    → Cont T1 Z
-    → Cont T2 Z
-    → State Z
-  do-case' (cast v ⌣⊕ c) k1 k2
-    = do-case' v (cast (cast-inl c) k1) (cast (cast-inr c) k2)
-  do-case' (inl v) k1 k2 = return v k1
-  do-case' (inr v) k1 k2 = return v k2
 
   do-case : ∀ {T1 T2 T3 Z}
     → Val (` T1 ⊕ T2)
@@ -162,7 +151,11 @@ module Progress
     → Val (` T2 ⇒ T3)
     → Cont T3 Z
     → State Z
-  do-case v1 v2 v3 k = do-case' v1 (app₂ v2 k) (app₂ v3 k)
+  do-case (cast v1 ⌣⊕ (cast l (` T1 ⊕ T2) (` T3 ⊕ T4))) v2 v3 k
+    = return (cast v3 ⌣⇒ (cast l (` T4 ⇒ _) (` T2 ⇒ _)))
+             (case₃ v1 (cast v2 ⌣⇒ (cast l _ _)) k)
+  do-case (inl v) v2 v3 k = return v (app₂ v2 k)
+  do-case (inr v) v2 v3 k = return v (app₂ v3 k)
 
   do-cast : ∀ {T1 T2 Z}
     → Cast T1 T2

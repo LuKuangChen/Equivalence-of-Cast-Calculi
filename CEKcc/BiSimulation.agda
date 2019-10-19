@@ -3,7 +3,9 @@ open import CEKcc.CastRep
 module CEKcc.BiSimulation
   (Label : Set)
   (LCR : CastRep Label)
+  (LCS : SurelyLazyD Label LCR)
   (RCR : CastRep Label)
+  (RCS : SurelyLazyD Label RCR)
   where
 
 open import Utilities using (repeat)
@@ -26,6 +28,7 @@ module Values = CEKcc.Values Label
 
 module L where
   open CastRep LCR public
+  open SurelyLazyD LCS public
 
 module LV = CEKcc.Values Label L.Cast
 module LM = CEKcc.Machine Label LCR
@@ -34,6 +37,7 @@ module LM = CEKcc.Machine Label LCR
 
 module R where
   open CastRep RCR public
+  open SurelyLazyD RCS public
 
 module RV = CEKcc.Values Label R.Cast
 module RM = CEKcc.Machine Label RCR
@@ -483,8 +487,8 @@ do-case : ∀ {T1 T2 T3 Z}
   → ContRelate lk rk
   → StateRelate (LM.do-case lv1 lv2 lv3 lk)
                 (RM.do-case rv1 rv2 rv3 rk)
-do-case (inl v1 c) v2 v3 k = return v1 (ext-cont c (mk-cont (app₂ v2 k)))
-do-case (inr v1 c) v2 v3 k = return v1 (ext-cont c (mk-cont (app₂ v3 k)))
+do-case (inl v1 c) (fun env c₁ b c₂) v3 k = return v1 (mk-cont (app₂ (fun env (seq c c₁) b c₂) k))
+do-case (inr v1 c) v2 (fun env c₁ b c₂) k = return v1 (mk-cont (app₂ (fun env (seq c c₁) b c₂) k))
 
 observe-val : ∀ {T}
   → {lv : LV.Val T}

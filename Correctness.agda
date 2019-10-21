@@ -11,7 +11,7 @@ open import Types
 open import Terms Label
 open import Observe Label
 
-open import CEKcc.HCast Label
+open import CEKcc.LCast Label
   using ()
   renaming (cast-rep to HCR; cast-rep-surely-lazyD to HCS; cast-rep-monoid to HCM; cast-rep-cast-id-is-id to HCI)
 

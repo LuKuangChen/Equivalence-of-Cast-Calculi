@@ -62,42 +62,6 @@ mutual
       → EnvRelate E F
       → EnvRelate (LV._∷_ v E) (RV._∷_ u F)
 
-  -- data InlRelate : ∀ {T1 T3 T4} → LV.Val T1 → L.Cast T1 T3 → RV.Val (` T3 ⊕ T4) → Set where
-  --   base : ∀ {T1 T2}
-  --     → {v : LV.Val T1}
-  --     → {u : RV.Val T1}
-  --     → ValRelate v u
-  --     -----------------
-  --     → InlRelate {T4 = T2} v (L.mk-id T1) (RV.inl u)
-
-  --   cast : ∀ {T1 T3 T4 T5 T6}
-  --     → (l : Label)
-  --     → {v : LV.Val T1}
-  --     → {c : L.Cast T1 T3}
-  --     → {u : RV.Val (` T3 ⊕ T4)}
-  --     → InlRelate v c u
-  --     ---------
-  --     → InlRelate v (L.mk-seq c (L.mk-cast l T3 T5))
-  --                 (RV.cast u ⌣⊕ (RC.mk-cast l (` T3 ⊕ T4) (` T5 ⊕ T6)))
-
---   data InrRelate : ∀ {T2 T3 T4} → LV.Val T2 → L.Cast T2 T4 → RV.Val (` T3 ⊕ T4) → Set where
---     base : ∀ {T1 T2}
---       → {v : LV.Val T2}
---       → {u : RV.Val T2}
---       → ValRelate v u
---       -----------------
---       → InrRelate {T3 = T1} v (L.mk-id T2) (RV.inr u)
-
---     cast : ∀ {T2 T3 T4 T5 T6}
---       → (l : Label)
---       → {v : LV.Val T2}
---       → {c : L.Cast T2 T4}
---       → {u : RV.Val (` T3 ⊕ T4)}
---       → InrRelate v c u
---       ---------
---       → InrRelate v (L.mk-seq c (L.mk-cast l T4 T6))
---                   (RV.cast u ⌣⊕ (RC.mk-cast l (` T3 ⊕ T4) (` T5 ⊕ T6))
--- )
   data ValRelate : ∀ {T} → LV.Val T → RV.Val T → Set where
     inj : ∀ {l}
       → (P : PreType)
@@ -193,13 +157,6 @@ mutual
       → ValRelate (LV.inr lv (L.mk-seq lc (L.mk-cast l T4 T6)))
                   (RV.cast rv ⌣⊕ (RC.mk-cast l (` T3 ⊕ T4) (` T5 ⊕ T6)))
       
-    -- inr : ∀ {T2 T3 T4}
-    --   → {lv : LV.Val T2}
-    --   → {lc : L.Cast T2 T4}
-    --   → {rv : RV.Val (` T3 ⊕ T4)}
-    --   → InrRelate lv lc rv
-    --   -----------------
-    --   → ValRelate (LV.inr lv lc) rv 
                  
 lenv : ∀ {T}
   → {v : LV.Env T}
@@ -665,60 +622,6 @@ lem-ext-cont c1 c2 c3 (LM.cont c4 k)
   rewrite L.monoid-assoc c1 c2 (L.mk-seq c3 c4)
         | L.monoid-assoc c2 c3 c4
   = refl
-
--- do-case-inl : ∀ {T1 T3 T4 T5 Y Z}
---   → {lv : LV.Val T1}
---   → {lc1 : L.Cast T1 T3}
---   → {rv : RV.Val (` T3 ⊕ T4)}
---   → InlRelate lv lc1 rv
---   → (lc2 : L.Cast T3 T5)
---   → (lf : LV.Val (` T5 ⇒ Y))
---   → (lk : LM.Cont Y Z)
---   → (rk1 : RM.Cont T3 Z)
---   → {rk2 : RM.Cont T4 Z}
---   → ContRelate (LM.ext-cont lc2 (LM.mk-cont (LM.app₂ lf lk))) rk1
---   → StateRelate (LM.return lv (LM.cont (L.mk-seq lc1 lc2) (LM.app₂ lf lk)))
---                 (RP.do-case' rv rk1 rk2)
--- do-case-inl (base x) lc2 lf lk rk1 k
---   rewrite L.monoid-id-l lc2 | L.monoid-id-r lc2
---   = return x k
--- do-case-inl (cast {T3 = T3} l {c = c} v) lc2 lf lk rk1 k
---   rewrite L.monoid-assoc c (L.mk-cast l _ _) lc2
---   = do-case-inl v _ lf lk _ rel
---   where
---     rel : ContRelate
---       (LM.ext-cont (L.mk-seq (L.mk-cast l T3 _) lc2)
---        (LM.mk-cont (LM.app₂ lf lk)))
---       (RM.cast (RC.cast l T3 _) rk1)
---     rel rewrite ext-cont-seq (L.mk-cast l T3 _) lc2 (LM.mk-cont (LM.app₂ lf lk))
---       = ext-cont l T3 _ k
-
--- do-case-inr : ∀ {T2 T3 T4 T6 Y Z}
---   → {lv : LV.Val T2}
---   → {lc1 : L.Cast T2 T4}
---   → {rv : RV.Val (` T3 ⊕ T4)}
---   → InrRelate lv lc1 rv
---   → (lc2 : L.Cast T4 T6)
---   → (lf : LV.Val (` T6 ⇒ Y))
---   → (lk : LM.Cont Y Z)
---   → {rk1 : RM.Cont T3 Z}
---   → (rk2 : RM.Cont T4 Z)
---   → ContRelate (LM.ext-cont lc2 (LM.mk-cont (LM.app₂ lf lk))) rk2
---   → StateRelate (LM.return lv (LM.cont (L.mk-seq lc1 lc2) (LM.app₂ lf lk)))
---                 (RP.do-case' rv rk1 rk2)
--- do-case-inr (base x) lc2 lf lk rk2 k
---   rewrite  L.monoid-id-l lc2 | L.monoid-id-r lc2
---   = return x k
--- do-case-inr (cast {T4 = T4} l {c = c} v) lc2 lf lk rk2 k
---   rewrite L.monoid-assoc c (L.mk-cast l _ _) lc2
---   = do-case-inr v _ lf lk _ rel
---   where
---     rel : ContRelate
---       (LM.ext-cont (L.mk-seq (L.mk-cast l T4 _) lc2)
---        (LM.mk-cont (LM.app₂ lf lk)))
---       (RM.cast (RC.cast l T4 _) rk2)
---     rel rewrite ext-cont-seq (L.mk-cast l T4 _) lc2 (LM.mk-cont (LM.app₂ lf lk))
---       = ext-cont l T4 _ k
 
 cap-fun : ∀ {Γ T1 T2 T3 T4}
   → {env : LV.Env Γ}

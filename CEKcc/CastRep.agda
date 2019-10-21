@@ -62,7 +62,6 @@ record SurelyLazyD (CR : CastRep) : Set where
       → (v : Val Cast T1)
       --------------------
       → apply-cast (mk-seq c1 c2) v ≡ (_>>=_ Cast (apply-cast c1 v) (λ u → apply-cast c2 u))
-
     lem-cast-¬⌣ : ∀ {T1 T2}
       → (l : Label)
       → ¬ (T1 ⌣ T2)

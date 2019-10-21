@@ -6,9 +6,10 @@ open import CEKcc.CastRep Label
 
 open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Product using (Σ; _,_; ∃; Σ-syntax; ∃-syntax)
 open import Data.Empty using (⊥-elim)
 open import Relation.Nullary using (Dec; yes; no)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂)
 
 data Head : PreType → Type → Set where
   ⁇ : ∀ {P} → (l : Label) → Head P ⋆
@@ -55,6 +56,48 @@ mutual
       (c₂ : Cast T1 T2) →
       Body (S1 ⊕ T1) (S2 ⊕ T2)
 
+GapP : PreType → PreType → Set
+GapP P1 P2 = P1 ≡ P2 ⊎ Label
+
+GapT : Type → Type → Set
+GapT T1 T2 = T1 ≡ T2 ⊎ Label
+
+ℓ-dom : ∀ {T1 T2 T3 T4}
+  → GapP (T1 ⇒ T2) (T3 ⇒ T4)
+  → GapT T3 T1
+ℓ-dom (inj₁ refl) = inj₁ refl
+ℓ-dom (inj₂ l) = inj₂ l
+
+ℓ-cod : ∀ {T1 T2 T3 T4}
+  → GapP (T1 ⇒ T2) (T3 ⇒ T4)
+  → GapT T2 T4
+ℓ-cod (inj₁ refl) = inj₁ refl
+ℓ-cod (inj₂ l) = inj₂ l
+
+ℓ-car : ∀ {T1 T2 T3 T4}
+  → GapP (T1 ⊗ T2) (T3 ⊗ T4)
+  → GapT T1 T3
+ℓ-car (inj₁ refl) = inj₁ refl
+ℓ-car (inj₂ l) = inj₂ l
+
+ℓ-cdr : ∀ {T1 T2 T3 T4}
+  → GapP (T1 ⊗ T2) (T3 ⊗ T4)
+  → GapT T2 T4
+ℓ-cdr (inj₁ refl) = inj₁ refl
+ℓ-cdr (inj₂ l) = inj₂ l
+
+ℓ-inl : ∀ {T1 T2 T3 T4}
+  → GapP (T1 ⊕ T2) (T3 ⊕ T4)
+  → GapT T1 T3
+ℓ-inl (inj₁ refl) = inj₁ refl
+ℓ-inl (inj₂ l) = inj₂ l
+
+ℓ-inr : ∀ {T1 T2 T3 T4}
+  → GapP (T1 ⊕ T2) (T3 ⊕ T4)
+  → GapT T2 T4
+ℓ-inr (inj₁ refl) = inj₁ refl
+ℓ-inr (inj₂ l) = inj₂ l
+
 mutual
   seq : ∀ {T1 T2 T3 T4}
     → Cast T1 T2
@@ -62,22 +105,40 @@ mutual
     → Cast T3 T4
   ----------------
     → Cast T1 T4
-  seq id⋆ (inj₁ refl) c2 = c2
-  seq id⋆ (inj₂ l') id⋆ = id⋆
-  seq id⋆ (inj₂ l') (↷ (⁇ l) r) = ↷ (⁇ l) r
-  seq id⋆ (inj₂ l') (↷ ε r) = ↷ (⁇ l') r
-  seq (↷ h r) ℓ c2 = ↷ h (seq' r ℓ c2)
+  seq id⋆ ℓ id⋆ = id⋆
+  seq id⋆ ℓ (↷ (⁇ l) r) = ↷ (⁇ l) r
+  seq id⋆ ℓ (↷ ε r) with ℓ
+  seq id⋆ ℓ (↷ ε r) | inj₁ ()
+  seq id⋆ ℓ (↷ ε r) | inj₂ l = ↷ (⁇ l) r
+  seq (↷ h (rest b (fail l))) ℓ c2 = ↷ h (rest b (fail l))
+  seq (↷ h (rest b (last t))) ℓ id⋆ = ↷ h (rest b (last ‼))
+  seq (↷ h1 (rest b1 (last t1))) ℓ (↷ h2 r2) = ↷ h1 (seq-rest b1 t1 ℓ h2 r2)
 
-  seq' : ∀ {P1 T1 T2 T3}
-    → Rest P1 T1
-    → T1 ≡ T2 ⊎ Label
-    → Cast T2 T3
-  ----------------
+  seq-rest : ∀ {P1 P2 P3 T1 T2 T3}
+    → (b1 : Body P1 P2)
+    → (t1 : Last P2 T1)
+    → (ℓ : GapT T1 T2)
+    → (h2 : Head P3 T2)
+    → (r2 : Rest P3 T3)
     → Rest P1 T3
-  seq' (rest b (fail l)) ℓ c = rest b (fail l)
-  seq' (rest b (last t)) ℓ id⋆ = rest b (last ‼)
-  seq' (rest b (last t)) ℓ (↷ h r) = ext-rest (link h ℓ t) b r
+  seq-rest {P2 = P1} b1 t1 ℓ h2 (rest {P = P2} b2 t2) with (` P1) ⌣? (` P2)
+  seq-rest {P2 = P1} b1 t1 ℓ h2 (rest {_} b2 t2) | yes p = rest (seq-m (link h2 ℓ t1) p b1 b2) t2
+  seq-rest {P2 = P1} b1 t1 ℓ h2 (rest {_} b2 t2) | no ¬p with (link h2 ℓ t1)
+  seq-rest b1 t1 ℓ h2 (rest b2 t2) | no ¬p | inj₁ refl = ⊥-elim (¬p (⌣refl _))
+  seq-rest b1 t1 ℓ h2 (rest b2 t2) | no ¬p | inj₂ l = rest b1 (fail l)
 
+  seq-m : ∀ {P1 P2 P3 P4}
+    → P2 ≡ P3 ⊎ Label
+    → (` P2) ⌣ (` P3)
+    → Body P1 P2
+    → Body P3 P4
+    ---
+    → Body P1 P4
+  seq-m ℓ ⌣U U U = U
+  seq-m ℓ ⌣⇒ (c₁ ⇒ c₂) (c₃ ⇒ c₄) = seq c₃ (ℓ-dom ℓ) c₁ ⇒ seq c₂ (ℓ-cod ℓ) c₄
+  seq-m ℓ ⌣⊗ (c₁ ⊗ c₂) (c₃ ⊗ c₄) = seq c₁ (ℓ-car ℓ) c₃ ⊗ seq c₂ (ℓ-cdr ℓ) c₄
+  seq-m ℓ ⌣⊕ (c₁ ⊕ c₂) (c₃ ⊕ c₄) = seq c₁ (ℓ-inl ℓ) c₃ ⊕ seq c₂ (ℓ-inr ℓ) c₄
+  
   link : ∀ {Q P T1 T2}
     → (h : Head P T2)
     → (ℓ : T1 ≡ T2 ⊎ Label)
@@ -87,26 +148,6 @@ mutual
   link (⁇ l) ℓ t = inj₂ l
   link ε (inj₁ refl) ε = inj₁ refl
   link ε (inj₂ y) t = inj₂ y
-
-  ext-rest : ∀ {P1 P2 P3 T1}
-    → P2 ≡ P3 ⊎ Label
-    → Body P1 P2
-    → Rest P3 T1
-  ----------------
-    → Rest P1 T1
-  ext-rest (inj₁ refl) U (rest U t) = rest U t
-  ext-rest (inj₁ refl) (c₁ ⇒ c₂) (rest (c₃ ⇒ c₄) t) = rest ((seq c₃ (inj₁ refl) c₁) ⇒ (seq c₂ (inj₁ refl) c₄)) t
-  ext-rest (inj₁ refl) (c₁ ⊗ c₂) (rest (c₃ ⊗ c₄) t) = rest ((seq c₁ (inj₁ refl) c₃) ⊗ (seq c₂ (inj₁ refl) c₄)) t
-  ext-rest (inj₁ refl) (c₁ ⊕ c₂) (rest (c₃ ⊕ c₄) t) = rest ((seq c₁ (inj₁ refl) c₃) ⊕ (seq c₂ (inj₁ refl) c₄)) t
-  ext-rest {P2 = P2} {P3 = P3} (inj₂ l) b r with (` P2) ⌣? (` P3)
-  ext-rest {P2 = .U} {.U} (inj₂ l) U (rest U t) | yes ⌣U = rest U t
-  ext-rest {P2 = .(_ ⇒ _)} {.(_ ⇒ _)} (inj₂ l) (c₁ ⇒ c₂) (rest (c₃ ⇒ c₄) t) | yes ⌣⇒
-    = rest ((seq c₃ (inj₂ l) c₁) ⇒ (seq c₂ (inj₂ l) c₄)) t
-  ext-rest {P2 = .(_ ⊗ _)} {.(_ ⊗ _)} (inj₂ l) (c₁ ⊗ c₂) (rest (c₃ ⊗ c₄) t) | yes ⌣⊗
-    = rest ((seq c₁ (inj₂ l) c₃) ⊗ (seq c₂ (inj₂ l) c₄)) t
-  ext-rest {P2 = .(_ ⊕ _)} {.(_ ⊕ _)} (inj₂ l) (c₁ ⊕ c₂) (rest (c₃ ⊕ c₄) t) | yes ⌣⊕
-    = rest ((seq c₁ (inj₂ l) c₃) ⊕ (seq c₂ (inj₂ l) c₄)) t
-  ext-rest {P2 = P2} {P3} (inj₂ l) b (rest b₁ t) | no ¬p = rest b (fail l)
 
 mutual
   mk-id : ∀ T → Cast T T
@@ -157,7 +198,30 @@ seq-id⋆-l (inj₁ refl) (↷ (⁇ l) r) = refl
 seq-id⋆-l (inj₂ y) id⋆ = refl
 seq-id⋆-l (inj₂ y) (↷ (⁇ l) r) = refl
 
+
+seq-id⋆-id⋆ : ∀ ℓ
+  → seq id⋆ ℓ id⋆ ≡ id⋆
+seq-id⋆-id⋆ (inj₁ refl) = refl
+seq-id⋆-id⋆ (inj₂ y) = refl
+
 mutual
+  seq-m-assoc : ∀ {P1 P2 P3 P4 P5 P6}
+    → (b1 : Body P1 P2)
+    → (ℓ1 : GapP P2 P3)
+    → (p1 : (` P2) ⌣ (` P3))
+    → (b2 : Body P3 P4)
+    → (ℓ2 : GapP P4 P5)
+    → (p2 : (` P4) ⌣ (` P5))
+    → (b3 : Body P5 P6)
+    ---
+    → seq-m ℓ2 p2 (seq-m ℓ1 p1 b1 b2) b3
+      ≡
+      seq-m ℓ1 p1 b1 (seq-m ℓ2 p2 b2 b3)
+  seq-m-assoc U ℓ1 ⌣U U ℓ2 ⌣U U = refl
+  seq-m-assoc (c₁ ⇒ c₂) ℓ1 ⌣⇒ (c₃ ⇒ c₄) ℓ2 ⌣⇒ (c₅ ⇒ c₆) = cong₂ (λ x y → x ⇒ y) (sym (seq-assoc c₅ (ℓ-dom ℓ2) c₃ (ℓ-dom ℓ1) c₁)) (seq-assoc c₂ (ℓ-cod ℓ1) c₄ (ℓ-cod ℓ2) c₆)
+  seq-m-assoc (c₁ ⊗ c₂) ℓ1 ⌣⊗ (c₃ ⊗ c₄) ℓ2 ⌣⊗ (c₅ ⊗ c₆) = cong₂ (λ x y → x ⊗ y) (seq-assoc c₁ (ℓ-car ℓ1) c₃ (ℓ-car ℓ2) c₅) (seq-assoc c₂ (ℓ-cdr ℓ1) c₄ (ℓ-cdr ℓ2) c₆)
+  seq-m-assoc (c₁ ⊕ c₂) ℓ1 ⌣⊕ (c₃ ⊕ c₄) ℓ2 ⌣⊕ (c₅ ⊕ c₆) = cong₂ (λ x y → x ⊕ y) (seq-assoc c₁ (ℓ-inl ℓ1) c₃ (ℓ-inl ℓ2) c₅) (seq-assoc c₂ (ℓ-inr ℓ1) c₄ (ℓ-inr ℓ2) c₆)
+  
   seq-assoc : ∀ {T1 T2 T3 T4 T5 T6}
     → (c1 : Cast T1 T2)
     → (ℓ1 : T2 ≡ T3 ⊎ Label)
@@ -165,190 +229,76 @@ mutual
     → (ℓ2 : T4 ≡ T5 ⊎ Label)
     → (c3 : Cast T5 T6)
     → seq (seq c1 ℓ1 c2) ℓ2 c3 ≡ seq c1 ℓ1 (seq c2 ℓ2 c3)
-  seq-assoc id⋆ (inj₁ refl) c2 ℓ2 c3
-    rewrite seq-id⋆-l (inj₁ refl) c2 | seq-id⋆-l (inj₁ refl) (seq c2 ℓ2 c3)
-    = refl
-  seq-assoc id⋆ (inj₂ l) id⋆ ℓ2 c3
-    rewrite seq-id⋆-l (inj₂ l) (seq id⋆ ℓ2 c3)
-    = refl
-  seq-assoc id⋆ (inj₂ l) (↷ (⁇ l₁) r) ℓ2 c3
-    rewrite seq-id⋆-l (inj₂ l) (seq (↷ (⁇ l₁) r) ℓ2 c3)
-    = refl
-  seq-assoc id⋆ (inj₂ l) (↷ ε (rest b (fail l₁))) ℓ2 c3 = refl
-  seq-assoc id⋆ (inj₂ l) (↷ ε (rest b (last t))) ℓ2 c3 = refl
+  seq-assoc id⋆ ℓ1 id⋆ ℓ2 id⋆ = refl
+  seq-assoc id⋆ ℓ1 id⋆ ℓ2 (↷ (⁇ l) r) = refl
+  seq-assoc id⋆ ℓ1 id⋆ ℓ2 (↷ ε r) with ℓ2
+  seq-assoc id⋆ ℓ1 id⋆ ℓ2 (↷ ε r) | inj₁ ()
+  seq-assoc id⋆ ℓ1 id⋆ ℓ2 (↷ ε r) | inj₂ y = refl
+  seq-assoc id⋆ ℓ1 (↷ (⁇ l) (rest b (fail l₁))) ℓ2 c3 = refl
+  seq-assoc id⋆ ℓ1 (↷ (⁇ l) (rest b (last t))) ℓ2 id⋆ = refl
+  seq-assoc id⋆ ℓ1 (↷ (⁇ l) (rest {Q = P1} b (last t))) ℓ2 (↷ h (rest {P = P2} b₁ t₁)) with (` P1) ⌣? (` P2)
+  seq-assoc id⋆ ℓ1 (↷ (⁇ l) (rest {Q = P1} b (last t))) ℓ2 (↷ h (rest {_} b₁ t₁)) | yes p = refl
+  seq-assoc id⋆ ℓ1 (↷ (⁇ l) (rest {Q = P1} b (last t))) ℓ2 (↷ h (rest {_} b₁ t₁)) | no ¬p with link h ℓ2 t
+  seq-assoc id⋆ ℓ1 (↷ (⁇ l) (rest {Q = _} b (last t))) ℓ2 (↷ h (rest {_} b₁ t₁)) | no ¬p | inj₁ refl = ⊥-elim (¬p (⌣refl _))
+  seq-assoc id⋆ ℓ1 (↷ (⁇ l) (rest {Q = P1} b (last t))) ℓ2 (↷ h (rest {_} b₁ t₁)) | no ¬p | inj₂ y = refl
+  seq-assoc id⋆ ℓ1 (↷ ε (rest b t)) ℓ2 c3 with ℓ1
+  seq-assoc id⋆ ℓ1 (↷ ε (rest b t)) ℓ2 c3 | inj₁ ()
+  seq-assoc id⋆ ℓ1 (↷ ε (rest b (fail l))) ℓ2 c3 | inj₂ y = refl
+  seq-assoc id⋆ ℓ1 (↷ ε (rest b (last t))) ℓ2 id⋆ | inj₂ y = refl
+  seq-assoc id⋆ ℓ1 (↷ ε (rest {Q = P1} b (last t))) ℓ2 (↷ h (rest {P = P2} b₁ t₁)) | inj₂ y with (` P1) ⌣? (` P2)
+  seq-assoc id⋆ ℓ1 (↷ ε (rest {Q = P1} b (last t))) ℓ2 (↷ h (rest {_} b₁ t₁)) | inj₂ y | yes p = refl
+  seq-assoc id⋆ ℓ1 (↷ ε (rest {Q = P1} b (last t))) ℓ2 (↷ h (rest {_} b₁ t₁)) | inj₂ y | no ¬p with link h ℓ2 t
+  seq-assoc id⋆ ℓ1 (↷ ε (rest {Q = _} b (last t))) ℓ2 (↷ h (rest {_} b₁ t₁)) | inj₂ y | no ¬p | inj₁ refl = ⊥-elim (¬p (⌣refl _))
+  seq-assoc id⋆ ℓ1 (↷ ε (rest {Q = P1} b (last t))) ℓ2 (↷ h (rest {_} b₁ t₁)) | inj₂ y | no ¬p | inj₂ y₁ = refl
   seq-assoc (↷ h (rest b (fail l))) ℓ1 c2 ℓ2 c3 = refl
-  seq-assoc (↷ h (rest b (last t))) ℓ1 id⋆ (inj₁ refl) id⋆ = refl
-  seq-assoc (↷ h (rest b (last t))) ℓ1 id⋆ (inj₁ refl) (↷ (⁇ l) (rest b₁ t₁)) = refl
-  seq-assoc (↷ h (rest b (last t))) ℓ1 id⋆ (inj₂ l) id⋆ = refl
-  seq-assoc (↷ h (rest b (last t))) ℓ1 id⋆ (inj₂ l) (↷ (⁇ l₁) (rest b₁ t₁)) = refl
-  seq-assoc (↷ h (rest b (last t))) ℓ1 id⋆ (inj₂ l) (↷ ε (rest b₁ t₁)) = refl
-  seq-assoc (↷ h (rest b (last t))) ℓ1 (↷ h₁ (rest b₁ (fail l))) ℓ2 c3 with (link h₁ ℓ1 t)
-  seq-assoc (↷ h (rest U (last t))) ℓ1 (↷ h₁ (rest U (fail l))) ℓ2 c3 | inj₁ refl = refl
-  seq-assoc (↷ h (rest (c₁ ⇒ c₂) (last t))) ℓ1 (↷ h₁ (rest (c₃ ⇒ c₄) (fail l))) ℓ2 c3 | inj₁ refl = refl
-  seq-assoc (↷ h (rest (c₁ ⊗ c₂) (last t))) ℓ1 (↷ h₁ (rest (c₃ ⊗ c₄) (fail l))) ℓ2 c3 | inj₁ refl = refl
-  seq-assoc (↷ h (rest (c₁ ⊕ c₂) (last t))) ℓ1 (↷ h₁ (rest (c₃ ⊕ c₄) (fail l))) ℓ2 c3 | inj₁ refl = refl
-  seq-assoc (↷ h (rest {Q = Q} b (last t))) ℓ1 (↷ h₁ (rest {P = P} b₁ (fail l))) ℓ2 c3 | inj₂ y with (` Q) ⌣? (` P)
-  seq-assoc (↷ h (rest {Q = .U} U (last t))) ℓ1 (↷ h₁ (rest U (fail l))) ℓ2 c3 | inj₂ y | yes ⌣U = refl
-  seq-assoc (↷ h (rest {Q = .(_ ⇒ _)} (c₁ ⇒ c₂) (last t))) ℓ1 (↷ h₁ (rest (c₃ ⇒ c₄) (fail l))) ℓ2 c3 | inj₂ y | yes ⌣⇒ = refl
-  seq-assoc (↷ h (rest {Q = .(_ ⊗ _)} (c₁ ⊗ c₂) (last t))) ℓ1 (↷ h₁ (rest (c₃ ⊗ c₄) (fail l))) ℓ2 c3 | inj₂ y | yes ⌣⊗ = refl
-  seq-assoc (↷ h (rest {Q = .(_ ⊕ _)} (c₁ ⊕ c₂) (last t))) ℓ1 (↷ h₁ (rest (c₃ ⊕ c₄) (fail l))) ℓ2 c3 | inj₂ y | yes ⌣⊕ = refl
-  seq-assoc (↷ h (rest {Q = Q} b (last t))) ℓ1 (↷ h₁ (rest b₁ (fail l))) ℓ2 c3 | inj₂ y | no ¬p = refl
-  seq-assoc (↷ h (rest {Q = Q} b (last t))) ℓ1 (↷ (⁇ l) (rest {P = P} b₁ (last t₁))) ℓ2 id⋆ with (` Q) ⌣? (` P)
-  seq-assoc (↷ h (rest {Q = .U} U (last t))) ℓ1 (↷ (⁇ l) (rest {_} U (last t₁))) ℓ2 id⋆ | yes ⌣U = refl
-  seq-assoc (↷ h (rest {Q = .(_ ⇒ _)} (c₁ ⇒ c₂) (last t))) ℓ1 (↷ (⁇ l) (rest {_} (c₃ ⇒ c₄) (last t₁))) ℓ2 id⋆ | yes ⌣⇒ = refl
-  seq-assoc (↷ h (rest {Q = .(_ ⊗ _)} (c₁ ⊗ c₂) (last t))) ℓ1 (↷ (⁇ l) (rest {_} (c₃ ⊗ c₄) (last t₁))) ℓ2 id⋆ | yes ⌣⊗ = refl
-  seq-assoc (↷ h (rest {Q = .(_ ⊕ _)} (c₁ ⊕ c₂) (last t))) ℓ1 (↷ (⁇ l) (rest {_} (c₃ ⊕ c₄) (last t₁))) ℓ2 id⋆ | yes ⌣⊕ = refl
-  seq-assoc (↷ h (rest {Q = Q} b (last t))) ℓ1 (↷ (⁇ l) (rest {_} b₁ (last t₁))) ℓ2 id⋆ | no ¬p = refl
-  seq-assoc (↷ h (rest b (last t))) ℓ1 (↷ ε (rest b₁ (last t₁))) ℓ2 id⋆ with ℓ1
-  seq-assoc (↷ h (rest U (last ε))) ℓ1 (↷ ε (rest U (last t₁))) ℓ2 id⋆ | inj₁ refl = refl
-  seq-assoc (↷ h (rest (c₁ ⇒ c₂) (last ε))) ℓ1 (↷ ε (rest (c₃ ⇒ c₄) (last t₁))) ℓ2 id⋆ | inj₁ refl = refl
-  seq-assoc (↷ h (rest (c₁ ⊗ c₂) (last ε))) ℓ1 (↷ ε (rest (c₃ ⊗ c₄) (last t₁))) ℓ2 id⋆ | inj₁ refl = refl
-  seq-assoc (↷ h (rest (c₁ ⊕ c₂) (last ε))) ℓ1 (↷ ε (rest (c₃ ⊕ c₄) (last t₁))) ℓ2 id⋆ | inj₁ refl = refl
-  seq-assoc (↷ h (rest {Q = Q} b (last t))) ℓ1 (↷ ε (rest {P = P} b₁ (last t₁))) ℓ2 id⋆ | inj₂ l with (` Q) ⌣? (` P)
-  seq-assoc (↷ h (rest {Q = .U} U (last t))) ℓ1 (↷ ε (rest U (last t₁))) ℓ2 id⋆ | inj₂ l | yes ⌣U = refl
-  seq-assoc (↷ h (rest {Q = .(_ ⇒ _)} (c₁ ⇒ c₂) (last t))) ℓ1 (↷ ε (rest (c₃ ⇒ c₄) (last t₁))) ℓ2 id⋆ | inj₂ l | yes ⌣⇒ = refl
-  seq-assoc (↷ h (rest {Q = .(_ ⊗ _)} (c₁ ⊗ c₂) (last t))) ℓ1 (↷ ε (rest (c₃ ⊗ c₄) (last t₁))) ℓ2 id⋆ | inj₂ l | yes ⌣⊗ = refl
-  seq-assoc (↷ h (rest {Q = .(_ ⊕ _)} (c₁ ⊕ c₂) (last t))) ℓ1 (↷ ε (rest (c₃ ⊕ c₄) (last t₁))) ℓ2 id⋆ | inj₂ l | yes ⌣⊕ = refl
-  seq-assoc (↷ h (rest {Q = Q} b (last t))) ℓ1 (↷ ε (rest b₁ (last t₁))) ℓ2 id⋆ | inj₂ l | no ¬p = refl
-  seq-assoc (↷ h (rest b (last t))) ℓ1 (↷ h₁ (rest b₁ (last t₁))) ℓ2 (↷ h₂ (rest b₂ t₂)) = cong (↷ h) (seq'-assoc (link h₁ ℓ1 t) b b₁ t₁ ℓ2 h₂ b₂ t₂)
-  
-  seq'-assoc : ∀ {P P₁ P₂ Q Q₁ Q₂ T4 T5 T6 }
-    → ∀ ℓ1
-    → (b : Body P₂ Q)
-    → (b₁    : Body P₁ Q₁)
-    → (t₁    : Last Q₁ T4)
-    → (ℓ2 : T4 ≡ T5 ⊎ Label)
-    → (h₂    : Head P T5)
-    → (b₂    : Body P Q₂)
-    → (t₂    : Tail Q₂ T6)
-    → seq' (ext-rest ℓ1 b (rest b₁ (last t₁))) ℓ2 (↷ h₂ (rest b₂ t₂)) ≡
-      ext-rest ℓ1 b (ext-rest (link h₂ ℓ2 t₁) b₁ (rest b₂ t₂))
-  seq'-assoc (inj₁ refl) U U t₁ ℓ2 h₂ b₂ t₂ = seq'-assoc-U (link h₂ ℓ2 t₁) (inj₁ refl) b₂ t₂
-  ---
-  seq'-assoc (inj₁ refl) (c₁ ⇒ c₂) (c₃ ⇒ c₄) t₁ ℓ2 h₂ b₂ t₂ with (link h₂ ℓ2 t₁)
-  seq'-assoc (inj₁ refl) (c₁ ⇒ c₂) (c₃ ⇒ c₄) t₁ ℓ2 h₂ (c₅ ⇒ c₆) t₂ | inj₁ refl
-    rewrite seq-assoc c₅ (inj₁ refl) c₃ (inj₁ refl) c₁ | seq-assoc c₂ (inj₁ refl) c₄ (inj₁ refl) c₆
-    = refl
-  seq'-assoc {P = P} {Q₁ = (T1 ⇒ T2)} (inj₁ refl) (c₁ ⇒ c₂) (c₃ ⇒ c₄) t₁ ℓ2 h₂ b₂ t₂ | inj₂ y with (` (T1 ⇒ T2)) ⌣? (` P)
-  seq'-assoc {.(_ ⇒ _)} (inj₁ refl) (c₁ ⇒ c₂) (c₃ ⇒ c₄) t₁ ℓ2 h₂ (c₅ ⇒ c₆) t₂ | inj₂ y | yes ⌣⇒ 
-    rewrite seq-assoc c₅ (inj₂ y) c₃ (inj₁ refl) c₁ | seq-assoc c₂ (inj₁ refl) c₄ (inj₂ y) c₆
-    = refl
-  seq'-assoc {P} (inj₁ refl) (c₁ ⇒ c₂) (c₃ ⇒ c₄) t₁ ℓ2 h₂ b₂ t₂ | inj₂ y | no ¬p = refl
-  ---
-  seq'-assoc (inj₁ refl) (c₁ ⊗ c₂) (c₃ ⊗ c₄) t₁ ℓ2 h₂ b₂ t₂ with (link h₂ ℓ2 t₁)
-  seq'-assoc (inj₁ refl) (c₁ ⊗ c₂) (c₃ ⊗ c₄) t₁ ℓ2 h₂ (c₅ ⊗ c₆) t₂ | inj₁ refl
-    rewrite seq-assoc c₁ (inj₁ refl) c₃ (inj₁ refl) c₅ | seq-assoc c₂ (inj₁ refl) c₄ (inj₁ refl) c₆
-    = refl
-  seq'-assoc {P = P} {Q₁ = (T1 ⊗ T2)} (inj₁ refl) (c₁ ⊗ c₂) (c₃ ⊗ c₄) t₁ ℓ2 h₂ b₂ t₂ | inj₂ y with (` (T1 ⊗ T2)) ⌣? (` P)
-  seq'-assoc {.(_ ⊗ _)} (inj₁ refl) (c₁ ⊗ c₂) (c₃ ⊗ c₄) t₁ ℓ2 h₂ (c₅ ⊗ c₆) t₂ | inj₂ y | yes ⌣⊗ 
-    rewrite seq-assoc c₁ (inj₁ refl) c₃ (inj₂ y) c₅ | seq-assoc c₂ (inj₁ refl) c₄ (inj₂ y) c₆
-    = refl
-  seq'-assoc {P} (inj₁ refl) (c₁ ⊗ c₂) (c₃ ⊗ c₄) t₁ ℓ2 h₂ b₂ t₂ | inj₂ y | no ¬p = refl
-  ---
-  seq'-assoc (inj₁ refl) (c₁ ⊕ c₂) (c₃ ⊕ c₄) t₁ ℓ2 h₂ b₂ t₂ with (link h₂ ℓ2 t₁)
-  seq'-assoc (inj₁ refl) (c₁ ⊕ c₂) (c₃ ⊕ c₄) t₁ ℓ2 h₂ (c₅ ⊕ c₆) t₂ | inj₁ refl
-    rewrite seq-assoc c₁ (inj₁ refl) c₃ (inj₁ refl) c₅ | seq-assoc c₂ (inj₁ refl) c₄ (inj₁ refl) c₆
-    = refl
-  seq'-assoc {P = P} {Q₁ = (T1 ⊕ T2)} (inj₁ refl) (c₁ ⊕ c₂) (c₃ ⊕ c₄) t₁ ℓ2 h₂ b₂ t₂ | inj₂ y with (` (T1 ⊕ T2)) ⌣? (` P)
-  seq'-assoc {.(_ ⊕ _)} (inj₁ refl) (c₁ ⊕ c₂) (c₃ ⊕ c₄) t₁ ℓ2 h₂ (c₅ ⊕ c₆) t₂ | inj₂ y | yes ⌣⊕ 
-    rewrite seq-assoc c₁ (inj₁ refl) c₃ (inj₂ y) c₅ | seq-assoc c₂ (inj₁ refl) c₄ (inj₂ y) c₆
-    = refl
-  seq'-assoc {P} (inj₁ refl) (c₁ ⊕ c₂) (c₃ ⊕ c₄) t₁ ℓ2 h₂ b₂ t₂ | inj₂ y | no ¬p = refl
-  ---
-  seq'-assoc {P₁ = P₁} {Q = Q} (inj₂ y) b b₁ t₁ ℓ2 h₂ b₂ t₂ with (` Q) ⌣? (` P₁)
-  seq'-assoc {P₁ = .U} {Q = .U} (inj₂ y) U U t₁ ℓ2 h₂ b₂ t₂ | yes ⌣U = seq'-assoc-U (link h₂ ℓ2 t₁) (inj₂ y) b₂ t₂
-  ---
-  seq'-assoc {P₁ = .(_ ⇒ _)} {Q = .(_ ⇒ _)} (inj₂ y) (c₁ ⇒ c₂) (c₃ ⇒ c₄) t₁ ℓ2 h₂ b₂ t₂ | yes ⌣⇒ with (link h₂ ℓ2 t₁)
-  seq'-assoc {_} {.(_ ⇒ _)} {_} {.(_ ⇒ _)} (inj₂ y) (c₁ ⇒ c₂) (c₃ ⇒ c₄) t₁ ℓ2 h₂ (c₅ ⇒ c₆) t₂ | yes ⌣⇒ | inj₁ refl
-    rewrite seq-assoc c₅ (inj₁ refl) c₃ (inj₂ y) c₁ | seq-assoc c₂ (inj₂ y) c₄ (inj₁ refl) c₆
-    = refl
-  seq'-assoc {P = P} {Q₁ = (T1 ⇒ T2)} (inj₂ y) (c₁ ⇒ c₂) (c₃ ⇒ c₄) t₁ ℓ2 h₂ b₂ t₂ | yes ⌣⇒ | inj₂ y₁ with (` (T1 ⇒ T2)) ⌣? (` P)
-  seq'-assoc {.(_ ⇒ _)} {.(_ ⇒ _)} {_} {.(_ ⇒ _)} (inj₂ y) (c₁ ⇒ c₂) (c₃ ⇒ c₄) t₁ ℓ2 h₂ (c₅ ⇒ c₆) t₂ | yes ⌣⇒ | inj₂ y₁ | yes ⌣⇒
-    rewrite seq-assoc c₅ (inj₂ y₁) c₃ (inj₂ y) c₁ | seq-assoc c₂ (inj₂ y) c₄ (inj₂ y₁) c₆
-    = refl
-  seq'-assoc {P} {.(_ ⇒ _)} {_} {.(_ ⇒ _)} (inj₂ y) (c₁ ⇒ c₂) (c₃ ⇒ c₄) t₁ ℓ2 h₂ b₂ t₂ | yes ⌣⇒ | inj₂ y₁ | no ¬p = refl
-  ---
-  ---
-  seq'-assoc {P₁ = .(_ ⊗ _)} {Q = .(_ ⊗ _)} (inj₂ y) (c₁ ⊗ c₂) (c₃ ⊗ c₄) t₁ ℓ2 h₂ b₂ t₂ | yes ⌣⊗ with (link h₂ ℓ2 t₁)
-  seq'-assoc {_} {.(_ ⊗ _)} {_} {.(_ ⊗ _)} (inj₂ y) (c₁ ⊗ c₂) (c₃ ⊗ c₄) t₁ ℓ2 h₂ (c₅ ⊗ c₆) t₂ | yes ⌣⊗ | inj₁ refl
-    rewrite seq-assoc c₁ (inj₂ y) c₃ (inj₁ refl) c₅ | seq-assoc c₂ (inj₂ y) c₄ (inj₁ refl) c₆
-    = refl
-  seq'-assoc {P = P} {Q₁ = (T1 ⊗ T2)} (inj₂ y) (c₁ ⊗ c₂) (c₃ ⊗ c₄) t₁ ℓ2 h₂ b₂ t₂ | yes ⌣⊗ | inj₂ y₁ with (` (T1 ⊗ T2)) ⌣? (` P)
-  seq'-assoc {.(_ ⊗ _)} {.(_ ⊗ _)} {_} {.(_ ⊗ _)} (inj₂ y) (c₁ ⊗ c₂) (c₃ ⊗ c₄) t₁ ℓ2 h₂ (c₅ ⊗ c₆) t₂ | yes ⌣⊗ | inj₂ y₁ | yes ⌣⊗
-    rewrite seq-assoc c₁ (inj₂ y) c₃ (inj₂ y₁) c₅ | seq-assoc c₂ (inj₂ y) c₄ (inj₂ y₁) c₆
-    = refl
-  seq'-assoc {P} {.(_ ⊗ _)} {_} {.(_ ⊗ _)} (inj₂ y) (c₁ ⊗ c₂) (c₃ ⊗ c₄) t₁ ℓ2 h₂ b₂ t₂ | yes ⌣⊗ | inj₂ y₁ | no ¬p = refl
-  ---
-  ---
-  seq'-assoc {P₁ = .(_ ⊕ _)} {Q = .(_ ⊕ _)} (inj₂ y) (c₁ ⊕ c₂) (c₃ ⊕ c₄) t₁ ℓ2 h₂ b₂ t₂ | yes ⌣⊕ with (link h₂ ℓ2 t₁)
-  seq'-assoc {_} {.(_ ⊕ _)} {_} {.(_ ⊕ _)} (inj₂ y) (c₁ ⊕ c₂) (c₃ ⊕ c₄) t₁ ℓ2 h₂ (c₅ ⊕ c₆) t₂ | yes ⌣⊕ | inj₁ refl
-    rewrite seq-assoc c₁ (inj₂ y) c₃ (inj₁ refl) c₅ | seq-assoc c₂ (inj₂ y) c₄ (inj₁ refl) c₆
-    = refl
-  seq'-assoc {P = P} {Q₁ = (T1 ⊕ T2)} (inj₂ y) (c₁ ⊕ c₂) (c₃ ⊕ c₄) t₁ ℓ2 h₂ b₂ t₂ | yes ⌣⊕ | inj₂ y₁ with (` (T1 ⊕ T2)) ⌣? (` P)
-  seq'-assoc {.(_ ⊕ _)} {.(_ ⊕ _)} {_} {.(_ ⊕ _)} (inj₂ y) (c₁ ⊕ c₂) (c₃ ⊕ c₄) t₁ ℓ2 h₂ (c₅ ⊕ c₆) t₂ | yes ⌣⊕ | inj₂ y₁ | yes ⌣⊕
-    rewrite seq-assoc c₁ (inj₂ y) c₃ (inj₂ y₁) c₅ | seq-assoc c₂ (inj₂ y) c₄ (inj₂ y₁) c₆
-    = refl
-  seq'-assoc {P} {.(_ ⊕ _)} {_} {.(_ ⊕ _)} (inj₂ y) (c₁ ⊕ c₂) (c₃ ⊕ c₄) t₁ ℓ2 h₂ b₂ t₂ | yes ⌣⊕ | inj₂ y₁ | no ¬p = refl
-  ---
-  seq'-assoc {P₁ = P₁} {Q = Q} (inj₂ y) b b₁ t₁ ℓ2 h₂ b₂ t₂ | no ¬p with ext-rest (link h₂ ℓ2 t₁) b₁ (rest b₂ t₂)
-  seq'-assoc {P₁ = P₁} {Q = Q} (inj₂ y) b b₁ t₁ ℓ2 h₂ b₂ t₂ | no ¬p | rest b₃ t = refl
-
-  seq'-assoc-U : ∀ {P1 P2 T1}
-    → ∀ ℓ1 ℓ2
-    → (b : Body P1 P2)
-    → (t : Tail P2 T1)
-    → ext-rest ℓ1 U (rest b t) ≡
-      ext-rest ℓ2 U (ext-rest ℓ1 U (rest b t))
-  seq'-assoc-U ℓ1 ℓ2 b t with ext-rest ℓ1 U (rest b t)
-  seq'-assoc-U ℓ1 (inj₁ refl) b t | rest U t₁ = refl
-  seq'-assoc-U ℓ1 (inj₂ y) b t | rest U t₁ = refl
-
+  seq-assoc (↷ h (rest b (last t))) ℓ1 id⋆ ℓ2 id⋆ = refl
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 id⋆ ℓ2 (↷ (⁇ l) (rest {P = P2} b₁ t₁)) with (` P1) ⌣? (` P2)
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 id⋆ ℓ2 (↷ (⁇ l) (rest {_} b₁ t₁)) | yes p = refl
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 id⋆ ℓ2 (↷ (⁇ l) (rest {_} b₁ t₁)) | no ¬p = refl
+  seq-assoc (↷ h (rest b (last t))) ℓ1 id⋆ ℓ2 (↷ ε (rest b₁ t₁)) with ℓ2
+  seq-assoc (↷ h (rest b (last t))) ℓ1 id⋆ ℓ2 (↷ ε (rest b₁ t₁)) | inj₁ ()
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 id⋆ ℓ2 (↷ ε (rest {P = P2} b₁ t₁)) | inj₂ y with (` P1) ⌣? (` P2)
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 id⋆ ℓ2 (↷ ε (rest b₁ t₁)) | inj₂ y | yes p = refl
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 id⋆ ℓ2 (↷ ε (rest b₁ t₁)) | inj₂ y | no ¬p = refl
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {P = P2} b₁ (fail l))) ℓ2 c3 with (` P1) ⌣? (` P2)
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} b₁ (fail l))) ℓ2 c3 | yes p = refl
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} b₁ (fail l))) ℓ2 c3 | no ¬p with link h₁ ℓ1 t
+  seq-assoc (↷ h (rest {Q = _} b (last t))) ℓ1 (↷ h₁ (rest {_} b₁ (fail l))) ℓ2 c3 | no ¬p | inj₁ refl = ⊥-elim (¬p (⌣refl _))
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} b₁ (fail l))) ℓ2 c3 | no ¬p | inj₂ y = refl
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {P = P2} b₁ (last t₁))) ℓ2 id⋆ with (` P1) ⌣? (` P2)
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} b₁ (last t₁))) ℓ2 id⋆ | yes p = refl
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} b₁ (last t₁))) ℓ2 id⋆ | no ¬p with link h₁ ℓ1 t
+  seq-assoc (↷ h (rest {Q = _} b (last t))) ℓ1 (↷ h₁ (rest {_} b₁ (last t₁))) ℓ2 id⋆ | no ¬p | inj₁ refl =  ⊥-elim (¬p (⌣refl (` _)))
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} b₁ (last t₁))) ℓ2 id⋆ | no ¬p | inj₂ y = refl
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {P2} {Q = P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {P = P4} b₂ t₂)) with (` P1) ⌣? (` P2)
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {P4} b₂ t₂)) | yes p with (` P3) ⌣? (` P4)
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {P2} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | yes p | yes p₁ with (` P1) ⌣? (` P2)
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {P2} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {P4} b₂ t₂)) | yes p | yes p₁ | yes p₂
+    rewrite ⌣unique p p₂ = cong (λ b → ↷ h (rest b t₂)) (seq-m-assoc b (link h₁ ℓ1 t) p₂ b₁ (link h₂ ℓ2 t₁) p₁ b₂)
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | yes p | yes p₁ | no ¬p = ⊥-elim (¬p p)
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | yes p | no ¬p with link h₂ ℓ2 t₁
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {_} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | yes p | no ¬p | inj₁ refl = ⊥-elim (¬p (⌣refl (` _)))
+  seq-assoc (↷ h (rest {Q = .U} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | yes ⌣U | no ¬p | inj₂ y = refl
+  seq-assoc (↷ h (rest {Q = .(_ ⇒ _)} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | yes ⌣⇒ | no ¬p | inj₂ y = refl
+  seq-assoc (↷ h (rest {Q = .(_ ⊗ _)} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | yes ⌣⊗ | no ¬p | inj₂ y = refl
+  seq-assoc (↷ h (rest {Q = .(_ ⊕ _)} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | yes ⌣⊕ | no ¬p | inj₂ y = refl
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {P4} b₂ t₂)) | no ¬p with (` P3) ⌣? (` P4)
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {P2} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | yes p with (` P1) ⌣? (` P2)
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | yes p | yes p₁ = ⊥-elim (¬p p₁)
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | yes p | no ¬p₁ with link h₁ ℓ1 t
+  seq-assoc (↷ h (rest {Q = _} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | yes p | no ¬p₁ | inj₁ refl = ⊥-elim (¬p₁ (⌣refl (` _)))
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | yes p | no ¬p₁ | inj₂ y = refl
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ with link h₂ ℓ2 t₁
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {_} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ | inj₁ refl = ⊥-elim (¬p₁ (⌣refl (` _)))
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {P2} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ | inj₂ y with (` P1) ⌣? (` P2)
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ | inj₂ y | yes p = ⊥-elim (¬p p)
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ | inj₂ y | no ¬p₂ with link h₁ ℓ1 t
+  seq-assoc (↷ h (rest {Q = _} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ | inj₂ y | no ¬p₂ | inj₁ refl = ⊥-elim (¬p₂ (⌣refl (` _)))
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ | inj₂ y | no ¬p₂ | inj₂ y₁ = refl 
 
 open import CEKcc.Values Label Cast
   
 module AlternativeApplyCast where
-
-  GapP : PreType → PreType → Set
-  GapP P1 P2 = P1 ≡ P2 ⊎ Label
-  
-  GapT : Type → Type → Set
-  GapT T1 T2 = T1 ≡ T2 ⊎ Label
-  
-  ℓ-dom : ∀ {T1 T2 T3 T4}
-    → GapP (T1 ⇒ T2) (T3 ⇒ T4)
-    → GapT T3 T1
-  ℓ-dom (inj₁ refl) = inj₁ refl
-  ℓ-dom (inj₂ l) = inj₂ l
-  
-  ℓ-cod : ∀ {T1 T2 T3 T4}
-    → GapP (T1 ⇒ T2) (T3 ⇒ T4)
-    → GapT T2 T4
-  ℓ-cod (inj₁ refl) = inj₁ refl
-  ℓ-cod (inj₂ l) = inj₂ l
-  
-  ℓ-car : ∀ {T1 T2 T3 T4}
-    → GapP (T1 ⊗ T2) (T3 ⊗ T4)
-    → GapT T1 T3
-  ℓ-car (inj₁ refl) = inj₁ refl
-  ℓ-car (inj₂ l) = inj₂ l
- 
-  ℓ-cdr : ∀ {T1 T2 T3 T4}
-    → GapP (T1 ⊗ T2) (T3 ⊗ T4)
-    → GapT T2 T4
-  ℓ-cdr (inj₁ refl) = inj₁ refl
-  ℓ-cdr (inj₂ l) = inj₂ l
-  
-  ℓ-inl : ∀ {T1 T2 T3 T4}
-    → GapP (T1 ⊕ T2) (T3 ⊕ T4)
-    → GapT T1 T3
-  ℓ-inl (inj₁ refl) = inj₁ refl
-  ℓ-inl (inj₂ l) = inj₂ l
- 
-  ℓ-inr : ∀ {T1 T2 T3 T4}
-    → GapP (T1 ⊕ T2) (T3 ⊕ T4)
-    → GapT T2 T4
-  ℓ-inr (inj₁ refl) = inj₁ refl
-  ℓ-inr (inj₂ l) = inj₂ l
  
   apply-body : ∀ {P1 P2 P3}
     → P1 ≡ P2 ⊎ Label
@@ -376,7 +326,7 @@ module AlternativeApplyCast where
     ---
     → CastResult T
   apply-rest ℓ (rest b t) v = apply-body ℓ b v >>= apply-tail t
-  
+
   apply-cast : ∀ {T1 T2}
     → Cast T1 T2
     → Val T1
@@ -386,115 +336,124 @@ module AlternativeApplyCast where
   apply-cast (↷ (⁇ l) r) (inj _ v) = apply-rest (inj₂ l) r v
   apply-cast (↷ ε r) v = apply-rest (inj₁ refl) r v
 
-apply-tail : ∀ {P T} → Tail P T → Val (` P) → CastResult T
-apply-tail (fail l) v = fail l
-apply-tail (last ‼) v = succ (inj _ v)
-apply-tail (last ε) v = succ v
-
-apply-body : ∀ {P Q} → Body P Q → Val (` P) → CastResult (` Q)
-apply-body U v
-  = succ v
-apply-body (c₁ ⇒ c₂) (fun E c₃ b c₄)
-  = succ (fun E (mk-seq c₁ c₃) b (mk-seq c₄ c₂))
-apply-body (c₁ ⊗ c₂) (cons v₁ c₃ v₂ c₄)
-  = succ (cons v₁ (mk-seq c₃ c₁) v₂ (mk-seq c₄ c₂))
-apply-body (c₁ ⊕ c₂) (inl v c)
-  = succ (inl v (mk-seq c c₁))
-apply-body (c₁ ⊕ c₂) (inr v c)
-  = succ (inr v (mk-seq c c₂))
-  
-apply-rest : ∀ {P T} → Rest P T → Val (` P) → CastResult T
-apply-rest (rest b t) v
-  = apply-body b v >>= λ u →
-    apply-tail t u
-                 
-apply-head : ∀ {P T} → Head P T → Val T → CastResult (` P)
-apply-head {P = Q} (⁇ l) (inj P v) with (` P) ⌣? (` Q)
-apply-head {.U} (⁇ l) (inj .U sole) | yes ⌣U = succ sole
-apply-head {(T1 ⇒ T2)} (⁇ l) (inj _ (fun env c₁ b c₂)) | yes ⌣⇒
-  = succ (fun env (seq (mk-id T1) (inj₂ l) c₁) b (seq c₂ (inj₂ l) (mk-id T2)))
-apply-head {.(_ ⊗ _)} (⁇ l) (inj _ (cons v₁ c₁ v₂ c₂)) | yes ⌣⊗
-  = succ (cons v₁ (mk-seq c₁ (mk-cast l _ _)) v₂ (mk-seq c₂ (mk-cast l _ _)))
-apply-head {.(_ ⊕ _)} (⁇ l) (inj _ (inl v c)) | yes ⌣⊕
-  = succ (inl v (mk-seq c (mk-cast l _ _)))
-apply-head {.(_ ⊕ _)} (⁇ l) (inj _ (inr v c)) | yes ⌣⊕
-  = succ (inr v (mk-seq c (mk-cast l _ _)))
-apply-head {Q} (⁇ l) (inj P v) | no ¬p = fail l
-apply-head ε v = succ v
-  
-apply-cast : ∀ {T1 T2} → Cast T1 T2 → Val T1 → CastResult T2
-apply-cast id⋆ v
-  = succ v
-apply-cast (↷ h r) v
-  = apply-head h v >>= λ u →
-    apply-rest r u
-
-module ApplyEqv where
-  lem-apply-tail : ∀ {P T}
-    → (t : Tail P T)
-    → (v : Val (` P))
-    → apply-tail t v ≡ AlternativeApplyCast.apply-tail t v
-  lem-apply-tail (fail l) v = refl
-  lem-apply-tail (last ‼) v = refl
-  lem-apply-tail (last ε) v = refl
-
-  thm-eqv : ∀ {T1 T2}
-    → (c : Cast T1 T2)
-    → (v : Val T1)
-    → apply-cast c v ≡ AlternativeApplyCast.apply-cast c v
-  thm-eqv id⋆ v = refl
-  thm-eqv (↷ {P = P2} (⁇ l) (rest b t)) (inj P1 v) with (` P1) ⌣? (` P2)
-  thm-eqv (↷ {P = .U} (⁇ l) (rest U t)) (inj .U sole) | yes ⌣U = lem-apply-tail t sole
-  thm-eqv (↷ {P = .(_ ⇒ _)} (⁇ l) (rest (c₃ ⇒ c₄) t)) (inj .(_ ⇒ _) (fun env c₁ b₁ c₂)) | yes ⌣⇒
-    rewrite sym (seq-assoc c₃ (inj₁ refl) (mk-id _) (inj₂ l) c₁) | seq-id-r c₃
-          | seq-assoc c₂ (inj₂ l) (mk-id _) (inj₁ refl) c₄ | seq-id-l c₄
-    = lem-apply-tail t _
-  thm-eqv (↷ {P = .(_ ⊗ _)} (⁇ l) (rest (c₃ ⊗ c₄) t)) (inj (T1 ⊗ T2) (cons v c₁ v₁ c₂)) | yes ⌣⊗
-    rewrite seq-assoc c₁ (inj₁ refl) (mk-cast l _ _) (inj₁ refl) c₃
-          | seq-assoc (mk-id T1) (inj₂ l) (mk-id _) (inj₁ refl) c₃
-          | seq-id-l c₃
-          | sym (seq-assoc c₁ (inj₁ refl) (mk-id T1) (inj₂ l) c₃) | seq-id-r c₁
-          | seq-assoc c₂ (inj₁ refl) (mk-cast l _ _) (inj₁ refl) c₄
-          | seq-assoc (mk-id T2) (inj₂ l) (mk-id _) (inj₁ refl) c₄
-          | seq-id-l c₄
-          | sym (seq-assoc c₂ (inj₁ refl) (mk-id T2) (inj₂ l) c₄) | seq-id-r c₂
-    = lem-apply-tail _ _
-  thm-eqv (↷ {P = .(_ ⊕ _)} (⁇ l) (rest (c₃ ⊕ c₄) t)) (inj (T1 ⊕ T2) (inl v₁ c₁)) | yes ⌣⊕
-    rewrite seq-assoc c₁ (inj₁ refl) (mk-cast l _ _) (inj₁ refl) c₃
-          | seq-assoc (mk-id T1) (inj₂ l) (mk-id _) (inj₁ refl) c₃
-          | seq-id-l c₃
-          | sym (seq-assoc c₁ (inj₁ refl) (mk-id T1) (inj₂ l) c₃) | seq-id-r c₁
-    = lem-apply-tail _ _
-  thm-eqv (↷ {P = .(_ ⊕ _)} (⁇ l) (rest (c₃ ⊕ c₄) t)) (inj (T1 ⊕ T2) (inr v₂ c₂)) | yes ⌣⊕
-    rewrite seq-assoc c₂ (inj₁ refl) (mk-cast l _ _) (inj₁ refl) c₄
-          | seq-assoc (mk-id T2) (inj₂ l) (mk-id _) (inj₁ refl) c₄
-          | seq-id-l c₄
-          | sym (seq-assoc c₂ (inj₁ refl) (mk-id T2) (inj₂ l) c₄) | seq-id-r c₂
-    = lem-apply-tail _ _
-  thm-eqv (↷ {P = P2} (⁇ l) (rest b t)) (inj P1 v) | no ¬p = refl
-  thm-eqv (↷ ε (rest U t)) sole = lem-apply-tail _ _
-  thm-eqv (↷ ε (rest (c₃ ⇒ c₄) t)) (fun env c₁ b₁ c₂) = lem-apply-tail _ _
-  thm-eqv (↷ ε (rest (c₃ ⊗ c₄) t)) (cons v c₁ v₁ c₂) = lem-apply-tail _ _
-  thm-eqv (↷ ε (rest (c₁ ⊕ c₂) t)) (inl v c) = lem-apply-tail _ _
-  thm-eqv (↷ ε (rest (c₁ ⊕ c₂) t)) (inr v c) = lem-apply-tail _ _
+open AlternativeApplyCast public
 
 mutual
   lem-id-body : ∀ P
     → (v : Val (` P))  
     -----------------------------
-    → apply-body (mk-id-body P) v ≡ succ v
+    → apply-body (inj₁ refl) (mk-id-body P) v ≡ succ v
   lem-id-body U sole = refl
   lem-id-body (T₁ ⇒ T₂) (fun env c₁ b c₂) rewrite seq-id-l c₁ | seq-id-r c₂ = refl
-  lem-id-body (T₁ ⊗ T₂) (cons v₁ c₁ v₂ c₂) rewrite seq-id-r c₁ | seq-id-r c₂ = refl
+  lem-id-body (T₁ ⊗ T₂) (cons v c₁ v₁ c₂) rewrite seq-id-r c₁ | seq-id-r c₂ = refl
   lem-id-body (T₁ ⊕ T₂) (inl v c) rewrite seq-id-r c = refl
   lem-id-body (T₁ ⊕ T₂) (inr v c) rewrite seq-id-r c = refl
-  
+
   lem-id : ∀ T
     → (v : Val T)  
     -----------------------------
     → apply-cast (mk-id T) v ≡ succ v
   lem-id ⋆ v = refl
-  lem-id (` P) v rewrite lem-id-body P v = refl
+  lem-id (` U) sole = refl
+  lem-id (` (T₁ ⇒ T₂)) (fun env c₁ b c₂) rewrite seq-id-l c₁ | seq-id-r c₂ = refl
+  lem-id (` (T₁ ⊗ T₂)) (cons v c₁ v₁ c₂) rewrite seq-id-r c₁ | seq-id-r c₂ = refl
+  lem-id (` (T₁ ⊕ T₂)) (inl v c) rewrite seq-id-r c = refl
+  lem-id (` (T₁ ⊕ T₂)) (inr v c) rewrite seq-id-r c = refl
+
+lem-seq-fail : ∀ {P1 P2 P3 T1 T2}
+  → (v : Val (` P1))
+  → (ℓ : GapP P1 P2)
+  → (b : Body P2 P3)
+  → (l : Label)
+  → (f : Val T1 → CastResult T2)
+  ---
+  → (apply-body ℓ b v >>= (λ v → fail l)) ≡
+    ((apply-body ℓ b v >>= (λ v → fail l)) >>= f)
+lem-seq-fail v ℓ b l f with apply-body ℓ b v
+lem-seq-fail v ℓ b l f | succ v₁ = refl
+lem-seq-fail v ℓ b l f | fail l₁ = refl
+
+lem-apply-body-refl : ∀ {P1 P2}
+  → (v : Val (` P1))
+  → (b : Body P1 P2)
+  → ∃[ u ](apply-body (inj₁ refl) b v ≡ succ u)
+lem-apply-body-refl {P1} v b with (` P1) ⌣? (` P1)
+lem-apply-body-refl {.U} sole U | yes ⌣U = sole , refl
+lem-apply-body-refl {.(_ ⇒ _)} (fun env c₁ b₁ c₂) (c₃ ⇒ c₄) | yes ⌣⇒
+  = (fun env (seq c₃ (inj₁ refl) c₁) b₁ (seq c₂ (inj₁ refl) c₄)) , refl
+lem-apply-body-refl {.(_ ⊗ _)} (cons v c₁ v₁ c₂) (c₃ ⊗ c₄) | yes ⌣⊗
+  = cons v (seq c₁ (inj₁ refl) c₃) v₁ (seq c₂ (inj₁ refl) c₄) , refl
+lem-apply-body-refl {.(_ ⊕ _)} (inl v c) (c₁ ⊕ c₂) | yes ⌣⊕ = inl v (seq c (inj₁ refl) c₁) , refl
+lem-apply-body-refl {.(_ ⊕ _)} (inr v c) (c₁ ⊕ c₂) | yes ⌣⊕ = inr v (seq c (inj₁ refl) c₂) , refl
+lem-apply-body-refl {P1} v b | no ¬p = ⊥-elim (¬p (⌣refl _))
+
+lem-apply-body-⌣ : ∀ {P0 P1 P2}
+  → (v : Val (` P0))
+  → (ℓ : GapP P0 P1)
+  → (p : (` P0) ⌣ (` P1))
+  → (b : Body P1 P2)
+  → ∃[ u ](apply-body ℓ b v ≡ succ u)
+lem-apply-body-⌣ {.U} {.U} sole ℓ ⌣U U = sole , refl
+lem-apply-body-⌣ {.(_ ⇒ _)} {.(_ ⇒ _)} (fun env c₁ b₁ c₂) ℓ ⌣⇒ (c₃ ⇒ c₄) = (fun env (seq c₃ _ c₁) b₁ (seq c₂ _ c₄)) , refl
+lem-apply-body-⌣ {.(_ ⊗ _)} {.(_ ⊗ _)} (cons v c₁ v₁ c₂) ℓ ⌣⊗ (c₃ ⊗ c₄) = cons v (seq c₁ _ c₃) v₁ (seq c₂ _ c₄) , refl
+lem-apply-body-⌣ {.(_ ⊕ _)} {.(_ ⊕ _)} (inl v c) ℓ ⌣⊕ (c₁ ⊕ c₂) = inl v (seq c _ c₁) , refl
+lem-apply-body-⌣ {.(_ ⊕ _)} {.(_ ⊕ _)} (inr v c) ℓ ⌣⊕ (c₁ ⊕ c₂) = inr v (seq c _ c₂) , refl
+
+lem-seq' : ∀ {P1 P2 P3 P4 P5 T1 T2}
+  → (v : Val (` P1))
+  → (ℓ : GapP P1 P2)
+  → (b1 : Body P2 P3)
+  → (t1 : Last P3 T1)
+  → (h2 : Head P4 T1)
+  → (b2 : Body P4 P5)
+  → (t2 : Tail P5 T2)
+  → apply-rest ℓ
+      (seq-rest b1 t1 (inj₁ refl) h2 (rest b2 t2))
+      v
+    ≡
+    ((apply-body ℓ b1 v >>= apply-tail (last t1)) >>=
+      apply-cast (↷ h2 (rest b2 t2)))
+lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 with (` P3) ⌣? (` P4)
+lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | yes p with t1 | h2
+lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | yes p | ‼ | ⁇ l with (` P1) ⌣? (` P2)
+lem-seq' {.U} {.U} {.U} {.U} sole ℓ U t1 h2 U t2 | yes ⌣U | ‼ | ⁇ l | yes ⌣U = refl
+lem-seq' {.(_ ⇒ _)} {.(_ ⇒ _)} {.(_ ⇒ _)} {.(_ ⇒ _)} (fun env c₁ b c₂) ℓ (c₃ ⇒ c₄) t1 h2 (c₅ ⇒ c₆) t2 | yes ⌣⇒ | ‼ | ⁇ l | yes ⌣⇒
+  rewrite seq-assoc c₅ (inj₂ l) c₃ (ℓ-dom ℓ) c₁ | seq-assoc c₂ (ℓ-cod ℓ) c₄ (inj₂ l) c₆
+  = refl
+lem-seq' {.(_ ⊗ _)} {.(_ ⊗ _)} {.(_ ⊗ _)} {.(_ ⊗ _)} (cons v c₁ v₁ c₂) ℓ (c₃ ⊗ c₄) t1 h2 (c₅ ⊗ c₆) t2 | yes ⌣⊗ | ‼ | ⁇ l | yes ⌣⊗
+  rewrite seq-assoc c₁ (ℓ-car ℓ) c₃ (inj₂ l) c₅ | seq-assoc c₂ (ℓ-cdr ℓ) c₄ (inj₂ l) c₆
+  = refl
+lem-seq' {.(_ ⊕ _)} {.(_ ⊕ _)} {.(_ ⊕ _)} {.(_ ⊕ _)} (inl v c) ℓ (c₁ ⊕ c₂) t1 h2 (c₃ ⊕ c₄) t2 | yes ⌣⊕ | ‼ | ⁇ l | yes ⌣⊕
+  rewrite seq-assoc c (ℓ-inl ℓ) c₁ (inj₂ l) c₃
+  = refl
+lem-seq' {.(_ ⊕ _)} {.(_ ⊕ _)} {.(_ ⊕ _)} {.(_ ⊕ _)} (inr v c) ℓ (c₁ ⊕ c₂) t1 h2 (c₃ ⊕ c₄) t2 | yes ⌣⊕ | ‼ | ⁇ l | yes ⌣⊕
+  rewrite seq-assoc c (ℓ-inr ℓ) c₂ (inj₂ l) c₄
+  = refl
+lem-seq' {P1} {.P1} {P3} {P4} v (inj₁ refl) b1 t1 h2 b2 t2 | yes p | ‼ | ⁇ l | no ¬p = (⊥-elim (¬p (⌣refl (` P1))))
+lem-seq' {P1} {P2} {P3} {P4} v (inj₂ y) b1 t1 h2 b2 t2 | yes p | ‼ | ⁇ l | no ¬p = refl
+lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | yes p | ε | ε with (` P1) ⌣? (` P2)
+lem-seq' {.(_ ⇒ _)} {.(_ ⇒ _)} {.(_ ⇒ _)} {.(_ ⇒ _)} (fun env c₁ b c₂) ℓ (c₃ ⇒ c₄) t1 h2 (c₅ ⇒ c₆) t2 | yes ⌣⇒ | ε | ε | yes ⌣⇒
+  rewrite seq-assoc c₅ (inj₁ refl) c₃ (ℓ-dom ℓ) c₁ | seq-assoc c₂ (ℓ-cod ℓ) c₄ (inj₁ refl) c₆
+  = refl
+lem-seq' {.U} {.U} {.U} {.U} sole ℓ U t1 h2 U t2 | yes ⌣U | ε | ε | yes ⌣U = refl
+lem-seq' {.(_ ⊗ _)} {.(_ ⊗ _)} {.(_ ⊗ _)} {.(_ ⊗ _)} (cons v c₁ v₁ c₂) ℓ (c₃ ⊗ c₄) t1 h2 (c₅ ⊗ c₆) t2 | yes ⌣⊗ | ε | ε | yes ⌣⊗
+  rewrite seq-assoc c₁ (ℓ-car ℓ) c₃ (inj₁ refl) c₅ | seq-assoc c₂ (ℓ-cdr ℓ) c₄ (inj₁ refl) c₆
+  = refl
+lem-seq' {.(_ ⊕ _)} {.(_ ⊕ _)} {.(_ ⊕ _)} {.(_ ⊕ _)} (inl v c) ℓ (c₁ ⊕ c₂) t1 h2 (c₃ ⊕ c₄) t2 | yes ⌣⊕ | ε | ε | yes ⌣⊕
+  rewrite seq-assoc c (ℓ-inl ℓ) c₁ (inj₁ refl) c₃
+  = refl
+lem-seq' {.(_ ⊕ _)} {.(_ ⊕ _)} {.(_ ⊕ _)} {.(_ ⊕ _)} (inr v c) ℓ (c₁ ⊕ c₂) t1 h2 (c₃ ⊕ c₄) t2 | yes ⌣⊕ | ε | ε | yes ⌣⊕
+  rewrite seq-assoc c (ℓ-inr ℓ) c₂ (inj₁ refl) c₄
+  = refl
+lem-seq' {P1} {.P1} {P3} {P3} v (inj₁ refl) b1 t1 h2 b2 t2 | yes p | ε | ε | no ¬p = (⊥-elim (¬p (⌣refl (` P1))))
+lem-seq' {P1} {P2} {P3} {P3} v (inj₂ y) b1 t1 h2 b2 t2 | yes p | ε | ε | no ¬p = refl
+lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | no ¬p with t1 | h2
+... | ε | ε = (⊥-elim (¬p (⌣refl (` P3))))
+... | ‼ | ⁇ l with apply-body ℓ b1 v
+lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | no ¬p | ‼ | ⁇ l | succ v₁ with (` P3) ⌣? (` P4)
+lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | no ¬p | ‼ | ⁇ l | succ v₁ | yes p = ⊥-elim (¬p p)
+lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | no ¬p | ‼ | ⁇ l | succ v₁ | no ¬p₁ = refl
+lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | no ¬p | ‼ | ⁇ l | fail l₁ = refl
 
 lem-seq : ∀ {T1 T2 T3}
   → (c1 : Cast T1 T2)
@@ -504,74 +463,11 @@ lem-seq : ∀ {T1 T2 T3}
   → apply-cast (mk-seq c1 c2) v ≡ apply-cast c1 v >>= λ u → apply-cast c2 u
 lem-seq id⋆ id⋆ v = refl
 lem-seq id⋆ (↷ (⁇ l) r) v = refl
-lem-seq (↷ h (rest b t)) c2 v with apply-head h v
-lem-seq (↷ h (rest b (fail l))) c2 v | succ v₁ with apply-body b v₁
-lem-seq (↷ h (rest b (fail l))) c2 v | succ v₁ | succ v₂ = refl
-lem-seq (↷ h (rest b (fail l))) c2 v | succ v₁ | fail l₁ = refl
-lem-seq (↷ h (rest b (last t))) id⋆ v | succ v₁ with apply-body b v₁
-lem-seq (↷ h (rest b (last ‼))) id⋆ v | succ v₁ | succ v₂ = refl
-lem-seq (↷ h (rest b (last t))) id⋆ v | succ v₁ | fail l = refl
-lem-seq (↷ h (rest {Q = P1} b (last ‼))) (↷ {P = P2} (⁇ l) (rest b₁ t)) v | succ v₁ with (` P1) ⌣? (` P2)
-lem-seq (↷ h (rest {Q = .U} U (last ‼))) (↷ {P = .U} (⁇ l) (rest U t)) v | succ sole | yes ⌣U = refl
-lem-seq (↷ h (rest {Q = .(_ ⇒ _)} (c₁ ⇒ c₂) (last ‼))) (↷ {P = (T3 ⇒ T4)} (⁇ l) (rest (c₃ ⇒ c₄) t)) v | succ (fun env c₅ b c₆) | yes ⌣⇒
-  rewrite seq-assoc (mk-id T3) (inj₂ l) (mk-id _) (inj₁ refl) (mk-seq c₁ c₅)
-        | seq-id-l (seq c₁ (inj₁ refl) c₅)
-        | sym (seq-assoc c₃ (inj₁ refl) (mk-id T3) (inj₂ l) (seq c₁ (inj₁ refl) c₅))
-        | seq-id-r c₃
-        | seq-assoc c₃ (inj₂ l) c₁ (inj₁ refl) c₅
-        | seq-assoc c₆ (inj₁ refl) c₂ (inj₂ l) (mk-id T4)
-        | seq-assoc c₆ (inj₁ refl) (seq c₂ (inj₂ l) (mk-id T4)) (inj₁ refl) c₄
-        | seq-assoc c₂ (inj₂ l) (mk-id T4) (inj₁ refl) c₄
-        | seq-id-l c₄
-  = refl
-lem-seq (↷ h (rest {Q = (T1 ⊗ T2)} (c₁ ⊗ c₂) (last ‼))) (↷ {P = (T3 ⊗ T4)} (⁇ l) (rest (c₃ ⊗ c₄) t)) v | succ (cons v₁ c₅ v₂ c₆) | yes ⌣⊗
-  rewrite sym (seq-assoc (mk-seq c₅ c₁) (inj₁ refl) (mk-id T1) (inj₂ l) (mk-id T3))
-        | seq-id-r (seq c₅ (inj₁ refl) c₁)
-        | seq-assoc (seq c₅ (inj₁ refl) c₁) (inj₂ l) (mk-id T3) (inj₁ refl) c₃
-        | seq-id-l c₃
-        | seq-assoc c₅ (inj₁ refl) c₁ (inj₂ l) c₃
-        --
-        | sym (seq-assoc (mk-seq c₆ c₂) (inj₁ refl) (mk-id T2) (inj₂ l) (mk-id T4))
-        | seq-id-r (seq c₆ (inj₁ refl) c₂)
-        | seq-assoc (seq c₆ (inj₁ refl) c₂) (inj₂ l) (mk-id T4) (inj₁ refl) c₄
-        | seq-id-l c₄
-        | seq-assoc c₆ (inj₁ refl) c₂ (inj₂ l) c₄
-  = refl
-lem-seq (↷ h (rest {Q = (T1 ⊕ T2)} (c₁ ⊕ c₂) (last ‼))) (↷ {P = (T3 ⊕ T4)} (⁇ l) (rest (c₃ ⊕ c₄) t)) v | succ (inl v₁ c₅) | yes ⌣⊕
-  rewrite sym (seq-assoc (mk-seq c₅ c₁) (inj₁ refl) (mk-id T1) (inj₂ l) (mk-id T3))
-        | seq-id-r (seq c₅ (inj₁ refl) c₁)
-        | seq-assoc (seq c₅ (inj₁ refl) c₁) (inj₂ l) (mk-id T3) (inj₁ refl) c₃
-        | seq-id-l c₃
-        | seq-assoc c₅ (inj₁ refl) c₁ (inj₂ l) c₃
-  = refl
-lem-seq (↷ h (rest {Q = (T1 ⊕ T2)} (c₁ ⊕ c₂) (last ‼))) (↷ {P = (T3 ⊕ T4)} (⁇ l) (rest (c₃ ⊕ c₄) t)) v | succ (inr v₁ c₆) | yes ⌣⊕
-  rewrite sym (seq-assoc (mk-seq c₆ c₂) (inj₁ refl) (mk-id T2) (inj₂ l) (mk-id T4))
-        | seq-id-r (seq c₆ (inj₁ refl) c₂)
-        | seq-assoc (seq c₆ (inj₁ refl) c₂) (inj₂ l) (mk-id T4) (inj₁ refl) c₄
-        | seq-id-l c₄
-        | seq-assoc c₆ (inj₁ refl) c₂ (inj₂ l) c₄
-  = refl
-lem-seq (↷ h (rest {Q = P1} b (last ‼))) (↷ {P = P2} (⁇ l) (rest b₁ t)) v | succ v₁ | no ¬p with apply-body b v₁
-lem-seq (↷ h (rest {Q = P1} b (last ‼))) (↷ {P = P2} (⁇ l) (rest b₁ t)) v | succ v₁ | no ¬p | succ v₂ with (` P1) ⌣? (` P2)
-lem-seq (↷ h (rest {Q = P1} b (last ‼))) (↷ {P = P2} (⁇ l) (rest b₁ t)) v | succ v₁ | no ¬p | succ v₂ | yes p = ⊥-elim (¬p p)
-lem-seq (↷ h (rest {Q = P1} b (last ‼))) (↷ {P = P2} (⁇ l) (rest b₁ t)) v | succ v₁ | no ¬p | succ v₂ | no ¬p₁ = refl
-lem-seq (↷ h (rest {Q = P1} b (last ‼))) (↷ {P = P2} (⁇ l) (rest b₁ t)) v | succ v₁ | no ¬p | fail l₁ = refl
-lem-seq (↷ h (rest U (last ε))) (↷ ε (rest U t)) v | succ sole = refl
-lem-seq (↷ h (rest (c₁ ⇒ c₂) (last ε))) (↷ ε (rest (c₃ ⇒ c₄) t)) v | succ (fun env c₅ b c₆)
-  rewrite seq-assoc c₃ (inj₁ refl) c₁ (inj₁ refl) c₅
-        | seq-assoc c₆ (inj₁ refl) c₂ (inj₁ refl) c₄
-  = refl
-lem-seq (↷ h (rest (c₁ ⊗ c₂) (last ε))) (↷ ε (rest (c₃ ⊗ c₄) t)) v | succ (cons v₁ c₅ v₂ c₆)
-  rewrite seq-assoc c₅ (inj₁ refl) c₁ (inj₁ refl) c₃
-        | seq-assoc c₆ (inj₁ refl) c₂ (inj₁ refl) c₄
-  = refl
-lem-seq (↷ h (rest (c₁ ⊕ c₂) (last ε))) (↷ ε (rest (c₃ ⊕ c₄) t)) v | succ (inl v₁ c)
-  rewrite seq-assoc c (inj₁ refl) c₁ (inj₁ refl) c₃
-  = refl
-lem-seq (↷ h (rest (c₁ ⊕ c₂) (last ε))) (↷ ε (rest (c₃ ⊕ c₄) t)) v | succ (inr v₁ c)
-  rewrite seq-assoc c (inj₁ refl) c₂ (inj₁ refl) c₄
-  = refl
-lem-seq (↷ h (rest b t)) c2 v | fail l = refl
+lem-seq (↷ h (rest b (last ‼))) id⋆ v = sym (>>=-succ _)
+lem-seq (↷ (⁇ l₁) (rest b (fail l))) c2 (inj P v) = lem-seq-fail v (inj₂ l₁) b l _
+lem-seq (↷ ε (rest b (fail l))) c2 v = lem-seq-fail v _ b l _
+lem-seq (↷ (⁇ l) (rest {Q = P1} b (last t))) (↷ h₁ (rest {_} b₁ t₁)) (inj P v) = lem-seq' v (inj₂ l) b t h₁ b₁ t₁
+lem-seq (↷ ε (rest {Q = P1} b (last t))) (↷ h₁ (rest {_} b₁ t₁)) v = lem-seq' v (inj₁ refl) b t h₁ b₁ t₁
 
 lem-cast-¬⌣ : ∀ {T1 T2}
   → (l : Label)
@@ -584,7 +480,7 @@ lem-cast-¬⌣ {` P} {⋆} l ¬p v = ⊥-elim (¬p (P⌣⋆ P))
 lem-cast-¬⌣ {` P} {` P₁} l ¬p v with (` P) ⌣? (` P₁)
 lem-cast-¬⌣ {` P} {` P₁} l ¬p v | yes p = ⊥-elim (¬p p)
 lem-cast-¬⌣ {` P} {` P₁} l ¬p v | no ¬p₁
-  rewrite sym (>>=-succ (apply-body (mk-id-body P) v))
+  rewrite sym (>>=-succ (apply-body (inj₁ refl) (mk-id-body P) v))
         | lem-id (` P) v
   = refl
 
@@ -598,8 +494,18 @@ lem-cast-inj : ∀ {P}
   → (v : Val (` P))  
   → apply-cast (mk-cast l (` P) ⋆) v ≡ succ (inj P v)
 lem-cast-inj {P} l v
-  rewrite sym (>>=-succ (apply-body (mk-id-body P) v))
+  rewrite sym (>>=-succ (apply-body (inj₁ refl) (mk-id-body P) v))
         | lem-id (` P) v
+  = refl
+
+lem-seq2-id : ∀ {T1 T2 T3 T4}
+  → (c1 : Cast T1 T2)
+  → (ℓ : GapT T2 T3)
+  → (c2 : Cast T3 T4)
+  → seq c1 (inj₁ refl) (seq (mk-id T2) ℓ c2)
+    ≡ seq c1 ℓ c2
+lem-seq2-id c1 ℓ c2
+  rewrite sym (seq-assoc c1 (inj₁ refl) (mk-id _) ℓ c2) | seq-id-r c1
   = refl
 
 lem-cast-proj : ∀ l P P₁ v
@@ -615,14 +521,13 @@ lem-cast-proj l (T1 ⇒ T2) (T3 ⇒ T4) (fun env c₁ b c₂) | yes ⌣⇒
         | seq-id-r c₂
   = refl
 lem-cast-proj l (T1 ⊗ T2) (T3 ⊗ T4) (cons v c₁ v₁ c₂) | yes ⌣⊗
-  rewrite seq-id-r (seq c₁ (inj₁ refl) (seq (mk-id T3) (inj₂ l) (mk-id T1)))
-        | seq-id-r (seq c₂ (inj₁ refl) (seq (mk-id T4) (inj₂ l) (mk-id T2)))
+  rewrite lem-seq2-id c₁ (inj₂ l) (mk-id T1) | lem-seq2-id c₂ (inj₂ l) (mk-id T2)
   = refl
 lem-cast-proj l (T1 ⊕ T2) (T3 ⊕ T4) (inl v c₁) | yes ⌣⊕
-  rewrite seq-id-r (seq c₁ (inj₁ refl) (seq (mk-id T3) (inj₂ l) (mk-id T1)))
+  rewrite lem-seq2-id c₁ (inj₂ l) (mk-id T1)
   = refl
 lem-cast-proj l (T1 ⊕ T2) (T3 ⊕ T4) (inr v c₂) | yes ⌣⊕
-  rewrite seq-id-r (seq c₂ (inj₁ refl) (seq (mk-id T4) (inj₂ l) (mk-id T2)))
+  rewrite lem-seq2-id c₂ (inj₂ l) (mk-id T2)
   = refl
 lem-cast-proj l P P₁ v | no ¬p rewrite lem-id-body P₁ v = refl
 

@@ -13,7 +13,7 @@ open import Variables
 mutual
   
   data Val : Type → Set where
-    inj : ∀ P → Val (` P) → Val ⋆
+    dyn : ∀ P → Val (` P) → Val *
     fun : ∀ {Γ}
       → {T1 T2 T3 T4 : Type}
       → (env : Env Γ)

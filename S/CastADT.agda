@@ -62,6 +62,7 @@ record LazyD (CR : CastADT) : Set where
       → (v : Val Cast T1)
       --------------------
       → apply-cast (mk-seq c1 c2) v ≡ (_>>=_ Cast (apply-cast c1 v) (λ u → apply-cast c2 u))
+      
     lem-cast-¬⌣ : ∀ {T1 T2}
       → (l : Label)
       → ¬ (T1 ⌣ T2)
@@ -69,17 +70,114 @@ record LazyD (CR : CastADT) : Set where
       ---
       → apply-cast (mk-cast l T1 T2) v ≡ fail l
 
-    lem-cast-id⋆ : ∀ l
-      → (v : Val Cast ⋆)
-      → apply-cast (mk-cast l ⋆ ⋆) v ≡ succ v
+    lem-cast-id* : ∀ l
+      → (v : Val Cast *)
+      → apply-cast (mk-cast l * *) v ≡ succ v
 
     lem-cast-inj : ∀ {P}
       → (l : Label)
       → (v : Val Cast (` P))  
-      → apply-cast (mk-cast l (` P) ⋆) v ≡ succ (inj P v)
+      → apply-cast (mk-cast l (` P) *) v ≡ succ (dyn P v)
       
     lem-cast-proj : ∀ l P P₁ v
-      → apply-cast (mk-cast l ⋆ (` P)) (inj P₁ v) ≡ apply-cast (mk-cast l (` P₁) (` P)) v
+      → apply-cast (mk-cast l * (` P)) (dyn P₁ v) ≡ apply-cast (mk-cast l (` P₁) (` P)) v
+
+    lem-cast-U : ∀ l
+      → apply-cast (mk-cast l (` U) (` U)) sole ≡ succ sole
+
+    lem-cast-⇒ : ∀ T11 T12 T21 T22
+      → ∀ {S T}
+      → (l : Label)
+      → {Γ : Context}
+      → (E : Env Cast Γ)
+      → (c₁ : Cast T11 S)
+      → (b : (Γ , S) ⊢ T)
+      → (c₂ : Cast T T12)
+      → apply-cast (mk-cast l (` (T11 ⇒ T12)) (` (T21 ⇒ T22))) (fun E c₁ b c₂) ≡
+        succ (fun E (mk-seq (mk-cast l T21 T11) c₁) b (mk-seq c₂ (mk-cast l T12 T22)))
+
+    lem-cast-⊗ : ∀ T01 T02 T11 T12 T21 T22
+      → (l : Label)
+      → (v₁ : Val Cast T01)
+      → (v₂ : Val Cast T02)
+      → (c₁ : Cast T01 T11)
+      → (c₂ : Cast T02 T12)
+      → apply-cast (mk-cast l (` (T11 ⊗ T12)) (` (T21 ⊗ T22))) (cons v₁ c₁ v₂ c₂) ≡
+        succ (cons v₁ (mk-seq c₁ (mk-cast l T11 T21)) v₂ (mk-seq c₂ (mk-cast l T12 T22)))
+
+    lem-cast-⊕-l : ∀ T T11 T12 T21 T22
+      → (l : Label)
+      → (v : Val Cast T)
+      → (c : Cast T T11)
+      → apply-cast (mk-cast l (` (T11 ⊕ T12)) (` (T21 ⊕ T22))) (inl v c) ≡
+        succ (inl v (mk-seq c (mk-cast l T11 T21)))
+
+    lem-cast-⊕-r : ∀ T T11 T12 T21 T22
+      → (l : Label)
+      → (v : Val Cast T)
+      → (c : Cast T T12)
+      → apply-cast (mk-cast l (` (T11 ⊕ T12)) (` (T21 ⊕ T22))) (inr v c) ≡
+        succ (inr v (mk-seq c (mk-cast l T12 T22)))
+
+
+
+record LazyUD (CR : CastADT) : Set where
+  open CastADT CR
+  
+  compose : ∀ {T1 T2 T3} →
+    (Val Cast T1 → CastResult Cast T2) →
+    (Val Cast T2 → CastResult Cast T3) →
+    ---
+    (Val Cast T1 → CastResult Cast T3)
+  compose f g v = _>>=_ Cast (f v) g
+
+  field
+    lem-id : ∀ T 
+      -----------------------------
+      → apply-cast (mk-id T) ≡ succ
+
+    lem-seq : ∀ {T1 T2 T3}
+      → (c1 : Cast T1 T2)
+      → (c2 : Cast T2 T3)
+      --------------------
+      → apply-cast (mk-seq c1 c2) ≡ compose (apply-cast c1) (apply-cast c2)
+      
+    lem-cast-id* : ∀ l
+      → apply-cast (mk-cast l * *) ≡ succ
+      
+    lem-cast-P* : ∀ {P}
+      → ¬ Ground P
+      → (l : Label)
+      → apply-cast (mk-cast l (` P) *)
+        ≡
+        compose (apply-cast (mk-cast l (` P) (` ground P)))
+                (apply-cast (mk-cast l (` ground P) *))
+
+    lem-cast-I* : ∀ {I}
+      → Ground I
+      → (l : Label)
+      → apply-cast (mk-cast l (` I) *) ≡ λ v → succ (dyn I v)
+
+    lem-cast-*P : ∀ {P}
+      → ¬ Ground P
+      → (l : Label)
+      → apply-cast (mk-cast l * (` P))
+        ≡
+        compose (apply-cast (mk-cast l * (` ground P)))
+                (apply-cast (mk-cast l (` ground P) (` P)))
+
+    lem-cast-*I-succ : ∀ {I}
+      → Ground I
+      → (l : Label)
+      → (v : Val Cast (` I))  
+      → apply-cast (mk-cast l * (` I)) (dyn I v) ≡ succ v
+    
+    lem-cast-*I-fail : ∀ {I J}
+      → Ground I
+      → ¬ I ≡ J
+      → (l : Label)
+      → (v : Val Cast (` J))  
+      → apply-cast (mk-cast l * (` I)) (dyn J v) ≡ fail l
 
     lem-cast-U : ∀ l
       → apply-cast (mk-cast l (` U) (` U)) sole ≡ succ sole

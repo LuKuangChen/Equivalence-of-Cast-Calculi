@@ -1,18 +1,19 @@
-open import CEKcc.CastRep
+open import S.CastADT
 
-module Simulation
+module Bisimulation
   (Label : Set)
-  (LCR : CastRep Label)
+  (LCR : CastADT Label)
   (LCM : Monoid Label LCR)
-  (LCS : SurelyLazyD Label LCR)
+  (LCS : LazyD Label LCR)
   (Extras : CastIdIsId Label LCR)
   where
 
 open import Data.Empty using (⊥; ⊥-elim)
 open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Data.Nat using (ℕ; suc; zero; _+_)
-open import Data.Product using (Σ; _×_ ; Σ-syntax)
+open import Data.Product using (Σ; _×_ ; Σ-syntax; ∃-syntax)
   renaming (_,_ to ⟨_,_⟩)
+open import Data.Sum using (_⊎_ ; inj₁; inj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; sym; subst)
 
 open import Variables
@@ -20,32 +21,30 @@ open import Types
 open import Terms Label
 open import Observe Label
 
-open import Utilities
-
-import CEKcc.Machine
-import CEKcc.Values
-import CEKc.Machine
-import CEKc.Values
+import S.Machine
+import S.Values
+import D.Machine
+import D.Values
 
 -- instantiate CEKcc
 
 module L where
-  open CastRep LCR public
-  open SurelyLazyD LCS public
+  open CastADT LCR public
+  open LazyD LCS public
   open Monoid LCM
     renaming (lem-id-l to monoid-id-l; lem-id-r to monoid-id-r; lem-assoc to monoid-assoc)
     public
   open CastIdIsId Extras public
 
-module LV = CEKcc.Values Label L.Cast
-module LM = CEKcc.Machine Label LCR
+module LV = S.Values Label L.Cast
+module LM = S.Machine Label LCR
 
 -- instantiate CEKc
 
-import CEKc.TCast
-module RC = CEKc.TCast Label
-module RV = CEKc.Values Label RC.Cast
-module RM = CEKc.Machine Label -- RC.Cast -- RC.cast
+import D.TCast
+module RC = D.TCast Label
+module RV = D.Values Label RC.Cast
+module RM = D.Machine Label -- RC.Cast -- RC.cast
 module RP = RM.Progress RC.apply-cast
                         RC.cast-dom RC.cast-cod
                         RC.cast-car RC.cast-cdr
@@ -252,15 +251,16 @@ do-cast l T1 T2 v | no ¬p
   rewrite L.lem-cast-¬⌣ l ¬p (lval v)
    = fail l
 
+-- Lemma 4.6 (applyCast Preserves Bisimulation)
 apply-cast : ∀ {T1 T2}
-  → {lc : L.Cast T1 T2}
-  → {rc : RC.Cast T1 T2}
-  → CastRelate lc rc
   → {lv : LV.Val T1}
   → {rv : RV.Val T1}
   → ValRelate lv rv
+  → {lc : L.Cast T1 T2}
+  → {rc : RC.Cast T1 T2}
+  → CastRelate lc rc
   → CastResultRelate (L.apply-cast lc lv) (RC.apply-cast rc rv)
-apply-cast (cast l T1 T2) v
+apply-cast v (cast l T1 T2)
   with L.apply-cast (L.mk-cast l T1 T2) (lval v) | RC.do-cast l T1 T2 (rval v) | do-cast l T1 T2 v
 ... | LV.succ _ | RV.succ _ | succ u = succ u
 ... | LV.fail _ | RV.fail _ | fail l₁ = fail l₁
@@ -398,7 +398,12 @@ mutual
       ----------------
       → PreContRelate ( (LM.case₃ lv1 lv2 lκ)) (RM.case₃ rv1 rv2 rκ)
   
-data StateRelate : {T : Type} → LM.State T → RM.State T → Set where
+data NonhaltingRelate : {T : Type}
+  → LM.Nonhalting T
+  → RM.Nonhalting T
+  → Set
+  where
+  
   inspect : ∀ {Γ T1 T3}
     → (e : Γ ⊢ T1)
     → {lE : LV.Env Γ}
@@ -408,7 +413,7 @@ data StateRelate : {T : Type} → LM.State T → RM.State T → Set where
     → {rκ : RM.Cont T1 T3}
     → (κ : ContRelate lκ rκ)
     ------------
-    → StateRelate (LM.inspect e lE lκ) (RM.inspect e rE rκ)
+    → NonhaltingRelate (LM.inspect e lE lκ) (RM.inspect e rE rκ)
     
   return : ∀ {T1 T2}
     → {lv1 : LV.Val T1}
@@ -418,7 +423,15 @@ data StateRelate : {T : Type} → LM.State T → RM.State T → Set where
     → {rκ : RM.Cont T1 T2}
     → (κ : ContRelate lκ rκ)
     ------------
-    → StateRelate (LM.return lv1 lκ) (RM.return rv1 rκ)
+    → NonhaltingRelate (LM.return lv1 lκ) (RM.return rv1 rκ)
+
+data StateRelate : {T : Type} → LM.State T → RM.State T → Set where
+
+  `_ : ∀ {T}
+    → {ls : LM.Nonhalting T}
+    → {rs : RM.Nonhalting T}
+    → (s : NonhaltingRelate ls rs)
+    → StateRelate (LM.` ls) (RM.` rs)
 
   halt : ∀ {T}
     → (o : Observe T)
@@ -456,26 +469,22 @@ rstate : ∀ {T}
   → RM.State T
 rstate {rs = rs} ss = rs
 
-data StateRelate* : {T : Type} → LM.State T → RM.State T → Set where
-  done : ∀ {T}
-    → {lS : LM.State T}
-    → {rS : RM.State T}
-    → (ss : StateRelate lS rS)
-    → StateRelate* lS rS
-  step : ∀ {T}
-    → {lS2 : LM.State T}
-    → {rS1 : RM.State T}
-    → (ss : StateRelate* lS2 (RP.progress rS1))
-    → StateRelate* lS2 rS1
+StateRelate* : {T : Type} → LM.State T → RM.State T → Set
+StateRelate* ls rs = ∃[ rs' ]((rs RP.−→* rs') × StateRelate ls rs')
 
-count-steps : ∀ {T}
+StateRelate*-done : ∀ {T}
   → {lS : LM.State T}
   → {rS : RM.State T}
+  → (ss : StateRelate lS rS)
   → StateRelate* lS rS
-  → Σ[ n ∈ ℕ ] StateRelate lS (repeat n RP.progress rS)
-count-steps (done ss) = ⟨ 0 , ss ⟩
-count-steps (step ss) with count-steps ss
-count-steps (step ss) | ⟨ n , prf ⟩ = ⟨ (suc n) , prf ⟩
+StateRelate*-done ss = ⟨ _ , ⟨ (RP.refl _) , ss ⟩ ⟩
+
+StateRelate*-step : ∀ {T}
+  → {lS2 : LM.State T}
+  → {rS1 : RM.Nonhalting T}
+  → (ss : StateRelate* lS2 (RP.progress rS1))
+  → StateRelate* lS2 (RM.` rS1)
+StateRelate*-step ⟨ rs' , ⟨ ys , rel ⟩ ⟩ = ⟨ rs' , ⟨ (RP.step (RP.it _) ys) , rel ⟩ ⟩
 
 ext-cont-id : ∀ {T1 T2}
   → {lk : LM.Cont T1 T2}
@@ -525,10 +534,10 @@ do-app : ∀ {T1 T2 Z}
                  (RP.do-app rv1 rv2 rk)
 do-app (fun E b) rand k
   rewrite L.lem-id _ (lval rand)
-  = done (inspect b (rand ∷ E) (ext-cont-id k))
+  = StateRelate*-done (` inspect b (rand ∷ E) (ext-cont-id k))
 do-app (cast-fun l T3 T4 T5 T6 E c1 b c2 {g = g} rator) rand k
   rewrite lem-do-app E (L.mk-seq (L.mk-cast l T5 T3) c1) b c2 (L.mk-cast l T4 T6) (lval rand) (lcont k)
-  = step (helper (apply-cast (cast l T5 T3) rand))
+  = StateRelate*-step (helper (apply-cast rand (cast l T5 T3)))
   where
     helper : CastResultRelate (L.apply-cast (L.mk-cast l T5 T3) (lval rand)) (RC.apply-cast (RC.mk-cast l T5 T3) (rval rand))
       → StateRelate* (LM.do-app (LV.fun E (L.mk-seq (L.mk-cast l T5 T3) c1) b c2)
@@ -541,8 +550,8 @@ do-app (cast-fun l T3 T4 T5 T6 E c1 b c2 {g = g} rator) rand k
     helper p
       rewrite L.lem-seq (L.mk-cast l T5 T3) c1 (lval rand)
       with L.apply-cast (L.mk-cast l T5 T3) (lval rand) | RC.apply-cast (RC.mk-cast l T5 T3) (rval rand) | p
-    ... | LV.succ _ | RV.succ _ | succ rand₁ = step (do-app rator rand₁ (ext-cont l T4 T6 k))
-    ... | LV.fail _ | RV.fail _ | fail l₁ = done (halt (blame l₁))
+    ... | LV.succ _ | RV.succ _ | succ rand₁ = StateRelate*-step (do-app rator rand₁ (ext-cont l T4 T6 k))
+    ... | LV.fail _ | RV.fail _ | fail l₁ = StateRelate*-done (halt (blame l₁))
 
 lem-do-car : ∀ {T1 T2 T3 T4 T5 T6 Z}
   → (l : Label)
@@ -572,10 +581,10 @@ do-car : ∀ {T1 T2 Z}
   → {rk : RM.Cont T1 Z}
   → ContRelate lk rk
   → StateRelate* (LM.do-car lv lk) (RP.do-car rv rk)
-do-car (cons v v₁) k = done (return v (ext-cont-id k))
+do-car (cons v v₁) k = StateRelate*-done (` return v (ext-cont-id k))
 do-car (cast-cons l T3 T4 T5 T6 v1 c1 v2 c2 v) k
   rewrite lem-do-car {T6 = T6} l v1 c1 v2 c2 (lcont k)
-  = step (do-car v (ext-cont l T3 T5 k))
+  = StateRelate*-step (do-car v (ext-cont l T3 T5 k))
 
 lem-do-cdr : ∀ {T1 T2 T3 T4 T5 T6 Z}
   → (l : Label)
@@ -605,10 +614,10 @@ do-cdr : ∀ {T1 T2 Z}
   → {rk : RM.Cont T2 Z}
   → ContRelate lk rk
   → StateRelate* (LM.do-cdr lv lk) (RP.do-cdr rv rk)
-do-cdr (cons v1 v2) k = done (return v2 (ext-cont-id k))
+do-cdr (cons v1 v2) k = StateRelate*-done (` return v2 (ext-cont-id k))
 do-cdr (cast-cons l T3 T4 T5 T6 v1 c1 v2 c2 v) k
   rewrite lem-do-cdr {T5 = T5} l v1 c1 v2 c2 (lcont k)
-  = step (do-cdr v (ext-cont l T4 T6 k))
+  = StateRelate*-step (do-cdr v (ext-cont l T4 T6 k))
 
 lem-ext-cont : ∀ {T1 T2 T3 T4 Z}
   → (c1 : L.Cast T1 T2)
@@ -660,12 +669,12 @@ do-case : ∀ {T1 T2 T3 Z}
   → ContRelate lk rk
   → StateRelate* (LM.do-case lv1 lv2 lv3 lk)
                  (RP.do-case rv1 rv2 rv3 rk)
-do-case (inl v1) {lv2 = LV.fun env c1 b c2} v2 v3 k rewrite L.monoid-id-l c1 = done (return v1 (mk-cont (app₂ v2 k)))
-do-case (inr v1) v2 {lv3 = LV.fun env c1 b c2} v3 k rewrite L.monoid-id-l c1 = done (return v1 (mk-cont (app₂ v3 k)))
+do-case (inl v1) {lv2 = LV.fun env c1 b c2} v2 v3 k rewrite L.monoid-id-l c1 = StateRelate*-done (` return v1 (mk-cont (app₂ v2 k)))
+do-case (inr v1) v2 {lv3 = LV.fun env c1 b c2} v3 k rewrite L.monoid-id-l c1 = StateRelate*-done (` return v1 (mk-cont (app₂ v3 k)))
 do-case (cast-inl lv lc v1 l) {lv2 = LV.fun _ c _ _} v2 {lv3 = LV.fun _ _ _ _} v3 k with do-case v1 (cap-fun v2 l _) (cap-fun v3 l _) k
-... | tmp rewrite L.monoid-assoc lc (L.mk-cast l _ _) c = step tmp
+... | tmp rewrite L.monoid-assoc lc (L.mk-cast l _ _) c = StateRelate*-step tmp
 do-case (cast-inr lv lc v1 l) {lv2 = LV.fun _ _ _ _} v2 {lv3 = LV.fun _ c _ _} v3 k with do-case v1 (cap-fun v2 l _) (cap-fun v3 l _) k
-... | tmp rewrite L.monoid-assoc lc (L.mk-cast l _ _) c = step tmp
+... | tmp rewrite L.monoid-assoc lc (L.mk-cast l _ _) c = StateRelate*-step tmp
 
 observe-val : ∀ {T}
   → {lv : LV.Val T}
@@ -696,19 +705,19 @@ progress*-return : ∀ {T Z}
   ---
   → StateRelate* (LM.progress-return lv lk) (RP.progress (RM.return rv rk))
 progress*-return v mt with LM.observe-val (lval v) | RP.observe-val (rval v) | observe-val v
-... | _ | _ | refl = done (halt (done _))
-progress*-return v (cons₁ E e1 κ) = done (inspect e1 E (mk-cont (cons₂ v κ)))
-progress*-return v (cons₂ v1 κ) = done (return (cons v1 v) κ)
-progress*-return v (inl κ) = done (return (inl v) κ)
-progress*-return v (inr κ) = done (return (inr v) κ)
-progress*-return v (app₁ E e2 κ) = done (inspect e2 E (mk-cont (app₂ v κ)))
+... | _ | _ | refl = StateRelate*-done (halt (done _))
+progress*-return v (cons₁ E e1 κ) = StateRelate*-done (` inspect e1 E (mk-cont (cons₂ v κ)))
+progress*-return v (cons₂ v1 κ) = StateRelate*-done (` return (cons v1 v) κ)
+progress*-return v (inl κ) = StateRelate*-done (` return (inl v) κ)
+progress*-return v (inr κ) = StateRelate*-done (` return (inr v) κ)
+progress*-return v (app₁ E e2 κ) = StateRelate*-done (` inspect e2 E (mk-cont (app₂ v κ)))
 progress*-return v (app₂ v1 κ) = do-app v1 v κ
 progress*-return v (car κ) = do-car v κ
 progress*-return v (cdr κ) = do-cdr v κ
 progress*-return v (case₁ E e2 e3 κ)
-  = done (inspect e2 E (mk-cont (case₂ E v e3 κ)))
+  = StateRelate*-done (` inspect e2 E (mk-cont (case₂ E v e3 κ)))
 progress*-return v (case₂ E v1 e3 κ)
-  = done (inspect e3 E (mk-cont (case₃ v1 v κ)))
+  = StateRelate*-done (` inspect e3 E (mk-cont (case₃ v1 v κ)))
 progress*-return v (case₃ v1 v2 κ) = do-case v1 v2 v κ
 
 progress-ret : ∀ {T1 Z}
@@ -733,106 +742,160 @@ progress-ret v (ext-cont l T1 T2 {lk = (LM.cont fst snd)} k)
     prf p
       rewrite L.lem-seq (L.mk-cast l T1 T2) fst (lval v)
       with (L.apply-cast (L.mk-cast l T1 T2) (lval v)) | (RC.do-cast l T1 T2 (rval v)) | p
-    ... | LV.succ _ | RV.succ _ | succ v₁ = step (progress-ret v₁ k)
-    ... | LV.fail _ | RV.fail _ | fail l₁ = done (halt (blame l₁))
+    ... | LV.succ _ | RV.succ _ | succ v₁ = StateRelate*-step (progress-ret v₁ k)
+    ... | LV.fail _ | RV.fail _ | fail l₁ = StateRelate*-done (halt (blame l₁))
 
 progress* : ∀ {T}
-  → {lS : LM.State T}
-  → {rS : RM.State T}
-  → StateRelate lS rS
+  → {lS : LM.Nonhalting T}
+  → {rS : RM.Nonhalting T}
+  → NonhaltingRelate lS rS
   → StateRelate* (LM.progress lS) (RP.progress rS)
-progress* (inspect (var x) E κ) = done (return (E [ x ]) κ)
-progress* (inspect sole E κ) = done (return sole κ)
-progress* (inspect (lam T1 T2 e) E κ) = done (return (fun E e) κ)
-progress* (inspect (cons e e₁) E κ) = done (inspect e E (mk-cont (cons₁ E e₁ κ)))
-progress* (inspect (inl e) E κ) = done (inspect e E (mk-cont (inl κ)))
-progress* (inspect (inr e) E κ) = done (inspect e E (mk-cont (inr κ)))
-progress* (inspect (app e e₁) E κ) = done (inspect e E (mk-cont (app₁ E e₁ κ)))
-progress* (inspect (car e) E κ) = done (inspect e E (mk-cont (car κ)))
-progress* (inspect (cdr e) E κ) = done (inspect e E (mk-cont (cdr κ)))
-progress* (inspect (case e e₁ e₂) E κ) = done (inspect e E (mk-cont (case₁ E e₁ e₂ κ)))
-progress* (inspect (cast l T1 T2 e) E κ) = done (inspect e E (ext-cont l _ _ κ))
+progress* (inspect (var x) E κ) = StateRelate*-done (` return (E [ x ]) κ)
+progress* (inspect sole E κ) = StateRelate*-done (` return sole κ)
+progress* (inspect (lam T1 T2 e) E κ) = StateRelate*-done (` return (fun E e) κ)
+progress* (inspect (cons e e₁) E κ) = StateRelate*-done (` inspect e E (mk-cont (cons₁ E e₁ κ)))
+progress* (inspect (inl e) E κ) = StateRelate*-done (` inspect e E (mk-cont (inl κ)))
+progress* (inspect (inr e) E κ) = StateRelate*-done (` inspect e E (mk-cont (inr κ)))
+progress* (inspect (app e e₁) E κ) = StateRelate*-done (` inspect e E (mk-cont (app₁ E e₁ κ)))
+progress* (inspect (car e) E κ) = StateRelate*-done (` inspect e E (mk-cont (car κ)))
+progress* (inspect (cdr e) E κ) = StateRelate*-done (` inspect e E (mk-cont (cdr κ)))
+progress* (inspect (case e e₁ e₂) E κ) = StateRelate*-done (` inspect e E (mk-cont (case₁ E e₁ e₂ κ)))
+progress* (inspect (cast l T1 T2 e) E κ) = StateRelate*-done (` inspect e E (ext-cont l _ _ κ))
+progress* (inspect (blame l) E κ) = StateRelate*-done (halt (blame l))
 progress* (return v k) = progress-ret v k
-progress* (halt o) = done (halt o)
-
-weak-bisimulation : ∀ {T}
-  → {lS : LM.State T}
-  → {rS : RM.State T}
-  → StateRelate lS rS
-  ---
-  → Σ[ n ∈ ℕ ] StateRelate (LM.progress lS) (repeat n RP.progress (RP.progress rS))
-weak-bisimulation sr = count-steps (progress* sr)
 
 load : ∀ {T} → (e : ∅ ⊢ T) → StateRelate (LM.load e) (RM.load e)
-load e = inspect e [] (mk-cont mt)
+load e = ` inspect e [] (mk-cont mt)
 
-lem-evalo-l : ∀ {T}
-  → (n : ℕ)
-  → {ls : LM.State T}
-  → {rs : RM.State T}
-  → (ss : StateRelate ls rs)
-  → (o : Observe T)
-  → repeat n LM.progress ls ≡ LM.halt o
+lem-both-progress : ∀ {T}
+  → {ls ls' : LM.State T}
+  → {rs rs' : RM.State T}
+  → StateRelate ls rs
+  → ls LM.−→ ls'
+  → rs RP.−→ rs'
   ---
-  → Σ[ m ∈ ℕ ] (repeat m RP.progress rs ≡ RM.halt o)
-lem-evalo-l zero (halt _) o refl = ⟨ zero , refl ⟩
-lem-evalo-l (suc n) ss o p with weak-bisimulation ss
-lem-evalo-l (suc n) ss o p | ⟨ m0 , ss' ⟩ with lem-evalo-l n ss' o p
-lem-evalo-l (suc n) ss o p | ⟨ m0 , ss' ⟩ | ⟨ m1 , prf ⟩
-  rewrite thm-repeat m1 m0 RP.progress (RP.progress (rstate ss))
-  = ⟨ (suc (m1 + m0)) , prf ⟩
+  → ∃[ rs'' ]((rs' RP.−→* rs'') × (StateRelate ls' rs''))
+lem-both-progress (` s) (LM.it ls) (RP.it rs) = progress* s
 
-thm-evalo-l : ∀ {T}
-  → {e : ∅ ⊢ T}
+
+-- Lemma 4.7 (Weak Bisimulation between S(C) and D)
+bisim-1 : ∀ {T}
+  → {s1 : LM.State T}
+  → {s2 : RM.State T}
+  → StateRelate s1 s2
+  → {s3 : LM.State T}
+  → s1 LM.−→ s3
+  ---
+  → ∃[ s4 ]((s2 RP.−→* s4) × (StateRelate s3 s4))
+bisim-1 (` s) (LM.it ls) with lem-both-progress (` s) (LM.it ls) (RP.it _)
+... | ⟨ s4 , ⟨ rp2 , rel' ⟩ ⟩ = ⟨ s4 , ⟨ RP.step (RP.it _) rp2 , rel' ⟩ ⟩
+
+bisim-2 : ∀ {T}
+  → {s1 : LM.State T}
+  → {s2 : RM.State T}
+  → StateRelate s1 s2
+  → {s4 : RM.State T}
+  → s2 RP.−→ s4
+  ---
+  → ∃[ s3 ](∃[ s5 ]((s1 LM.−→* s3) × (s4 RP.−→* s5) × (StateRelate s3 s5)))
+bisim-2 (` s) (RP.it rs) with lem-both-progress (` s) (LM.it _) (RP.it _)
+... | ⟨ s5 , ⟨ rp2 , rel' ⟩ ⟩
+  = ⟨ _ , ⟨ _ , ⟨ LM.step (LM.it _) (LM.refl _) , ⟨ rp2 , rel' ⟩ ⟩ ⟩ ⟩
+
+bisim-3-l : ∀ {T}
+  → {s1 : LM.State T}
+  → {s2 : RM.State T}
+  → StateRelate s1 s2
   → {o : Observe T}
-  → LM.Evalo e o
+  → s1 ≡ LM.halt o
   ---
-  → RP.Evalo e o
-thm-evalo-l {e = e} {o = o} (LM.evalo n prf) with lem-evalo-l n (load e) o prf
-thm-evalo-l (LM.evalo n prf) | ⟨ m , x ⟩ = RP.evalo m x
+  → s2 ≡ RM.halt o
+bisim-3-l (halt o) refl = refl
 
-fast-halt : ∀ {T}
-  → (o : Observe T)
-  → {ls : LM.State T}
-  → (s : StateRelate* ls (RM.halt o))
+bisim-3-r : ∀ {T}
+  → {s1 : LM.State T}
+  → {s2 : RM.State T}
+  → StateRelate s1 s2
+  → {o : Observe T}
+  → s2 ≡ RM.halt o
   ---
-  → ls ≡ LM.halt o
-fast-halt o (done (halt _)) = refl
-fast-halt o (step s) = fast-halt o s
+  → s1 ≡ LM.halt o
+bisim-3-r (halt o) refl = refl
+
+transitiveL : ∀ {T}
+  → {r s t : LM.State T}
+  → r LM.−→* s
+  → s LM.−→* t
+  ---
+  → r LM.−→* t
+transitiveL (LM.refl _) p2 = p2
+transitiveL (LM.step x p1) p2 = LM.step x (transitiveL p1 p2)  
+
+transitiveR : ∀ {T}
+  → {r s t : RM.State T}
+  → r RP.−→* s
+  → s RP.−→* t
+  ---
+  → r RP.−→* t
+transitiveR (RP.refl _) p2 = p2
+transitiveR (RP.step x p1) p2 = RP.step x (transitiveR p1 p2)  
+
+correctness-lem-l : ∀ {T}
+  → {s1 : LM.State T}
+  → {s2 : RM.State T}
+  → StateRelate s1 s2
+  → {o : Observe T}
+  → s1 LM.−→* (LM.halt o)
+  ---
+  → s2 RP.−→* (RM.halt o)
+correctness-lem-l rel (LM.refl _) with bisim-3-l rel refl
+correctness-lem-l rel (LM.refl _) | refl = RP.refl _
+correctness-lem-l rel (LM.step lp lp*) with bisim-1 rel lp
+correctness-lem-l rel (LM.step lp lp*) | ⟨ _ , ⟨ rp*1 , rel' ⟩ ⟩
+  with correctness-lem-l rel' lp*
+... | rp*2 = transitiveR rp*1 rp*2
 
 mutual
-  lem-evalo-r* : ∀ {T}
-    → (n : ℕ)
-    → {ls : LM.State T}
-    → {rs : RM.State T}
-    → (ss : StateRelate* ls rs)
-    → (o : Observe T)
-    → repeat n RP.progress rs ≡ RM.halt o
+  helper : ∀ {T}
+    → {s1 : LM.State T}
+    → {s2 s4 : RM.State T}
+    → {o : Observe T}
+    → s2 RP.−→* s4
+    → s2 RP.−→* (RM.halt o)
+    → StateRelate s1 s4
     ---
-    → Σ[ m ∈ ℕ ] (repeat m LM.progress ls ≡ LM.halt o)
-  lem-evalo-r* n (done ss) o p = lem-evalo-r n ss o p
-  lem-evalo-r* zero (step ss) o refl with fast-halt o ss
-  ... | refl = ⟨ zero , refl ⟩
-  lem-evalo-r* (suc n) (step ss) o p = lem-evalo-r* n ss o p
-  
-  lem-evalo-r : ∀ {T}
-    → (n : ℕ)
-    → {ls : LM.State T}
-    → {rs : RM.State T}
-    → (ss : StateRelate ls rs)
-    → (o : Observe T)
-    → repeat n RP.progress rs ≡ RM.halt o
+    → s1 LM.−→* (LM.halt o)
+  helper (RP.refl s) ys2 rel = correctness-lem-r rel ys2
+  helper (RP.step () ys1) (RP.refl .(RM.halt _)) rel
+  helper (RP.step (RP.it _) ys1) (RP.step (RP.it _) ys2) rel = helper ys1 ys2 rel
+    
+  correctness-lem-r : ∀ {T}
+    → {s1 : LM.State T}
+    → {s2 : RM.State T}
+    → StateRelate s1 s2
+    → {o : Observe T}
+    → s2 RP.−→* (RM.halt o)
     ---
-    → Σ[ m ∈ ℕ ] (repeat m LM.progress ls ≡ LM.halt o)
-  lem-evalo-r zero (halt _) o refl = ⟨ zero , refl ⟩
-  lem-evalo-r (suc n) ss o p with lem-evalo-r* n (progress* ss) o p
-  lem-evalo-r (suc n) ss o p | ⟨ m , prf ⟩ = ⟨ (suc m) , prf ⟩
+    → s1 LM.−→* (LM.halt o)
+  correctness-lem-r rel (RP.refl _) rewrite bisim-3-r rel refl = LM.refl _
+  correctness-lem-r {s1 = s1} {s2 = s2} rel (RP.step rp rp*) with bisim-2 rel rp
+  ... | ⟨ s3 , ⟨ s5 , ⟨ s1-s3 , ⟨ s4-s5 , s3≈s5 ⟩ ⟩ ⟩ ⟩
+    with helper s4-s5 rp* s3≈s5
+  ... | lp* = transitiveL s1-s3 lp*
   
-thm-evalo-r : ∀ {T}
+-- Corollary 4.8 (Correctness of S(C))
+correctness-l : ∀ {T}
+  → {e : ∅ ⊢ T}
+  → {o : Observe T}
+  → LM.Evalo e o
+  ---
+  → RP.Evalo e o
+correctness-l (LM.it xs) = RP.it (correctness-lem-l (load _) xs)
+
+correctness-r : ∀ {T}
   → {e : ∅ ⊢ T}
   → {o : Observe T}
   → RP.Evalo e o
   ---
   → LM.Evalo e o
-thm-evalo-r {e = e} {o = o} (RP.evalo n prf) with lem-evalo-r n (load e) o prf
-thm-evalo-r (RP.evalo n prf) | ⟨ m , x ⟩ = LM.evalo m x
+correctness-r (RP.it ys) = LM.it (correctness-lem-r (load _) ys)

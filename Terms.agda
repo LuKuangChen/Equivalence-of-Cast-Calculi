@@ -8,12 +8,17 @@ open import Variables
 
 infix  4 _⊢_
 
+
+data Cast : Type → Type → Set where
+  it : (l : Label) → (S T : Type) → Cast S T
+  
+
 data _⊢_ : Context → Type → Set where
                                 
   -- kind of a constructor
                
   var : ∀ {Γ T}
-    → Γ ∋ T
+    → (x : Γ ∋ T)
     --------
     → Γ ⊢ T
           
@@ -25,61 +30,28 @@ data _⊢_ : Context → Type → Set where
             
   lam : ∀ {Γ}
     → ∀ T1 T2
-    → Γ , T1 ⊢ T2
+    → (e : Γ , T1 ⊢ T2)
     -------------
     → Γ ⊢ ` T1 ⇒ T2
-                 
-  cons : ∀ {Γ T1 T2}
-    → Γ ⊢ T1
-    → Γ ⊢ T2
-    ---------
-    → Γ ⊢ ` T1 ⊗ T2
-                 
-  inl : ∀ {Γ T1 T2}
-    → Γ ⊢ T1
-    --------
-    → Γ ⊢ ` T1 ⊕ T2
-    
-  inr : ∀ {Γ T1 T2}
-    → Γ ⊢ T2
-    --------
-    → Γ ⊢ ` T1 ⊕ T2
-                 
+        
   -- eliminators
   
   app : ∀ {Γ T1 T2}
-    → Γ ⊢ ` T1 ⇒ T2
-    → Γ ⊢ T1
+    → (e1 : Γ ⊢ ` T1 ⇒ T2)
+    → (e2 : Γ ⊢ T1)
     --------
     → Γ ⊢ T2
           
-  car : ∀ {Γ T1 T2}
-    → Γ ⊢ ` T1 ⊗ T2
-    ---------------
-    → Γ ⊢ T1
-    
-  cdr : ∀ {Γ T1 T2}
-    → Γ ⊢ ` T1 ⊗ T2
-    ---------------
-    → Γ ⊢ T2
-          
-  case : ∀ {Γ T1 T2 T3}
-    → Γ ⊢ ` T1 ⊕ T2
-    → Γ ⊢ ` T1 ⇒ T3
-    → Γ ⊢ ` T2 ⇒ T3
-    ----------------
-    → Γ ⊢ T3
-    
   -- kind of an eliminator
   
-  cast : ∀ {Γ}
-    → (l : Label)
-    → (T1 T2 : Type)
-    → Γ ⊢ T1
+  cast : ∀ {Γ S T}
+    → (e : Γ ⊢ S)
+    → (c : Cast S T)
     --------
-    → Γ ⊢ T2
+    → Γ ⊢ T
 
   blame : ∀ {Γ T}
     → (l : Label)
     ---
     → Γ ⊢ T
+

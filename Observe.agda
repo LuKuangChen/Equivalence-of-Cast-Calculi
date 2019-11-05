@@ -5,27 +5,16 @@ module Observe
 open import Types
 
 data Value : Type → Set where
-  inj : Value ⋆
-  
-  fun : ∀ {T1 T2}
-    ---
-    → Value (` T1 ⇒ T2)
-                  
-  sole :
+  dyn : Value *
+
+  unit :
     --------
       Value (` U)
-             
-  cons : ∀ {T1 T2}
-    ---------
-    → Value (` T1 ⊗ T2)
-                  
-  inl : ∀ {T1 T2}
-    --------
-    → Value (` T1 ⊕ T2)
-    
-  inr : ∀ {T1 T2}
-    --------
-    → Value (` T1 ⊕ T2)
+
+  lam : ∀ {T1 T2}
+    ---
+    → Value (` T1 ⇒ T2)
+                               
     
 data Observe : Type → Set where
   blame : ∀ {T}

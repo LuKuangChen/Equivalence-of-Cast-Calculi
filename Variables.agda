@@ -8,15 +8,14 @@ data Context : Set where
 
 
 infix  4 _∋_
-infix  9 S_
 
 data _∋_ : Context → Type → Set where
 
-  Z : ∀ {Γ A}
+  zero : ∀ {Γ A}
       ----------
     → Γ , A ∋ A
 
-  S_ : ∀ {Γ A B}
+  suc  : ∀ {Γ A B}
     → Γ ∋ A
       ---------
     → Γ , B ∋ A

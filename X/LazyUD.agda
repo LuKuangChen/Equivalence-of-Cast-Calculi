@@ -1,5 +1,3 @@
-open import Types
-
 open import Relation.Nullary using (Dec; yes; no)
 open import Data.Product using (∃-syntax; _,_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
@@ -8,10 +6,10 @@ module X.LazyUD
   (Label : Set)
   where
 
-open import Terms Label
+open import Types
 open import X.Values Label Ground
 
-open import Relation.Nullary using (Dec; yes; no)
+open import Relation.Nullary using (yes; no)
 
 project : Val * → Label → (Q : PreType) → Ground Q → CastResult (` Q)
 project (dyn P _ v) l Q _ with (` P) ≡? (` Q)
@@ -31,6 +29,8 @@ do-cast (` Q) * l v | no ¬Qg
 do-cast (` Q) (` P) l v with (` P) ⌣? (` Q)
 do-cast (` Q) (` P) l v | yes P⌣Q = succ (cast v l P⌣Q)
 do-cast (` Q) (` P) l v | no ¬P⌣Q = fail l
+
+open import X.Cast Label
 
 apply-cast : ∀ {S T} → Val S → Cast S T → CastResult T
 apply-cast v (it l S T) = do-cast T S l v

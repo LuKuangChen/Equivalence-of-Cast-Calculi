@@ -9,7 +9,7 @@ open import Variables
 open import Terms Label
 open import Observe Label
 open import X.Values Label Injectable
-
+open import X.Cast Label
 
 data Frame : Type → Type → Set where
       
@@ -25,7 +25,7 @@ data Frame : Type → Type → Set where
     → Frame S T
 
   cast1/1 : ∀ {S T}
-    → Cast S T
+    → (c : Cast S T)
     → Frame S T
     
 
@@ -105,7 +105,7 @@ module Progress
   progress (inspect sole E κ) = ` return unit κ
   progress (inspect (lam S T e) E κ) = ` return (lam S T e E) κ
   progress (inspect (app e1 e2) E κ) = ` inspect e1 E (step (app1/2 E e2) κ) 
-  progress (inspect (cast e c) E κ) = ` inspect e E (step (cast1/1 c) κ)
+  progress (inspect (cast T S l e) E κ) = ` inspect e E (step (cast1/1 (it l S T)) κ)
   progress (inspect (blame l) E κ) = halt (blame l)
   progress (return v done) = halt (done (observe-val v))
   progress (return v (step (app1/2 E e) κ)) = ` inspect e E (step (app2/2 v) κ)

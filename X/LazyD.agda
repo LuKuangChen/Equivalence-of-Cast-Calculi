@@ -1,17 +1,17 @@
-open import Types
-
 open import Relation.Nullary using (Dec; yes; no)
 
 module X.LazyD
   (Label : Set)
   where
 
+open import Types
+
 record Injectable (P : PreType) : Set where
 
-open import Terms Label
+open import X.Cast Label
 open import X.Values Label Injectable
 
-open import Relation.Nullary using (Dec; yes; no)
+open import Relation.Nullary using (yes; no)
 
 project : Val * → Label → (P : PreType) → CastResult (` P)
 project (dyn P _ v) l Q with (` P) ⌣? (` Q)

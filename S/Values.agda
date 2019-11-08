@@ -14,38 +14,19 @@ mutual
   
   data Val : Type → Set where
     dyn : ∀ P → Val (` P) → Val *
-    fun : ∀ {Γ}
-      → {T1 T2 T3 T4 : Type}
-      → (env : Env Γ)
-      → (c₁ : Cast T3 T1)
-      → (b : (Γ , T1) ⊢ T2)
-      → (c₂ : Cast T2 T4)
-      -------------
-      → Val (` T3 ⇒ T4)
 
-    sole :
+    unit :
       --------
         Val (` U)
 
-    cons : ∀ {T1 T2 T3 T4}
-      → Val T1
-      → (c₁ : Cast T1 T3)
-      → Val T2
+    lam : ∀ {Γ}
+      → {T1 T2 T3 T4 : Type}
+      → (c₁ : Cast T3 T1)
       → (c₂ : Cast T2 T4)
-      ---------
-      → Val (` T3 ⊗ T4)
-
-    inl : ∀ {T T1 T2}
-      → Val T
-      → (c : Cast T T1)
-      --------
-      → Val (` T1 ⊕ T2)
-      
-    inr : ∀ {T T1 T2}
-      → Val T
-      → (c : Cast T T2)
-      --------
-      → Val (` T1 ⊕ T2)
+      → (e : (Γ , T1) ⊢ T2)
+      → (E : Env Γ)
+      -------------
+      → Val (` T3 ⇒ T4)
 
   data Env : Context → Set where
     []  : Env ∅
@@ -55,8 +36,8 @@ mutual
       → Env (Γ , T)
    
 _[_] : ∀ {Γ T} → Env Γ → Γ ∋ T → Val T
-(c ∷ E) [ Z ] = c
-(c ∷ E) [ S x ] = E [ x ]
+(c ∷ E) [ zero ] = c
+(c ∷ E) [ suc x ] = E [ x ]
 
 data CastResult (T : Type) : Set where
   succ : (v : Val T) → CastResult T

@@ -8,11 +8,6 @@ open import Variables
 
 infix  4 _⊢_
 
-
-data Cast : Type → Type → Set where
-  it : (l : Label) → (S T : Type) → Cast S T
-  
-
 data _⊢_ : Context → Type → Set where
                                 
   -- kind of a constructor
@@ -44,9 +39,9 @@ data _⊢_ : Context → Type → Set where
           
   -- kind of an eliminator
   
-  cast : ∀ {Γ S T}
+  cast : ∀ {Γ} T S
+    → (l : Label)
     → (e : Γ ⊢ S)
-    → (c : Cast S T)
     --------
     → Γ ⊢ T
 

@@ -14,10 +14,6 @@ mutual
     U : PreType -- the unit type, adding other base type should be straightforward
     _⇒_ : (T₁ T₂ : Type) → PreType
 
-data TypeConstructor : Set where
-  `U : TypeConstructor
-  `⇒ : TypeConstructor
-
 data Ground : PreType → Set where
   `U : Ground (U)
   `⇒ : Ground (* ⇒ *)

@@ -19,7 +19,7 @@ data _⊢_ : Context → Type → Set where
           
   -- constructors
      
-  sole : ∀ {Γ}
+  unit : ∀ {Γ}
     --------
     → Γ ⊢ ` U
             
@@ -28,7 +28,23 @@ data _⊢_ : Context → Type → Set where
     → (e : Γ , T1 ⊢ T2)
     -------------
     → Γ ⊢ ` T1 ⇒ T2
-        
+               
+  cons : ∀ {Γ} T1 T2
+    → Γ ⊢ T1
+    → Γ ⊢ T2
+    ---------
+    → Γ ⊢ ` T1 ⊗ T2
+                 
+  inl : ∀ {Γ} T1 T2
+    → Γ ⊢ T1
+    --------
+    → Γ ⊢ ` T1 ⊕ T2
+    
+  inr : ∀ {Γ} T1 T2
+    → Γ ⊢ T2
+    --------
+    → Γ ⊢ ` T1 ⊕ T2
+
   -- eliminators
   
   app : ∀ {Γ T1 T2}
@@ -36,6 +52,23 @@ data _⊢_ : Context → Type → Set where
     → (e2 : Γ ⊢ T1)
     --------
     → Γ ⊢ T2
+          
+  fst : ∀ {Γ T1 T2}
+    → Γ ⊢ ` T1 ⊗ T2
+    ---------------
+    → Γ ⊢ T1
+    
+  snd : ∀ {Γ T1 T2}
+    → Γ ⊢ ` T1 ⊗ T2
+    ---------------
+    → Γ ⊢ T2
+          
+  case : ∀ {Γ T1 T2 T3}
+    → Γ ⊢ ` T1 ⊕ T2
+    → Γ , T1 ⊢ T3
+    → Γ , T2 ⊢ T3
+    ----------------
+    → Γ ⊢ T3
           
   -- kind of an eliminator
   

@@ -9,6 +9,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
 open import Terms Label
 open import Variables
+open import X.Cast Label
 
 mutual
   
@@ -19,13 +20,17 @@ mutual
       ---
       → Val *
 
-    cast : ∀ {P Q}
+    proxy : ∀ {P Q}
       → (v : Val (` P))
-      → (l : Label)
+      → (c : Cast (` P) (` Q))
       → (p :  (` P) ⌣ (` Q))
       ---
       → Val (` Q)
-    
+
+    unit :
+      --------
+        Val (` U)
+   
     lam : ∀ {Γ}
       → (T1 T2 : Type)
       → (e : Γ , T1 ⊢ T2)
@@ -33,9 +38,21 @@ mutual
       -------------
       → Val (` T1 ⇒ T2)
 
-    unit :
-      --------
-        Val (` U)
+    cons : ∀ {S T}
+      → (u : Val S)
+      → (v : Val T)
+      ---
+      → Val (` S ⊗ T)
+
+    inl : ∀ {S T}
+      → (v : Val S)
+      ---
+      → Val (` S ⊕ T)
+
+    inr : ∀ {S T}
+      → (v : Val T)
+      ---
+      → Val (` S ⊕ T)
 
   data Env : Context → Set where
     []  : Env ∅

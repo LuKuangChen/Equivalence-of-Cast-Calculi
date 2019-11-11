@@ -36,6 +36,10 @@ mutual
       ---
       → PreCont R T
 
+    done : ∀ {Z}
+      ----------
+      → PreCont Z Z
+
   data Cont : Type → Type → Set where
     cast : ∀ {R S T}
       → Cast R S
@@ -43,9 +47,10 @@ mutual
       ---
       → Cont R T
 
-    done : ∀ {Z}
-      ----------
-      → Cont Z Z
+    just : ∀ {S T}
+      → PreCont S T
+      ---
+      → Cont S T
 
     
                  

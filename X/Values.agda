@@ -38,21 +38,21 @@ mutual
       -------------
       → Val (` T1 ⇒ T2)
 
-    cons : ∀ {S T}
-      → (u : Val S)
-      → (v : Val T)
-      ---
-      → Val (` S ⊗ T)
+    -- cons : ∀ {S T}
+    --   → (u : Val S)
+    --   → (v : Val T)
+    --   ---
+    --   → Val (` S ⊗ T)
 
-    inl : ∀ {S T}
-      → (v : Val S)
-      ---
-      → Val (` S ⊕ T)
+    -- inl : ∀ {S T}
+    --   → (v : Val S)
+    --   ---
+    --   → Val (` S ⊕ T)
 
-    inr : ∀ {S T}
-      → (v : Val T)
-      ---
-      → Val (` S ⊕ T)
+    -- inr : ∀ {S T}
+    --   → (v : Val T)
+    --   ---
+    --   → Val (` S ⊕ T)
 
   data Env : Context → Set where
     []  : Env ∅

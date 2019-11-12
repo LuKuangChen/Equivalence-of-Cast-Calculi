@@ -2,6 +2,7 @@ open import Types
 
 module S.Values
   (Label : Set)
+  (Injectable : PreType → Set)
   (Cast : Type → Type → Set)
   where
   
@@ -13,7 +14,11 @@ open import Variables
 mutual
   
   data Val : Type → Set where
-    dyn : ∀ P → Val (` P) → Val *
+    dyn : ∀ P
+      → (Pi : Injectable P)
+      → (v : Val (` P))
+      ---
+      → Val *
 
     unit :
       --------

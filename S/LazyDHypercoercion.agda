@@ -92,7 +92,7 @@ mutual
   seq-rest {P2 = P1} b1 t1 ℓ h2 (rest {P = P2} b2 t2) with (` P1) ⌣? (` P2)
   seq-rest {P2 = P1} b1 t1 ℓ h2 (rest {_} b2 t2) | yes p = rest (seq-m (link h2 ℓ t1) p b1 b2) t2
   seq-rest {P2 = P1} b1 t1 ℓ h2 (rest {_} b2 t2) | no ¬p with (link h2 ℓ t1)
-  seq-rest b1 t1 ℓ h2 (rest b2 t2) | no ¬p | inj₁ refl = ⊥-elim (¬p ⌣refl)
+  seq-rest b1 t1 ℓ h2 (rest b2 t2) | no ¬p | inj₁ refl = ⊥-elim (¬p (⌣refl _))
   seq-rest b1 t1 ℓ h2 (rest b2 t2) | no ¬p | inj₂ l = rest b1 (fail l)
 
   seq-m : ∀ {P1 P2 P3 P4}
@@ -195,7 +195,7 @@ mutual
   seq-assoc id* ℓ1 (↷ (⁇ l) (rest {Q = P1} b (last t))) ℓ2 (↷ h (rest {P = P2} b₁ t₁)) with (` P1) ⌣? (` P2)
   seq-assoc id* ℓ1 (↷ (⁇ l) (rest {Q = P1} b (last t))) ℓ2 (↷ h (rest {_} b₁ t₁)) | yes p = refl
   seq-assoc id* ℓ1 (↷ (⁇ l) (rest {Q = P1} b (last t))) ℓ2 (↷ h (rest {_} b₁ t₁)) | no ¬p with link h ℓ2 t
-  seq-assoc id* ℓ1 (↷ (⁇ l) (rest {Q = _} b (last t))) ℓ2 (↷ h (rest {_} b₁ t₁)) | no ¬p | inj₁ refl = ⊥-elim (¬p ⌣refl)
+  seq-assoc id* ℓ1 (↷ (⁇ l) (rest {Q = _} b (last t))) ℓ2 (↷ h (rest {_} b₁ t₁)) | no ¬p | inj₁ refl = ⊥-elim (¬p (⌣refl _))
   seq-assoc id* ℓ1 (↷ (⁇ l) (rest {Q = P1} b (last t))) ℓ2 (↷ h (rest {_} b₁ t₁)) | no ¬p | inj₂ y = refl
   seq-assoc id* ℓ1 (↷ ε (rest b t)) ℓ2 c3 with ℓ1
   seq-assoc id* ℓ1 (↷ ε (rest b t)) ℓ2 c3 | inj₁ ()
@@ -204,7 +204,7 @@ mutual
   seq-assoc id* ℓ1 (↷ ε (rest {Q = P1} b (last t))) ℓ2 (↷ h (rest {P = P2} b₁ t₁)) | inj₂ y with (` P1) ⌣? (` P2)
   seq-assoc id* ℓ1 (↷ ε (rest {Q = P1} b (last t))) ℓ2 (↷ h (rest {_} b₁ t₁)) | inj₂ y | yes p = refl
   seq-assoc id* ℓ1 (↷ ε (rest {Q = P1} b (last t))) ℓ2 (↷ h (rest {_} b₁ t₁)) | inj₂ y | no ¬p with link h ℓ2 t
-  seq-assoc id* ℓ1 (↷ ε (rest {Q = _} b (last t))) ℓ2 (↷ h (rest {_} b₁ t₁)) | inj₂ y | no ¬p | inj₁ refl = ⊥-elim (¬p ⌣refl)
+  seq-assoc id* ℓ1 (↷ ε (rest {Q = _} b (last t))) ℓ2 (↷ h (rest {_} b₁ t₁)) | inj₂ y | no ¬p | inj₁ refl = ⊥-elim (¬p (⌣refl _))
   seq-assoc id* ℓ1 (↷ ε (rest {Q = P1} b (last t))) ℓ2 (↷ h (rest {_} b₁ t₁)) | inj₂ y | no ¬p | inj₂ y₁ = refl
   seq-assoc (↷ h (rest b (fail l))) ℓ1 c2 ℓ2 c3 = refl
   seq-assoc (↷ h (rest b (last t))) ℓ1 id* ℓ2 id* = refl
@@ -219,12 +219,12 @@ mutual
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {P = P2} b₁ (fail l))) ℓ2 c3 with (` P1) ⌣? (` P2)
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} b₁ (fail l))) ℓ2 c3 | yes p = refl
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} b₁ (fail l))) ℓ2 c3 | no ¬p with link h₁ ℓ1 t
-  seq-assoc (↷ h (rest {Q = _} b (last t))) ℓ1 (↷ h₁ (rest {_} b₁ (fail l))) ℓ2 c3 | no ¬p | inj₁ refl = ⊥-elim (¬p ⌣refl)
+  seq-assoc (↷ h (rest {Q = _} b (last t))) ℓ1 (↷ h₁ (rest {_} b₁ (fail l))) ℓ2 c3 | no ¬p | inj₁ refl = ⊥-elim (¬p (⌣refl _))
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} b₁ (fail l))) ℓ2 c3 | no ¬p | inj₂ y = refl
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {P = P2} b₁ (last t₁))) ℓ2 id* with (` P1) ⌣? (` P2)
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} b₁ (last t₁))) ℓ2 id* | yes p = refl
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} b₁ (last t₁))) ℓ2 id* | no ¬p with link h₁ ℓ1 t
-  seq-assoc (↷ h (rest {Q = _} b (last t))) ℓ1 (↷ h₁ (rest {_} b₁ (last t₁))) ℓ2 id* | no ¬p | inj₁ refl =  ⊥-elim (¬p ⌣refl)
+  seq-assoc (↷ h (rest {Q = _} b (last t))) ℓ1 (↷ h₁ (rest {_} b₁ (last t₁))) ℓ2 id* | no ¬p | inj₁ refl =  ⊥-elim (¬p (⌣refl _))
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} b₁ (last t₁))) ℓ2 id* | no ¬p | inj₂ y = refl
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {P2} {Q = P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {P = P4} b₂ t₂)) with (` P1) ⌣? (` P2)
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {P4} b₂ t₂)) | yes p with (` P3) ⌣? (` P4)
@@ -233,21 +233,21 @@ mutual
     rewrite ⌣unique p p₂ = cong (λ b → ↷ h (rest b t₂)) (seq-m-assoc b (link h₁ ℓ1 t) p₂ b₁ (link h₂ ℓ2 t₁) p₁ b₂)
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | yes p | yes p₁ | no ¬p = ⊥-elim (¬p p)
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | yes p | no ¬p with link h₂ ℓ2 t₁
-  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {_} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | yes p | no ¬p | inj₁ refl = ⊥-elim (¬p ⌣refl)
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {_} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | yes p | no ¬p | inj₁ refl = ⊥-elim (¬p (⌣refl _))
   seq-assoc (↷ h (rest {Q = .U} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | yes ⌣U | no ¬p | inj₂ y = refl
   seq-assoc (↷ h (rest {Q = .(_ ⇒ _)} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | yes ⌣⇒ | no ¬p | inj₂ y = refl
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {P4} b₂ t₂)) | no ¬p with (` P3) ⌣? (` P4)
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {P2} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | yes p with (` P1) ⌣? (` P2)
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | yes p | yes p₁ = ⊥-elim (¬p p₁)
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | yes p | no ¬p₁ with link h₁ ℓ1 t
-  seq-assoc (↷ h (rest {Q = _} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | yes p | no ¬p₁ | inj₁ refl = ⊥-elim (¬p₁ ⌣refl)
+  seq-assoc (↷ h (rest {Q = _} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | yes p | no ¬p₁ | inj₁ refl = ⊥-elim (¬p₁ (⌣refl _))
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | yes p | no ¬p₁ | inj₂ y = refl
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ with link h₂ ℓ2 t₁
-  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {_} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ | inj₁ refl = ⊥-elim (¬p₁ ⌣refl)
+  seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {_} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ | inj₁ refl = ⊥-elim (¬p₁ (⌣refl _))
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {P2} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ | inj₂ y with (` P1) ⌣? (` P2)
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ | inj₂ y | yes p = ⊥-elim (¬p p)
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ | inj₂ y | no ¬p₂ with link h₁ ℓ1 t
-  seq-assoc (↷ h (rest {Q = _} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ | inj₂ y | no ¬p₂ | inj₁ refl = ⊥-elim (¬p₂ ⌣refl)
+  seq-assoc (↷ h (rest {Q = _} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ | inj₂ y | no ¬p₂ | inj₁ refl = ⊥-elim (¬p₂ (⌣refl _))
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ | inj₂ y | no ¬p₂ | inj₂ y₁ = refl 
 
 open import S.Values Label Cast
@@ -262,7 +262,7 @@ module AlternativeApplyCast where
   apply-body {P1} {P2} ℓ b v with (` P1) ⌣? (` P2)
   apply-body {.U} {.U} ℓ U unit | yes ⌣U = succ unit
   apply-body {.(_ ⇒ _)} {.(_ ⇒ _)} ℓ (c₃ ⇒ c₄) (lam c₁ c₂ e₁ E) | yes ⌣⇒ = succ (lam (seq c₃ (ℓ-dom ℓ) c₁) (seq c₂ (ℓ-cod ℓ) c₄) e₁ E)
-  apply-body {P1} {.P1} (inj₁ refl) b v | no ¬p = ⊥-elim (¬p ⌣refl)
+  apply-body {P1} {.P1} (inj₁ refl) b v | no ¬p = ⊥-elim (¬p (⌣refl _))
   apply-body {P1} {P2} (inj₂ l) b v | no ¬p = fail l
   
   apply-tail : ∀ {P T} → Tail P T → Val (` P) → CastResult T
@@ -326,7 +326,7 @@ lem-apply-body-refl {P1} v b with (` P1) ⌣? (` P1)
 lem-apply-body-refl {.U} unit U | yes ⌣U = unit , refl
 lem-apply-body-refl {.(_ ⇒ _)} (lam c₁ c₂ e₁ E) (c₃ ⇒ c₄) | yes ⌣⇒
   = (lam (seq c₃ (inj₁ refl) c₁) (seq c₂ (inj₁ refl) c₄) e₁ E) , refl
-lem-apply-body-refl {P1} v b | no ¬p = ⊥-elim (¬p ⌣refl)
+lem-apply-body-refl {P1} v b | no ¬p = ⊥-elim (¬p (⌣refl _))
 
 lem-apply-body-⌣ : ∀ {P0 P1 P2}
   → (v : Val (` P0))
@@ -358,17 +358,17 @@ lem-seq' {.U} {.U} {.U} {.U} unit ℓ U t1 h2 U t2 | yes ⌣U | ‼ | ⁇ l | ye
 lem-seq' {.(_ ⇒ _)} {.(_ ⇒ _)} {.(_ ⇒ _)} {.(_ ⇒ _)} (lam c₁ c₂ e E) ℓ (c₃ ⇒ c₄) t1 h2 (c₅ ⇒ c₆) t2 | yes ⌣⇒ | ‼ | ⁇ l | yes ⌣⇒
   rewrite seq-assoc c₅ (inj₂ l) c₃ (ℓ-dom ℓ) c₁ | seq-assoc c₂ (ℓ-cod ℓ) c₄ (inj₂ l) c₆
   = refl
-lem-seq' {P1} {.P1} {P3} {P4} v (inj₁ refl) b1 t1 h2 b2 t2 | yes p | ‼ | ⁇ l | no ¬p = (⊥-elim (¬p ⌣refl))
+lem-seq' {P1} {.P1} {P3} {P4} v (inj₁ refl) b1 t1 h2 b2 t2 | yes p | ‼ | ⁇ l | no ¬p = (⊥-elim (¬p (⌣refl _)))
 lem-seq' {P1} {P2} {P3} {P4} v (inj₂ y) b1 t1 h2 b2 t2 | yes p | ‼ | ⁇ l | no ¬p = refl
 lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | yes p | ε | ε with (` P1) ⌣? (` P2)
 lem-seq' {.(_ ⇒ _)} {.(_ ⇒ _)} {.(_ ⇒ _)} {.(_ ⇒ _)} (lam c₁ c₂ e E) ℓ (c₃ ⇒ c₄) t1 h2 (c₅ ⇒ c₆) t2 | yes ⌣⇒ | ε | ε | yes ⌣⇒
   rewrite seq-assoc c₅ (inj₁ refl) c₃ (ℓ-dom ℓ) c₁ | seq-assoc c₂ (ℓ-cod ℓ) c₄ (inj₁ refl) c₆
   = refl
 lem-seq' {.U} {.U} {.U} {.U} unit ℓ U t1 h2 U t2 | yes ⌣U | ε | ε | yes ⌣U = refl
-lem-seq' {P1} {.P1} {P3} {P3} v (inj₁ refl) b1 t1 h2 b2 t2 | yes p | ε | ε | no ¬p = (⊥-elim (¬p ⌣refl))
+lem-seq' {P1} {.P1} {P3} {P3} v (inj₁ refl) b1 t1 h2 b2 t2 | yes p | ε | ε | no ¬p = (⊥-elim (¬p (⌣refl _)))
 lem-seq' {P1} {P2} {P3} {P3} v (inj₂ y) b1 t1 h2 b2 t2 | yes p | ε | ε | no ¬p = refl
 lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | no ¬p with t1 | h2
-... | ε | ε = (⊥-elim (¬p ⌣refl))
+... | ε | ε = (⊥-elim (¬p (⌣refl _)))
 ... | ‼ | ⁇ l with apply-body ℓ b1 v
 lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | no ¬p | ‼ | ⁇ l | succ v₁ with (` P3) ⌣? (` P4)
 lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | no ¬p | ‼ | ⁇ l | succ v₁ | yes p = ⊥-elim (¬p p)

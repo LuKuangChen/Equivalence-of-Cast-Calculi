@@ -7,7 +7,8 @@ module X.LazyUD
   where
 
 open import Types
-open import X.Values Label Ground
+open import BlameStrategies using (LazyUDInjectable)
+open import X.Values Label LazyUDInjectable
 open import X.Cast Label
 
 open import Relation.Nullary using (yes; no)

@@ -13,25 +13,25 @@ open import X.Cast Label
 
 data Frame : Type → Type → Set where
 
-  cons₁ : ∀ {Γ}
-    → ∀ S T
-    → (e2 : Γ ⊢ T)
-    → (E : Env Γ)
-    ---
-    → Frame S (` S ⊗ T)
+  -- cons₁ : ∀ {Γ}
+  --   → ∀ S T
+  --   → (e2 : Γ ⊢ T)
+  --   → (E : Env Γ)
+  --   ---
+  --   → Frame S (` S ⊗ T)
     
-  cons₂ : ∀ S T
-    → (v1 : Val S)
-    ---
-    → Frame T (` S ⊗ T)
+  -- cons₂ : ∀ S T
+  --   → (v1 : Val S)
+  --   ---
+  --   → Frame T (` S ⊗ T)
 
-  inl₁ : ∀ S T
-    ---
-    → Frame S (` S ⊕ T)
+  -- inl₁ : ∀ S T
+  --   ---
+  --   → Frame S (` S ⊕ T)
     
-  inr₁ : ∀ S T
-    ---
-    → Frame T (` S ⊕ T)
+  -- inr₁ : ∀ S T
+  --   ---
+  --   → Frame T (` S ⊕ T)
       
   app₁ : ∀ {Γ S T}
     → (e2 : Γ ⊢ S)
@@ -44,20 +44,20 @@ data Frame : Type → Type → Set where
     --------
     → Frame S T
 
-  fst₁ : ∀ {S T}
-    ---
-    → Frame (` S ⊗ T) S
+  -- fst₁ : ∀ {S T}
+  --   ---
+  --   → Frame (` S ⊗ T) S
     
-  snd₁ : ∀ {S T}
-    ---
-    → Frame (` S ⊗ T) T
+  -- snd₁ : ∀ {S T}
+  --   ---
+  --   → Frame (` S ⊗ T) T
 
-  case₁ : ∀ {Γ S T Z}
-    → (e2 : Γ , S ⊢ Z)
-    → (e3 : Γ , T ⊢ Z)
-    → (E : Env Γ)
-    ---
-    → Frame (` S ⊕ T) Z
+  -- case₁ : ∀ {Γ S T Z}
+  --   → (e2 : Γ , S ⊢ Z)
+  --   → (e3 : Γ , T ⊢ Z)
+  --   → (E : Env Γ)
+  --   ---
+  --   → Frame (` S ⊕ T) Z
 
   cast₁ : ∀ {S T}
     → (c : Cast S T)
@@ -120,36 +120,36 @@ module Progress
   do-app (lam T1 T2 e E) v k
     = ` inspect e (v ∷ E) k
 
-  do-fst : ∀ {T1 T2 Z}
-    → Val (` T1 ⊗ T2)
-    → Cont T1 Z
-    → State Z
-  do-fst (proxy v (it l (` T1 ⊗ T2) (` T3 ⊗ T4)) ⌣⊗) κ
-    = ` return v (step fst₁
-                 (step (cast₁ (it l T1 T3)) κ))
-  do-fst (cons v1 v2) κ = ` return v1 κ
+  -- do-fst : ∀ {T1 T2 Z}
+  --   → Val (` T1 ⊗ T2)
+  --   → Cont T1 Z
+  --   → State Z
+  -- do-fst (proxy v (it l (` T1 ⊗ T2) (` T3 ⊗ T4)) ⌣⊗) κ
+  --   = ` return v (step fst₁
+  --                (step (cast₁ (it l T1 T3)) κ))
+  -- do-fst (cons v1 v2) κ = ` return v1 κ
 
-  do-snd : ∀ {T1 T2 Z}
-    → Val (` T1 ⊗ T2)
-    → Cont T2 Z
-    → State Z
-  do-snd (proxy v (it l (` T1 ⊗ T2) (` T3 ⊗ T4)) ⌣⊗) κ
-    = ` return v (step snd₁
-                 (step (cast₁ (it l T2 T4)) κ))
-  do-snd (cons v1 v2) κ = ` return v2 κ
+  -- do-snd : ∀ {T1 T2 Z}
+  --   → Val (` T1 ⊗ T2)
+  --   → Cont T2 Z
+  --   → State Z
+  -- do-snd (proxy v (it l (` T1 ⊗ T2) (` T3 ⊗ T4)) ⌣⊗) κ
+  --   = ` return v (step snd₁
+  --                (step (cast₁ (it l T2 T4)) κ))
+  -- do-snd (cons v1 v2) κ = ` return v2 κ
 
-  do-case : ∀ {Γ T1 T2 T3 Z}
-    → Val (` T1 ⊕ T2)
-    → Γ , T1 ⊢ T3
-    → Γ , T2 ⊢ T3
-    → Env Γ
-    → Cont T3 Z
-    → State Z
-  do-case (proxy v (it l (` T1 ⊕ T2) (` T3 ⊕ T4)) ⌣⊕) e1 e2 E κ
-    = ` return v (step (case₁ (inl T3 T4 (cast T3 T1 l (var zero))) (inr T3 T4 (cast T4 T2 l (var zero))) E)
-                 (step (case₁ e1 e2 E) κ))
-  do-case (inl v) e1 e2 E κ = ` inspect e1 (v ∷ E) κ
-  do-case (inr v) e1 e2 E κ = ` inspect e2 (v ∷ E) κ
+  -- do-case : ∀ {Γ T1 T2 T3 Z}
+  --   → Val (` T1 ⊕ T2)
+  --   → Γ , T1 ⊢ T3
+  --   → Γ , T2 ⊢ T3
+  --   → Env Γ
+  --   → Cont T3 Z
+  --   → State Z
+  -- do-case (proxy v (it l (` T1 ⊕ T2) (` T3 ⊕ T4)) ⌣⊕) e1 e2 E κ
+  --   = ` return v (step (case₁ (inl T3 T4 (cast T3 T1 l (var zero))) (inr T3 T4 (cast T4 T2 l (var zero))) E)
+  --                (step (case₁ e1 e2 E) κ))
+  -- do-case (inl v) e1 e2 E κ = ` inspect e1 (v ∷ E) κ
+  -- do-case (inr v) e1 e2 E κ = ` inspect e2 (v ∷ E) κ
 
   do-cast : ∀ {T1 T2 Z}
     → Cast T1 T2
@@ -164,15 +164,15 @@ module Progress
   observe-val (dyn P Pi v) = dyn
   observe-val (proxy v c ⌣U) = unit
   observe-val (proxy v c ⌣⇒) = lam
-  observe-val (proxy v c ⌣⊗) = cons
-  observe-val (proxy v c ⌣⊕) with observe-val v
-  ... | inl = inl
-  ... | inr = inr
+  -- observe-val (proxy v c ⌣⊗) = cons
+  -- observe-val (proxy v c ⌣⊕) with observe-val v
+  -- ... | inl = inl
+  -- ... | inr = inr
   observe-val unit = unit
   observe-val (lam env S T b) = lam
-  observe-val (cons u v) = cons
-  observe-val (inl v) = inl
-  observe-val (inr v) = inr
+  -- observe-val (cons u v) = cons
+  -- observe-val (inl v) = inl
+  -- observe-val (inr v) = inr
 
   -- reduction
   progress : {T : Type} → Nonhalting T → State T
@@ -182,22 +182,22 @@ module Progress
   progress (inspect (app e1 e2) E κ) = ` inspect e1 E (step (app₁ e2 E) κ)
   progress (inspect (cast T S l e) E κ) = ` inspect e E (step (cast₁ (it l S T)) κ)
   progress (inspect (blame l) E κ) = halt (blame l)
-  progress (inspect (cons T1 T2 e1 e2) E κ) = ` inspect e1 E (step (cons₁ T1 T2 e2 E) κ)
-  progress (inspect (inl T1 T2 e) E κ) = ` inspect e E (step (inl₁ T1 T2) κ)
-  progress (inspect (inr T1 T2 e) E κ) = ` inspect e E (step (inr₁ T1 T2) κ)
-  progress (inspect (fst e) E κ) = ` inspect e E (step fst₁ κ)
-  progress (inspect (snd e) E κ) = ` inspect e E (step snd₁ κ)
-  progress (inspect (case e1 e2 e3) E κ) = ` inspect e1 E (step (case₁ e2 e3 E) κ)
+  -- progress (inspect (cons T1 T2 e1 e2) E κ) = ` inspect e1 E (step (cons₁ T1 T2 e2 E) κ)
+  -- progress (inspect (inl T1 T2 e) E κ) = ` inspect e E (step (inl₁ T1 T2) κ)
+  -- progress (inspect (inr T1 T2 e) E κ) = ` inspect e E (step (inr₁ T1 T2) κ)
+  -- progress (inspect (fst e) E κ) = ` inspect e E (step fst₁ κ)
+  -- progress (inspect (snd e) E κ) = ` inspect e E (step snd₁ κ)
+  -- progress (inspect (case e1 e2 e3) E κ) = ` inspect e1 E (step (case₁ e2 e3 E) κ)
   progress (return v done) = halt (done (observe-val v))
   progress (return v (step (app₁ e E) κ)) = ` inspect e E (step (app₂ v) κ)
   progress (return v (step (app₂ u) κ)) = do-app u v κ
-  progress (return v (step (cons₁ T1 T2 e2 E) κ)) = ` inspect e2 E (step (cons₂ T1 T2 v) κ)
-  progress (return v (step (cons₂ T1 T2 u) κ)) = ` return (cons u v) κ
-  progress (return v (step (inl₁ T1 T2) κ)) = ` return (inl v) κ
-  progress (return v (step (inr₁ T1 T2) κ)) = ` return (inr v) κ
-  progress (return v (step fst₁ κ)) = do-fst v κ
-  progress (return v (step snd₁ κ)) = do-snd v κ
-  progress (return v (step (case₁ e2 e3 E) κ)) = do-case v e2 e3 E κ
+  -- progress (return v (step (cons₁ T1 T2 e2 E) κ)) = ` inspect e2 E (step (cons₂ T1 T2 v) κ)
+  -- progress (return v (step (cons₂ T1 T2 u) κ)) = ` return (cons u v) κ
+  -- progress (return v (step (inl₁ T1 T2) κ)) = ` return (inl v) κ
+  -- progress (return v (step (inr₁ T1 T2) κ)) = ` return (inr v) κ
+  -- progress (return v (step fst₁ κ)) = do-fst v κ
+  -- progress (return v (step snd₁ κ)) = do-snd v κ
+  -- progress (return v (step (case₁ e2 e3 E) κ)) = do-case v e2 e3 E κ
   progress (return v (step (cast₁ c) κ)) = do-cast c v κ
   
   data _−→_ : ∀ {T} → State T → State T → Set where

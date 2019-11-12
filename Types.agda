@@ -228,5 +228,3 @@ data _⊑_ : Type → Type → Set where
   --   → T2 ⊑ T4
   --   ---
   --   → (` T1 ⊕ T2) ⊑ (` T3 ⊕ T4)
-
-  

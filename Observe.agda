@@ -15,17 +15,17 @@ data Value : Type → Set where
     ---
     → Value (` T1 ⇒ T2)
     
-  cons : ∀ {T1 T2}
-    ---
-    → Value (` T1 ⊗ T2)
+  -- cons : ∀ {T1 T2}
+  --   ---
+  --   → Value (` T1 ⊗ T2)
     
-  inl : ∀ {T1 T2}
-    ---
-    → Value (` T1 ⊕ T2)
+  -- inl : ∀ {T1 T2}
+  --   ---
+  --   → Value (` T1 ⊕ T2)
                                
-  inr : ∀ {T1 T2}
-    ---
-    → Value (` T1 ⊕ T2)                               
+  -- inr : ∀ {T1 T2}
+  --   ---
+  --   → Value (` T1 ⊕ T2)                               
     
 data Observe : Type → Set where
   blame : ∀ {T}

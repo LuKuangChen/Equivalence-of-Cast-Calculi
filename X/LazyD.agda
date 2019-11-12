@@ -5,14 +5,12 @@ module X.LazyD
   where
 
 open import Types
+open import BlameStrategies using (LazyDInjectable)
 
-open import Data.Unit using (⊤; tt)
-
-Injectable : PreType → Set
-Injectable P = ⊤
+open import Data.Unit using (tt)
 
 open import X.Cast Label
-open import X.Values Label Injectable
+open import X.Values Label LazyDInjectable
 
 open import Relation.Nullary using (yes; no)
 

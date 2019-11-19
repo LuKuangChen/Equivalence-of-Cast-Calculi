@@ -96,14 +96,24 @@ data State : Type → Set where
 load : ∀ {T} → ∅ ⊢ T → State T
 load e = ` inspect e [] (mk-cont done)
 
+bind : ∀ {S T}
+  → CastResult S
+  → (Val S → State T)
+  → State T
+bind (succ v) k = k v
+bind (fail l) k = halt (blame l)
+
 do-app : ∀ {T1 T2 Z}
   → Val (` T1 ⇒ T2)
   → Val T1
   → Cont T2 Z
   → State Z
-do-app (lam c₁ c₂ e E) v κ with apply-cast v c₁
-... | succ u = ` inspect e (u ∷ E) (ext-cont c₂ κ)
-... | fail l = halt (blame l)
+do-app (lam c₁ c₂ e E) v κ
+  = bind (apply-cast v c₁) λ u →
+    ` inspect e (u ∷ E) (ext-cont c₂ κ)
+-- with apply-cast v c₁
+-- ... | succ u = ` inspect e (u ∷ E) (ext-cont c₂ κ)
+-- ... | fail l = halt (blame l)
 
 -- do-car : ∀ {T1 T2 Z}
 --   → Val (` T1 ⊗ T2)

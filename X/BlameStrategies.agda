@@ -34,8 +34,8 @@ module LazyD where
   apply-cast v (it l (` P) (` Q)) = apply-cast' v (it l (` P) (` Q))
   apply-cast (dyn P I v) (it l * (` Q)) = apply-cast' v (it l (` P) (` Q))
 
-LazyD : BlameStrategy
-LazyD = record { Injectable = LazyD.I? ; apply-cast = LazyD.apply-cast }
+LazyDBS : BlameStrategy
+LazyDBS = record { Injectable = LazyD.I? ; apply-cast = LazyD.apply-cast }
 
 module LazyUD where
   open import Types
@@ -67,5 +67,5 @@ module LazyUD where
       (project v l (ground Q) (ground-Ground Q))
       (λ u → succ (proxy u (it l (` ground Q) (` Q)) (⌣sym (ground-⌣ Q))))
 
-LazyUD : BlameStrategy
-LazyUD = record { Injectable = LazyUD.I? ; apply-cast = LazyUD.apply-cast }
+LazyUDBS : BlameStrategy
+LazyUDBS = record { Injectable = LazyUD.I? ; apply-cast = LazyUD.apply-cast }

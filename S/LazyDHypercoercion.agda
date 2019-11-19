@@ -1,8 +1,14 @@
 module S.LazyDHypercoercion (Label : Set) where
+
+open import X.BlameStrategies Label using (BlameStrategy; LazyDBS)
+open BlameStrategy LazyDBS using (Injectable)
+
 open import Types
 open import Variables
 open import Terms Label
-open import S.CastADT Label
+open import Cast Label using (it)
+open import S.CastADT Label Injectable
+open import S.LazyDCastADT Label
 
 open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -250,7 +256,7 @@ mutual
   seq-assoc (↷ h (rest {Q = _} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ | inj₂ y | no ¬p₂ | inj₁ refl = ⊥-elim (¬p₂ (⌣refl _))
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ | inj₂ y | no ¬p₂ | inj₂ y₁ = refl 
 
-open import S.Values Label Cast
+open import S.Values Label Injectable Cast
   
 module AlternativeApplyCast where
  
@@ -267,7 +273,7 @@ module AlternativeApplyCast where
   
   apply-tail : ∀ {P T} → Tail P T → Val (` P) → CastResult T
   apply-tail (fail l) v = fail l
-  apply-tail (last ‼) v = succ (dyn _ v)
+  apply-tail (last ‼) v = succ (dyn _ _ v)
   apply-tail (last ε) v = succ v
 
   apply-rest : ∀ {P1 P2 T}
@@ -284,7 +290,7 @@ module AlternativeApplyCast where
     ---
     → CastResult T2
   apply-cast id* v = succ v
-  apply-cast (↷ (⁇ l) r) (dyn _ v) = apply-rest (inj₂ l) r v
+  apply-cast (↷ (⁇ l) r) (dyn _ _ v) = apply-rest (inj₂ l) r v
   apply-cast (↷ ε r) v = apply-rest (inj₁ refl) r v
 
 open AlternativeApplyCast public
@@ -384,9 +390,9 @@ lem-seq : ∀ {T1 T2 T3}
 lem-seq id* id* v = refl
 lem-seq id* (↷ (⁇ l) r) v = refl
 lem-seq (↷ h (rest b (last ‼))) id* v = sym (>>=-succ _)
-lem-seq (↷ (⁇ l₁) (rest b (fail l))) c2 (dyn P v) = lem-seq-fail v (inj₂ l₁) b l _
+lem-seq (↷ (⁇ l₁) (rest b (fail l))) c2 (dyn P _ v) = lem-seq-fail v (inj₂ l₁) b l _
 lem-seq (↷ ε (rest b (fail l))) c2 v = lem-seq-fail v _ b l _
-lem-seq (↷ (⁇ l) (rest {Q = P1} b (last t))) (↷ h₁ (rest {_} b₁ t₁)) (dyn P v) = lem-seq' v (inj₂ l) b t h₁ b₁ t₁
+lem-seq (↷ (⁇ l) (rest {Q = P1} b (last t))) (↷ h₁ (rest {_} b₁ t₁)) (dyn P _ v) = lem-seq' v (inj₂ l) b t h₁ b₁ t₁
 lem-seq (↷ ε (rest {Q = P1} b (last t))) (↷ h₁ (rest {_} b₁ t₁)) v = lem-seq' v (inj₁ refl) b t h₁ b₁ t₁
 
 lem-cast-¬⌣ : ∀ {T1 T2}
@@ -412,7 +418,7 @@ lem-cast-id* l v = refl
 lem-cast-inj : ∀ {P}
   → (l : Label)
   → (v : Val (` P))  
-  → apply-cast (mk-cast l (` P) *) v ≡ succ (dyn P v)
+  → apply-cast (mk-cast l (` P) *) v ≡ succ (dyn P _ v)
 lem-cast-inj {P} l v
   rewrite sym (>>=-succ (apply-body (inj₁ refl) (mk-id-body P) v))
         | lem-id (` P) v
@@ -429,7 +435,7 @@ lem-seq2-id c1 ℓ c2
   = refl
 
 lem-cast-proj : ∀ l P P₁ v
-  → apply-cast (mk-cast l * (` P)) (dyn P₁ v) ≡ apply-cast (mk-cast l (` P₁) (` P)) v
+  → apply-cast (mk-cast l * (` P)) (dyn P₁ _ v) ≡ apply-cast (mk-cast l (` P₁) (` P)) v
 lem-cast-proj l P P₁ v with (` P₁) ⌣? (` P)
 lem-cast-proj l .U .U unit | yes ⌣U = refl
 lem-cast-proj l (T1 ⇒ T2) (T3 ⇒ T4) (lam c₁ c₂ e E) | yes ⌣⇒
@@ -462,29 +468,32 @@ cast-adt : CastADT
 cast-adt
   = record
     { Cast = Cast
-    ; mk-cast = mk-cast
-    ; mk-seq = mk-seq
-    ; mk-id = mk-id
-    ; apply-cast = apply-cast
+    ; mk-cast = λ { (it l S T) → mk-cast l S T}
+    ; seq = mk-seq
+    ; id = mk-id
+    ; apply-cast = λ c v → apply-cast v c
     }
-cast-adt-LazyD : LazyD cast-adt
-cast-adt-LazyD
-  = record
-    { lem-id = lem-id
-    ; lem-seq = lem-seq
-    ; lem-cast-¬⌣ = lem-cast-¬⌣
-    ; lem-cast-id* = lem-cast-id*
-    ; lem-cast-inj = lem-cast-inj
-    ; lem-cast-proj = lem-cast-proj
-    ; lem-cast-U = lem-cast-U
-    ; lem-cast-⇒ = lem-cast-⇒
-    }
+    
+cast-adt-basic : CastADTBasic cast-adt
+cast-adt-basic = record { lem-apply-seq = λ v c1 c2 → lem-seq c1 c2 v
+                        ; lem-apply-id = λ v → lem-id _ v }
+
 cast-adt-monoid : Monoid cast-adt
 cast-adt-monoid
   = record
     { lem-id-l = seq-id-l
     ; lem-id-r = seq-id-r
     ; lem-assoc = λ c1 c2 c3 → seq-assoc c1 _ c2 _ c3
+    }
+cast-adt-LazyD : LazyD cast-adt
+cast-adt-LazyD
+  = record
+    { lem-cast-¬⌣ = lem-cast-¬⌣
+    ; lem-cast-id* = lem-cast-id*
+    ; lem-cast-inj = lem-cast-inj
+    ; lem-cast-proj = λ Q P l v → lem-cast-proj l Q P v
+    ; lem-cast-U = lem-cast-U
+    ; lem-cast-⇒ = λ T21 T22 T11 T12 l c₁ c₂ e E → lem-cast-⇒ T11 T12 T21 T22 l c₁ c₂ e E
     }
 
 lem-cast-id-is-id : ∀ l T →

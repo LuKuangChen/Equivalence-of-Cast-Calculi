@@ -1,4 +1,4 @@
-module X.Cast
+module Cast
   (Label : Set)
   where
 

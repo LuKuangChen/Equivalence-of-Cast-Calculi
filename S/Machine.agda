@@ -10,6 +10,7 @@ module S.Machine
 open CastADT cast-adt using (Cast; mk-cast; id; seq; apply-cast)
 
 open import Variables
+open import Cast Label using (it)
 open import Terms Label
 open import Observe Label
 open import S.Values Label Injectable Cast
@@ -40,24 +41,33 @@ mutual
       ----------
       → PreCont Z Z
 
-  data Cont : Type → Type → Set where
-    cast : ∀ {R S T}
-      → (c : Cast R S)
-      → (k : PreCont S T)
-      ---
-      → Cont R T
+  record Cont (S Z : Type) : Set where
+    inductive
+    constructor cast
+    field
+      T : Type
+      c : Cast S T
+      k : PreCont T Z
+           
 
-    just : ∀ {S T}
-      → (k : PreCont S T)
-      ---
-      → Cont S T
+  -- data Cont : Type → Type → Set where
+  --   cast : ∀ {R S T}
+  --     → (c : Cast R S)
+  --     → (k : PreCont S T)
+  --     ---
+  --     → Cont R T
+
+  --   -- just : ∀ {S T}
+  --   --   → (k : PreCont S T)
+  --   --   ---
+  --   --   → Cont S T
                  
 mk-cont : ∀ {T1 T2} → PreCont T1 T2 → Cont T1 T2
-mk-cont k = just k
+mk-cont {T1 = T1} k = cast T1 (id T1) k
 
 ext-cont : ∀ {T1 T2 T3} → Cast T1 T2 → Cont T2 T3 → Cont T1 T3
-ext-cont c (cast c' k) = cast (seq c c') k
-ext-cont c (just k) = cast c k
+ext-cont c (cast T c' k) = cast T (seq c c') k
+-- ext-cont c (just k) = cast c k
 
 data Nonhalting : Type → Set where 
   inspect : ∀ {Γ T1 T3}
@@ -156,12 +166,12 @@ progress (inspect (app e1 e2) E κ) = ` inspect e1 E (mk-cont (step (app₁ e2 E
 -- progress (inspect (car e) E κ) = ` inspect e E (mk-cont (car κ))
 -- progress (inspect (cdr e) E κ) = ` inspect e E (mk-cont (cdr κ))
 -- progress (inspect (case e1 e2 e3) E κ) = ` inspect e1 E (mk-cont (case₁ E e2 e3 κ))
-progress (inspect (cast T S l e) E κ) = ` inspect e E (ext-cont (mk-cast l S T) κ)
+progress (inspect (cast e c) E κ) = ` inspect e E (ext-cont (mk-cast c) κ)
 progress (inspect (blame l) E κ) = halt (blame l)
-progress (return v (cast c k)) with apply-cast v c
-progress (return v (cast c k)) | succ u = apply-cont u k
-progress (return v (cast c k)) | fail l = halt (blame l)
-progress (return v (just k)) = apply-cont v k
+progress (return v (cast T c k)) with apply-cast v c
+progress (return v (cast T c k)) | succ u = apply-cont u k
+progress (return v (cast T c k)) | fail l = halt (blame l)
+-- progress (return v (just k)) = apply-cont v k
 
 data _−→_ : ∀ {T} → State T → State T → Set where
   it : ∀ {T}

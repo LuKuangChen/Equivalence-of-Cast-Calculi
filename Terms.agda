@@ -5,6 +5,7 @@ module Terms
   where
 
 open import Variables
+open import Cast Label
 
 infix  4 _⊢_
 
@@ -72,9 +73,9 @@ data _⊢_ : Context → Type → Set where
           
   -- kind of an eliminator
   
-  cast : ∀ {Γ} T S
-    → (l : Label)
+  cast : ∀ {Γ T S}
     → (e : Γ ⊢ S)
+    → (c : Cast S T)
     --------
     → Γ ⊢ T
 

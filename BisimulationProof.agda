@@ -153,13 +153,6 @@ do-app (cast-lam l T3 T4 T5 T6 c1 c2 e rE u') v k
     ... | .(L.succ _) | .(R.succ _) | succ v'
       rewrite lem-do-app-cod c1 c2 (R.mk-cast (it l T4 T6)) e rE (rval v') (rcont k)
       = ss-step (do-app u' v' (ext-cont (it l T4 T6) k))
-    --   rewrite lem-do-app-cod (RP.seq (RP.mk-cast (it l T5 T3)) c1) c2 (R.mk-cast (it l T4 T6)) e rE (rval v) (rcont k)
-    --     | RP.lem-apply-seq (rval v) (R.mk-cast (it l T5 T3)) c1
-    --   with L.apply-cast (lval v) (L.it l T5 T3)
-    --     |  R.apply-cast (rval v) (R.mk-cast (it l T5 T3))
-    --     |  lem-apply-cast v (it l T5 T3)
-    -- ... | .(L.fail _) | .(R.fail _) | fail l' = ss-done (halt (blame l'))
-    -- ... | .(L.succ _) | .(R.succ _) | succ v' = ss-step (do-app u' v' (ext-cont (it l T4 T6) k))
                                                                      
 apply-cont : ∀ {S T}
   → {lv : L.Val S}

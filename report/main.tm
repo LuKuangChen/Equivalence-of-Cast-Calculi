@@ -10,25 +10,20 @@
 
   <\definition>
     <math|s\<approx\><rsup|\<ast\>>s<rprime|'>> if and only if there exists a
-    state t such that s\<longrightarrow\><rsup|\<ast\>>t and
+    state t such that <math|s\<longrightarrow\><rsup|\<ast\>>t> and
     <math|t\<approx\>s<rprime|'>>. Intuitively,
     <math|s\<approx\><rsup|\<ast\>>s<rprime|'>> means <math|s> will be
     related to <math|s<rprime|'>>.
   </definition>
 
-  <\lemma>
-    If <math|s\<approx\>s<rprime|'>> then
-    <math|s\<approx\><rsup|\<ast\>>s<rprime|'>>.
-  </lemma>
-
-  <\lemma>
-    If <math|s\<longrightarrow\>t> and <math|t\<approx\><rsup|\<ast\>>s<rprime|'>>
-    then <math|s\<approx\><rsup|\<ast\>>s<rprime|'>>.
-  </lemma>
+  <\notation>
+    <math|<around*|\<llbracket\>|c|\<rrbracket\>>> means
+    <math|\<lambda\>V.applyCast<around*|(|V,c|)>>.
+  </notation>
 
   <\lemma>
     If <math|U\<approx\>U<rprime|'>\<of\>A> then
-    <math|appC<around*|(|U,A<long-arrow|\<rubber-Rightarrow\>|l>B|)>\<approx\>appCt<rprime|'><around*|(|U,<around*|\<lceil\>|A<long-arrow|\<rubber-Rightarrow\>|l>B|\<rceil\>>|)>\<of\>B>.
+    <math|<around*|\<llbracket\>|A\<Rightarrow\><rsup|l>B|\<rrbracket\>><around*|(|U|)>\<approx\><around*|\<llbracket\>|<around*|\<lceil\>|A\<Rightarrow\><rsup|l>B|\<rceil\>>|\<rrbracket\>><around*|(|U<rprime|'>|)>\<of\>B>.
   </lemma>
 
   <\definition>
@@ -36,101 +31,116 @@
   </definition>
 
   <\lemma>
-    If <math|\<kappa\>\<approx\>\<kappa\><rprime|'>\<of\>A> then
-    <math|<around*|[|\<box\><around*|\<langle\>|A\<Rightarrow\><rsup|l>B|\<rangle\>>|]>\<kappa\>\<approx\><rsup|\<ast\>>extCont<around*|(|<around*|\<lceil\>|A\<Rightarrow\><rsup|l>B|\<rceil\>>,\<kappa\><rprime|'>|)><rsup|*>>
+    <math|extCont<around*|(|seq<around*|(|c,d|)>,\<kappa\>|)>=extCont<around*|(|c,extCont<around*|(|d,\<kappa\>|)>|)>>
   </lemma>
 
   <\lemma>
-    For all <math|U\<approx\>U<rprime|'>\<of\>A\<rightarrow\>B> and
-    <math|V\<approx\>V<rprime|'>\<of\>A> and
-    <math|k\<approx\>k<rprime|'>\<of\>B> then
-    <math|app<around*|(|U,V,\<kappa\>|)>\<approx\><rsup|\<ast\>>app<rprime|'><around*|(|U<rprime|'>,V<rprime|'>,\<kappa\><rprime|'>|)>>.
+    If <math|\<kappa\>\<approx\>\<kappa\><rprime|'>> then
+    <math|<around*|[|\<box\><around*|\<langle\>|A\<Rightarrow\><rsup|l>B|\<rangle\>>|]>\<kappa\>\<approx\>extCont<around*|(|<around*|\<lceil\>|A\<Rightarrow\><rsup|l>B|\<rceil\>>,\<kappa\><rprime|'>|)><rsup|*>>
+  </lemma>
+
+  <\lemma>
+    For all <math|U\<approx\>U<rprime|'>> and <math|V\<approx\>V<rprime|'>>
+    and <math|k\<approx\>k<rprime|'>> then
+    <math|doApp<around*|(|U,V,\<kappa\>|)>\<approx\><rsup|\<star\>>doApp<rprime|'><around*|(|U<rprime|'>,V<rprime|'>,\<kappa\><rprime|'>|)>>.
   </lemma>
 
   <\proof>
-    By induction on <math|U\<approx\><rsup|CS>U<rprime|'>\<of\>\<Alpha\>\<rightarrow\>\<Beta\>>.
-    There are two cases:
+    By induction on <math|U\<approx\>U<rprime|'>>. There are two cases.
 
     <\indent>
-      <with|font-series|bold|Case> <math|<around*|\<langle\>|\<lambda\>x<rsup|A,B>.e,E|\<rangle\>>\<approx\><around*|\<langle\>|\<lambda\>x<rsup|id<around*|(|A|)>,id<around*|(|B|)>>.e,E<rprime|'>|\<rangle\>>\<of\>A\<rightarrow\>B>
+      <with|font-series|bold|Case> <math|<around*|\<langle\>|\<lambda\>x\<of\>A\<point\>e\<of\>B,E|\<rangle\>>\<approx\><around*|\<langle\>|\<lambda\>x\<of\>id<around*|(|A|)>\<point\>e\<of\>id<around*|(|B|)>,E<rprime|'>|\<rangle\>>>
 
       In this case\ 
 
-      <\itemize>
-        <item><math|app<around*|(|U,V,k|)>=app<around*|(|<around*|\<langle\>|\<lambda\>x<rsup|A,B>.e,E|\<rangle\>>\<nocomma\>,V,\<kappa\>|)>=<around*|\<langle\>|e,E<around*|[|x\<leftarrow\>V|]>,\<kappa\>|\<rangle\>>>
+      <\eqnarray*>
+        <tformat|<table|<row|<cell|>|<cell|>|<cell|doApp<around*|(|U,V,k|)>>>|<row|<cell|>|<cell|=>|<cell|doApp<around*|(|<around*|\<langle\>|\<lambda\>x\<of\>A\<point\>e\<of\>B,E|\<rangle\>>\<nocomma\>,V,\<kappa\>|)>>>|<row|<cell|>|<cell|=>|<cell|<around*|\<langle\>|e,E<around*|[|x\<leftarrow\>V|]>,\<kappa\>|\<rangle\>>>>|<row|<cell|>|<cell|>|<cell|>>|<row|<cell|>|<cell|>|<cell|doApp<rprime|'><around*|(|U<rprime|'>,V<rprime|'>,\<kappa\><rprime|'>|)>>>|<row|<cell|>|<cell|=>|<cell|doApp<rprime|'><around*|(|<around*|\<langle\>|\<lambda\>x\<of\>id<around*|(|A|)>\<point\>e\<of\>id<around*|(|B|)>,E<rprime|'>|\<rangle\>>,V<rprime|'>,\<kappa\><rprime|'>|)>>>|<row|<cell|>|<cell|=>|<cell|<around*|\<llbracket\>|id<around*|(|A|)>|\<rrbracket\>><around*|(|V<rprime|'>|)>\<ggeq\>\<lambda\>V<rprime|'>.<around*|\<langle\>|e,E<rprime|'><around*|[|x\<leftarrow\>V<rprime|'>|]>,\<kappa\><rprime|'>|\<rangle\>>>>|<row|<cell|<around*|(|\<star\>|)>>|<cell|=>|<cell|<underline|Just
+        V<rprime|'>>\<ggeq\>\<lambda\>V<rprime|'>.<around*|\<langle\>|e,E<rprime|'><around*|[|x\<leftarrow\>V<rprime|'>|]>,\<kappa\><rprime|'>|\<rangle\>>>>|<row|<cell|>|<cell|=>|<cell|<around*|\<langle\>|e,E<rprime|'><around*|[|x\<leftarrow\>V<rprime|'>|]>,\<kappa\><rprime|'>|\<rangle\>>>>>>
+      </eqnarray*>
 
-        <item><math|app<rprime|'><around*|(|U<rprime|'>,V<rprime|'>,\<kappa\><rprime|'>|)>=app<rprime|'><around*|(|<around*|\<langle\>|\<lambda\>x<rsup|id<around*|(|A|)>,id<around*|(|B|)>>.e,E<rprime|'>|\<rangle\>>,V<rprime|'>,\<kappa\><rprime|'>|)>=<around*|\<langle\>|e,E<rprime|'><around*|[|x\<leftarrow\>V<rprime|'>|]>,\<kappa\><rprime|'>|\<rangle\>>>
-      </itemize>
+      The step marked with <math|<around*|(|\<star\>|)>> follows from the
+      basic property of <math|id<around*|(|\<cdot\>|)>>, that is
 
-      By the definition of our bisimulation relation
-      <math|<around*|\<langle\>|e,E<around*|[|x\<leftarrow\>V|]>,\<kappa\>|\<rangle\>>\<approx\><around*|\<langle\>|e,E<rprime|'><around*|[|x\<leftarrow\>V<rprime|'>|]>,\<kappa\><rprime|'>|\<rangle\>>>.
+      <\equation*>
+        <around*|\<llbracket\>|id<around*|(|A|)>|\<rrbracket\>><around*|(|V|)>=Just
+        V
+      </equation*>
 
-      By Lemma 2, <math|app<around*|(|U,V,\<kappa\>|)>\<approx\><rsup|\<ast\>>app<rprime|'><around*|(|U<rprime|'>,V<rprime|'>,\<kappa\><rprime|'>|)>>.
+      By definition, <math|<around*|\<langle\>|e,E<around*|[|x\<leftarrow\>V|]>,\<kappa\>|\<rangle\>>\<approx\><around*|\<langle\>|e,E<rprime|'><around*|[|x\<leftarrow\>V<rprime|'>|]>,\<kappa\><rprime|'>|\<rangle\>>>.
 
-      <with|font-series|bold|Case> <math|<around*|\<langle\>|U<rsub|1><around*|\<langle\>|A\<rightarrow\>B\<Rightarrow\><rsup|l>C\<rightarrow\>D|\<rangle\>>,E|\<rangle\>>\<approx\><around*|\<langle\>|\<lambda\>x<rsup|seq<around*|(|<around*|\<lceil\>|C\<Rightarrow\><rsup|l>A|\<rceil\>>,c|)>,seq<around*|(|d,<around*|\<lceil\>|B\<Rightarrow\><rsup|l>D|\<rceil\>>|)>>.e,E<rprime|'>|\<rangle\>>\<of\>C\<rightarrow\>D>
+      Thus <math|<around*|\<langle\>|e,E<around*|[|x\<leftarrow\>V|]>,\<kappa\>|\<rangle\>>\<approx\><rsup|\<ast\>><around*|\<langle\>|e,E<rprime|'><around*|[|x\<leftarrow\>V<rprime|'>|]>,\<kappa\><rprime|'>|\<rangle\>>>.
+
+      <with|font-series|bold|Case> <math|<around*|\<langle\>|U<rsub|1><around*|\<langle\>|A\<rightarrow\>B\<Rightarrow\><rsup|l>C\<rightarrow\>D|\<rangle\>>,E|\<rangle\>>\<approx\><around*|\<langle\>|\<lambda\>x\<of\>seq<around*|(|<around*|\<lceil\>|C\<Rightarrow\><rsup|l>A|\<rceil\>>,c|)>\<point\>e\<of\>seq<around*|(|d,<around*|\<lceil\>|B\<Rightarrow\><rsup|l>D|\<rceil\>>|)>,E<rprime|'>|\<rangle\>>>
 
       Let <math|U<rsub|1><rprime|'>=<around*|\<langle\>|\<lambda\>x<rsup|c,d>.e,E<rprime|'>|\<rangle\>>
-      >, we also have <math|U<rsub|1>\<approx\>U<rsub|1><rsup|<rprime|'>>\<of\>A\<rightarrow\>B>.\ 
+      >, we also have <math|U<rsub|1>\<approx\>U<rsub|1><rsup|<rprime|'>>>.
 
-      The left state is <math|<around*|\<langle\>|V,<around*|[|\<box\><around*|\<langle\>|C\<Rightarrow\><rsup|l>A|\<rangle\>>|]><around*|[|<around*|(|U<rsub|1>
-      \<box\>|)>|]><around*|[|B\<Rightarrow\><rsup|l>D|]>\<kappa\>|\<rangle\>>>,
-      whose <with|font-shape|italic|next> state is\ 
+      In this case,
 
-      <\equation*>
-        appC<around*|(|V,C\<Rightarrow\><rsup|l>A|)>\<ggeq\>\<lambda\>V<rsub|1>.<around*|\<langle\>|V,<around*|[|<around*|(|U<rsub|1>
-        \<box\>|)>|]><around*|[|B\<Rightarrow\><rsup|l>D|]>\<kappa\>|\<rangle\>>
-      </equation*>
+      <\eqnarray*>
+        <tformat|<table|<row|<cell|>|<cell|>|<cell|doApp<around*|(|U,V,k|)>>>|<row|<cell|>|<cell|=>|<cell|doApp<around*|(|<around*|\<langle\>|U<rsub|1><around*|\<langle\>|A\<rightarrow\>B\<Rightarrow\><rsup|l>C\<rightarrow\>D|\<rangle\>>,E|\<rangle\>>,V,k|)>>>|<row|<cell|>|<cell|\<longrightarrow\>>|<cell|<around*|\<llbracket\>|C\<Rightarrow\><rsup|l>A|\<rrbracket\>><around*|(|V|)>\<ggeq\>\<lambda\>V<rsub|1>.<around*|\<langle\>|V<rsub|1>,<around*|[|<around*|(|U<rsub|1>
+        \<box\>|)>|]><around*|[|B\<Rightarrow\><rsup|l>D|]>\<kappa\>|\<rangle\>>>>|<row|<cell|>|<cell|>|<cell|>>|<row|<cell|>|<cell|>|<cell|doApp<rprime|'><around*|(|U<rprime|'>,V<rprime|'>,k<rprime|'>|)>>>|<row|<cell|>|<cell|=>|<cell|doApp<rprime|'><around*|(|<around*|\<langle\>|\<lambda\>x\<of\>seq<around*|(|<around*|\<lceil\>|C\<Rightarrow\><rsup|l>A|\<rceil\>>,c|)>.e\<of\>seq<around*|(|d,<around*|\<lceil\>|B\<Rightarrow\><rsup|l>D|\<rceil\>>|)>,E<rprime|'>|\<rangle\>>,V<rprime|'>,k<rprime|'>|)>>>|<row|<cell|>|<cell|=>|<cell|<around*|\<llbracket\>|seq<around*|(|<around*|\<lceil\>|C\<Rightarrow\><rsup|l>A|\<rceil\>>,c|)>|\<rrbracket\>><around*|(|V<rprime|'>|)>\<ggeq\>\<lambda\>V<rsub|1><rprime|'>.<around*|\<langle\>|e,E<rprime|'><around*|[|x\<leftarrow\>V<rsub|1><rprime|'>|]>,extCont<around*|(|seq<around*|(|d,<around*|\<lceil\>|B\<Rightarrow\><rsup|l>D|\<rceil\>>|)>,k<rprime|'>|)>|\<rangle\>>>>|<row|<cell|<around*|(|\<star\>|)>>|<cell|=>|<cell|<underline|<around*|\<llbracket\>|<around*|\<lceil\>|C\<Rightarrow\><rsup|l>A|\<rceil\>>|\<rrbracket\>><around*|(|V<rprime|'>|)>\<ggeq\><around*|\<llbracket\>|c|\<rrbracket\>>>\<ggeq\>\<lambda\>V<rsub|1><rprime|'>.<around*|\<langle\>|e,E<rprime|'><around*|[|x\<leftarrow\>V<rsub|1><rprime|'>|]>,extCont<around*|(|seq<around*|(|d,<around*|\<lceil\>|B\<Rightarrow\><rsup|l>D|\<rceil\>>|)>,k<rprime|'>|)>|\<rangle\>>>>>>
+      </eqnarray*>
 
-      depends on the result of <math|appC<around*|(|V,C\<Rightarrow\><rsup|l>A|)>>.
-
-      And the right state is (roughly)\ 
+      The step marked with <math|<around*|(|\<star\>|)>> follows from the
+      basic property of <math|seq<around*|(|\<cdot\>,\<cdot\>|)>>, that is
 
       <\equation*>
-        appC<rprime|'><around*|(|V<rprime|'>\<nocomma\>,seq<around*|(|<around*|\<lceil\>|C\<Rightarrow\><rsup|l>A|\<rceil\>>,c|)>|)>\<ggeq\>\<lambda\>V<rsub|1><rprime|'>.<around*|\<langle\>|e,E<rprime|'><around*|[|x\<leftarrow\>V<rsub|1><rprime|'>|]>,extCont<around*|(|seq<around*|(|d,<around*|\<lceil\>|B\<Rightarrow\><rsup|l>D|\<rceil\>>|)>,\<kappa\><rprime|'>|)>|\<rangle\>>
+        <around*|\<llbracket\>|seq<around*|(|c,d|)>|\<rrbracket\>><around*|(|V|)>=<around*|\<llbracket\>|c|\<rrbracket\>><around*|(|V|)>\<ggeq\><around*|\<llbracket\>|d|\<rrbracket\>>
       </equation*>
 
-      By the basic property of <math|seq<around*|(|\<cdot\>,\<cdot\>|)>>, we
-      can apply <math|<around*|\<lceil\>|C\<Rightarrow\><rsup|l>A|\<rceil\>>>
-      and <math|c> sequencely. So the right state can be re-written to
-
-      <\equation*>
-        appC<rprime|'><around*|(|V<rprime|'>,<around*|\<lceil\>|C\<Rightarrow\><rsup|l>A|\<rceil\>>|)>\<ggeq\>\<lambda\>V<rsub|1><rprime|'>.appC<rprime|'><around*|(|V<rsub|1><rprime|'>\<nocomma\>,c|)>\<ggeq\>\<lambda\>V<rsub|2><rprime|'>.<around*|\<langle\>|e,E<rprime|'><around*|[|x\<leftarrow\>V<rsub|2><rprime|'>|]>,extCont<around*|(|seq<around*|(|d,<around*|\<lceil\>|B\<Rightarrow\><rsup|l>D|\<rceil\>>|)>,\<kappa\><rprime|'>|)>|\<rangle\>>
-      </equation*>
-
-      By Lemma 4, we can case-split <math|applyCast<around*|(|V,C\<Rightarrow\><rsup|l>A|)>>
-      and <math|applyCast<rprime|'><around*|(|V<rprime|'>,<around*|\<lceil\>|C\<Rightarrow\><rsup|l>A|\<rceil\>>|)>>
+      By Lemma 3, we can case-split <math|<around*|\<llbracket\>|C\<Rightarrow\><rsup|l>A|\<rrbracket\>><around*|(|V|)>>
+      and <math|<around*|\<llbracket\>|<around*|\<lceil\>|C\<Rightarrow\><rsup|l>A|\<rceil\>>|\<rrbracket\>><around*|(|V<rprime|'>|)>>
       at the same time.
 
       <\indent>
-        <with|font-series|bold|Case> <math|applyCast<around*|(|V,C<long-arrow|\<rubber-Rightarrow\>|l>A|)>=l>
-        and <math|applyCast<rprime|'><around*|(|V<rprime|'>,<around*|\<lceil\>|C<long-arrow|\<rubber-Rightarrow\>|l>A|\<rceil\>>|)>=l>
+        <with|font-series|bold|Case> <math|<around*|\<llbracket\>|C\<Rightarrow\><rsup|l>A|\<rrbracket\>><around*|(|V|)>=Err
+        l> and <math|<around*|\<llbracket\>|<around*|\<lceil\>|C\<Rightarrow\><rsup|l>A|\<rceil\>>|\<rrbracket\>><around*|(|V<rprime|'>|)>=Err
+        l>
 
         In this case\ 
 
         <\eqnarray*>
-          <tformat|<table|<row|<cell|>|<cell|>|<cell|app<around*|(|U,V,\<kappa\>|)>>>|<row|<cell|>|<cell|=>|<cell|<around*|\<langle\>|V,<around*|[|\<box\><around*|\<langle\>|C\<Rightarrow\><rsup|l>A|\<rangle\>>|]><around*|[|<around*|(|U<rsub|1>
-          \<box\>|)>|]><around*|[|B\<Rightarrow\><rsup|l>D|]>\<kappa\>|\<rangle\>>>>|<row|<cell|>|<cell|\<longrightarrow\>>|<cell|Halt
-          l>>|<row|<cell|>|<cell|>|<cell|>>|<row|<cell|>|<cell|>|<cell|app<rprime|'><around*|(|U<rprime|'>,V<rprime|'>,\<kappa\><rprime|'>|)>>>|<row|<cell|>|<cell|=>|<cell|Halt
+          <tformat|<table|<row|<cell|>|<cell|>|<cell|doApp<around*|(|U,V,\<kappa\>|)>>>|<row|<cell|>|<cell|\<longrightarrow\>>|<cell|Err
+          l\<ggeq\>\<lambda\>V<rsub|1>.<around*|\<langle\>|V<rsub|1>,<around*|[|<around*|(|U<rsub|1>
+          \<box\>|)>|]><around*|[|B\<Rightarrow\><rsup|l>D|]>\<kappa\>|\<rangle\>>>>|<row|<cell|>|<cell|\<longrightarrow\>>|<cell|Err
+          l>>|<row|<cell|>|<cell|>|<cell|>>|<row|<cell|>|<cell|>|<cell|doApp<rprime|'><around*|(|U<rprime|'>,V<rprime|'>,\<kappa\><rprime|'>|)>>>|<row|<cell|>|<cell|=>|<cell|Err
+          l\<ggeq\><around*|\<llbracket\>|c|\<rrbracket\>>\<ggeq\>\<lambda\>V<rsub|1><rprime|'>.<around*|\<langle\>|e,E<rprime|'><around*|[|x\<leftarrow\>V<rsub|1><rprime|'>|]>,extCont<around*|(|seq<around*|(|d,<around*|\<lceil\>|B\<Rightarrow\><rsup|l>D|\<rceil\>>|)>,k<rprime|'>|)>|\<rangle\>>>>|<row|<cell|>|<cell|=>|<cell|Err
           l>>>>
         </eqnarray*>
 
-        The final states are related by definition.
+        By definition, <math|Err l\<approx\>Err l>.
 
-        <with|font-series|bold|Case> <math|applyCast<around*|(|V,C<long-arrow|\<rubber-Rightarrow\>|l>A|)>=V<rsub|1>>
-        and <math|applyCast<rprime|'><around*|(|V<rprime|'>,<around*|\<lceil\>|C<long-arrow|\<rubber-Rightarrow\>|l>A|\<rceil\>>|)>=V<rsub|1><rprime|'>>
-        and <math|V<rsub|1>\<approx\>V<rsub|1><rprime|'>\<of\>C>
+        Thus <math|doApp<around*|(|U,V,\<kappa\>|)>\<approx\><rsup|\<ast\>>doApp<rprime|'><around*|(|U<rprime|'>,V<rprime|'>,\<kappa\><rprime|'>|)>>.
 
-        In this case, the reduction at the left side is straightforward.
+        <with|font-series|bold|Case> <math|<around*|\<llbracket\>|C\<Rightarrow\><rsup|l>A|\<rrbracket\>><around*|(|V|)>=Just
+        V<rsub|1>> and <math|<around*|\<llbracket\>|<around*|\<lceil\>|C\<Rightarrow\><rsup|l>A|\<rceil\>>|\<rrbracket\>><around*|(|V<rprime|'>|)>=Just
+        V<rsub|1><rprime|'>> and <math|V<rsub|1>\<approx\>V<rsub|1><rprime|'>>
+
+        In this case
 
         <\eqnarray*>
-          <tformat|<table|<row|<cell|>|<cell|>|<cell|app<around*|(|U,V,\<kappa\>|)>>>|<row|<cell|>|<cell|=>|<cell|<around*|\<langle\>|V,<around*|[|\<box\><around*|\<langle\>|C\<Rightarrow\><rsup|l>A|\<rangle\>>|]><around*|[|U<rsub|1>
-          \<box\>|]><around*|[|\<box\><around*|\<langle\>|B\<Rightarrow\><rsup|l>D|\<rangle\>>|]>\<kappa\>|\<rangle\>>>>|<row|<cell|>|<cell|\<longrightarrow\>>|<cell|<around*|\<langle\>|V<rsub|1>,<around*|[|U<rsub|1>
-          \<box\>|]><around*|[|\<box\><around*|\<langle\>|B\<Rightarrow\><rsup|l>D|\<rangle\>>|]>\<kappa\>|\<rangle\>>>>|<row|<cell|>|<cell|\<longrightarrow\>>|<cell|app<around*|(|U<rsub|1>,V<rsub|1>,<around*|[|\<box\><around*|\<langle\>|B\<Rightarrow\><rsup|l>D|\<rangle\>>|]>\<kappa\>|)>>>>>
+          <tformat|<table|<row|<cell|>|<cell|>|<cell|doApp<around*|(|U,V,\<kappa\>|)>>>|<row|<cell|>|<cell|\<longrightarrow\>>|<cell|Just
+          V<rsub|1>\<ggeq\>\<lambda\>V<rsub|1>.<around*|\<langle\>|V<rsub|1>,<around*|[|<around*|(|U<rsub|1>
+          \<box\>|)>|]><around*|[|B\<Rightarrow\><rsup|l>D|]>\<kappa\>|\<rangle\>>>>|<row|<cell|>|<cell|\<longrightarrow\>>|<cell|<around*|\<langle\>|V<rsub|1>,<around*|[|<around*|(|U<rsub|1>
+          \<box\>|)>|]><around*|[|B\<Rightarrow\><rsup|l>D|]>\<kappa\>|\<rangle\>>>>|<row|<cell|>|<cell|\<longrightarrow\>>|<cell|doApp<around*|(|U<rsub|1>,V<rsub|1>,<around*|[|\<box\><around*|\<langle\>|B\<Rightarrow\><rsup|l>D|\<rangle\>>|]>\<kappa\>|)>>>|<row|<cell|>|<cell|>|<cell|>>|<row|<cell|>|<cell|>|<cell|doApp<rprime|'><around*|(|U<rprime|'>,V<rprime|'>,\<kappa\><rprime|'>|)>>>|<row|<cell|>|<cell|=>|<cell|Just
+          V<rsub|1><rprime|'>\<ggeq\><around*|\<llbracket\>|c|\<rrbracket\>>\<ggeq\>\<lambda\>V<rsub|2><rprime|'>.<around*|\<langle\>|e,E<rprime|'><around*|[|x\<leftarrow\>V<rsub|2><rprime|'>|]>,extCont<around*|(|seq<around*|(|d,<around*|\<lceil\>|B\<Rightarrow\><rsup|l>D|\<rceil\>>|)>,k<rprime|'>|)>|\<rangle\>>>>|<row|<cell|>|<cell|=>|<cell|<around*|\<llbracket\>|c|\<rrbracket\>><around*|(|V<rsub|1><rprime|'>|)>\<ggeq\>\<lambda\>V<rsub|2><rprime|'>.<around*|\<langle\>|e,E<rprime|'><around*|[|x\<leftarrow\>V<rsub|2><rprime|'>|]>,extCont<around*|(|seq<around*|(|d,<around*|\<lceil\>|B\<Rightarrow\><rsup|l>D|\<rceil\>>|)>,k<rprime|'>|)>|\<rangle\>>>>|<row|<cell|<around*|(|\<star\>|)>>|<cell|=>|<cell|<around*|\<llbracket\>|c|\<rrbracket\>><around*|(|V<rsub|1><rprime|'>|)>\<ggeq\>\<lambda\>V<rsub|2><rprime|'>.<around*|\<langle\>|e,E<rprime|'><around*|[|x\<leftarrow\>V<rsub|2><rprime|'>|]>,<underline|extCont<around*|(|d,extCont<around*|(|<around*|\<lceil\>|B\<Rightarrow\><rsup|l>D|\<rceil\>>,\<kappa\><rprime|'>|)>|)>>|\<rangle\>>>>|<row|<cell|>|<cell|=>|<cell|doApp<rprime|'><around*|(|<around*|\<langle\>|\<lambda\>x<rsup|c,d>.e,E<rprime|'>|\<rangle\>>,V<rsub|1><rprime|'>,extCont<around*|(|<around*|\<lceil\>|B\<Rightarrow\><rsup|l>D|\<rceil\>>,\<kappa\><rprime|'>|)>|)>>>|<row|<cell|>|<cell|=>|<cell|doApp<rprime|'><around*|(|U<rsub|1><rprime|'>,V<rsub|1><rprime|'>,extCont<around*|(|<around*|\<lceil\>|B\<Rightarrow\><rsup|l>D|\<rceil\>>,\<kappa\><rprime|'>|)>|)>>>>>
         </eqnarray*>
 
-        The reduction at the right side is subtle.\ 
+        The step marked with <math|<around*|(|\<star\>|)>> follows from Lemma
+        5.\ 
 
-        The finial states\ 
+        Now we can use the induction hypothesis two show that\ 
+
+        <\equation*>
+          doApp<around*|(|U<rsub|1>,V<rsub|1>,<around*|[|\<box\><around*|\<langle\>|B\<Rightarrow\><rsup|l>D|\<rangle\>>|]>\<kappa\>|)>\<approx\><rsup|\<ast\>>doApp<rprime|'><around*|(|U<rsub|1><rprime|'>,V<rsub|1><rprime|'>,extCont<around*|(|<around*|\<lceil\>|B\<Rightarrow\><rsup|l>D|\<rceil\>>,\<kappa\><rprime|'>|)>|)>
+        </equation*>
+
+        because <math|U<rsub|1>\<approx\>U<rsub|1><rprime|'>> and
+        <math|V<rsub|1>\<approx\>V<rsub|1><rprime|'>> and, by Lemma 6,
+        <math|<around*|[|\<box\><around*|\<langle\>|B\<Rightarrow\><rsup|l>D|\<rangle\>>|]>\<kappa\>\<approx\>extCont<around*|(|<around*|\<lceil\>|B\<Rightarrow\><rsup|l>D|\<rceil\>>,\<kappa\><rprime|'>|)>>.
+
+        Thus <math|doApp<around*|(|U,V,\<kappa\>|)>\<approx\><rsup|\<ast\>>doApp<rprime|'><around*|(|U<rprime|'>,V<rprime|'>,\<kappa\><rprime|'>|)>>.
       </indent>
     </indent>
 
@@ -143,6 +153,16 @@
 
 <\references>
   <\collection>
-    <associate|auto-1|<tuple|1|?>>
+    <associate|auto-1|<tuple|1|1>>
   </collection>
 </references>
+
+<\auxiliary>
+  <\collection>
+    <\associate|toc>
+      <vspace*|1fn><with|font-series|<quote|bold>|math-font-series|<quote|bold>|1<space|2spc>Definitions>
+      <datoms|<macro|x|<repeat|<arg|x>|<with|font-series|medium|<with|font-size|1|<space|0.2fn>.<space|0.2fn>>>>>|<htab|5mm>>
+      <no-break><pageref|auto-1><vspace|0.5fn>
+    </associate>
+  </collection>
+</auxiliary>

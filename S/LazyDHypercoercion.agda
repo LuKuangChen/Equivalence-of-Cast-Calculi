@@ -6,6 +6,7 @@ open BlameStrategy LazyDBS using (Injectable)
 open import Types
 open import Variables
 open import Terms Label
+open import Error Label
 open import Cast Label using (it)
 open import S.CastADT Label Injectable
 open import S.LazyDCastADT Label
@@ -266,15 +267,15 @@ module AlternativeApplyCast where
     → Val (` P1)
     → CastResult (` P3)
   apply-body {P1} {P2} ℓ b v with (` P1) ⌣? (` P2)
-  apply-body {.U} {.U} ℓ U unit | yes ⌣U = succ unit
-  apply-body {.(_ ⇒ _)} {.(_ ⇒ _)} ℓ (c₃ ⇒ c₄) (lam c₁ c₂ e₁ E) | yes ⌣⇒ = succ (lam (seq c₃ (ℓ-dom ℓ) c₁) (seq c₂ (ℓ-cod ℓ) c₄) e₁ E)
+  apply-body {.U} {.U} ℓ U unit | yes ⌣U = just unit
+  apply-body {.(_ ⇒ _)} {.(_ ⇒ _)} ℓ (c₃ ⇒ c₄) (lam c₁ c₂ e₁ E) | yes ⌣⇒ = just (lam (seq c₃ (ℓ-dom ℓ) c₁) (seq c₂ (ℓ-cod ℓ) c₄) e₁ E)
   apply-body {P1} {.P1} (inj₁ refl) b v | no ¬p = ⊥-elim (¬p (⌣refl _))
-  apply-body {P1} {P2} (inj₂ l) b v | no ¬p = fail l
+  apply-body {P1} {P2} (inj₂ l) b v | no ¬p = error l
   
   apply-tail : ∀ {P T} → Tail P T → Val (` P) → CastResult T
-  apply-tail (fail l) v = fail l
-  apply-tail (last ‼) v = succ (dyn _ _ v)
-  apply-tail (last ε) v = succ v
+  apply-tail (fail l) v = error l
+  apply-tail (last ‼) v = just (dyn _ _ v)
+  apply-tail (last ε) v = just v
 
   apply-rest : ∀ {P1 P2 T}
     → GapP P1 P2
@@ -289,7 +290,7 @@ module AlternativeApplyCast where
     → Val T1
     ---
     → CastResult T2
-  apply-cast id* v = succ v
+  apply-cast id* v = just v
   apply-cast (↷ (⁇ l) r) (dyn _ _ v) = apply-rest (inj₂ l) r v
   apply-cast (↷ ε r) v = apply-rest (inj₁ refl) r v
 
@@ -299,35 +300,35 @@ mutual
   lem-id-body : ∀ P
     → (v : Val (` P))  
     -----------------------------
-    → apply-body (inj₁ refl) (mk-id-body P) v ≡ succ v
+    → apply-body (inj₁ refl) (mk-id-body P) v ≡ just v
   lem-id-body U unit = refl
   lem-id-body (T₁ ⇒ T₂) (lam c₁ c₂ e E) rewrite seq-id-l c₁ | seq-id-r c₂ = refl
 
   lem-id : ∀ T
     → (v : Val T)  
     -----------------------------
-    → apply-cast (mk-id T) v ≡ succ v
+    → apply-cast (mk-id T) v ≡ just v
   lem-id * v = refl
   lem-id (` U) unit = refl
   lem-id (` (T₁ ⇒ T₂)) (lam c₁ c₂ e E) rewrite seq-id-l c₁ | seq-id-r c₂ = refl
 
-lem-seq-fail : ∀ {P1 P2 P3 T1 T2}
+lem-seq-error : ∀ {P1 P2 P3 T1 T2}
   → (v : Val (` P1))
   → (ℓ : GapP P1 P2)
   → (b : Body P2 P3)
   → (l : Label)
   → (f : Val T1 → CastResult T2)
   ---
-  → (apply-body ℓ b v >>= (λ v → fail l)) ≡
-    ((apply-body ℓ b v >>= (λ v → fail l)) >>= f)
-lem-seq-fail v ℓ b l f with apply-body ℓ b v
-lem-seq-fail v ℓ b l f | succ v₁ = refl
-lem-seq-fail v ℓ b l f | fail l₁ = refl
+  → (apply-body ℓ b v >>= (λ v → error l)) ≡
+    ((apply-body ℓ b v >>= (λ v → error l)) >>= f)
+lem-seq-error v ℓ b l f with apply-body ℓ b v
+lem-seq-error v ℓ b l f | just v₁ = refl
+lem-seq-error v ℓ b l f | error l₁ = refl
 
 lem-apply-body-refl : ∀ {P1 P2}
   → (v : Val (` P1))
   → (b : Body P1 P2)
-  → ∃[ u ](apply-body (inj₁ refl) b v ≡ succ u)
+  → ∃[ u ](apply-body (inj₁ refl) b v ≡ just u)
 lem-apply-body-refl {P1} v b with (` P1) ⌣? (` P1)
 lem-apply-body-refl {.U} unit U | yes ⌣U = unit , refl
 lem-apply-body-refl {.(_ ⇒ _)} (lam c₁ c₂ e₁ E) (c₃ ⇒ c₄) | yes ⌣⇒
@@ -339,7 +340,7 @@ lem-apply-body-⌣ : ∀ {P0 P1 P2}
   → (ℓ : GapP P0 P1)
   → (p : (` P0) ⌣ (` P1))
   → (b : Body P1 P2)
-  → ∃[ u ](apply-body ℓ b v ≡ succ u)
+  → ∃[ u ](apply-body ℓ b v ≡ just u)
 lem-apply-body-⌣ {.U} {.U} unit ℓ ⌣U U = unit , refl
 lem-apply-body-⌣ {.(_ ⇒ _)} {.(_ ⇒ _)} (lam c₁ c₂ e₁ E) ℓ ⌣⇒ (c₃ ⇒ c₄) = (lam (seq c₃ _ c₁) (seq c₂ _ c₄) e₁ E) , refl
 
@@ -376,10 +377,10 @@ lem-seq' {P1} {P2} {P3} {P3} v (inj₂ y) b1 t1 h2 b2 t2 | yes p | ε | ε | no 
 lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | no ¬p with t1 | h2
 ... | ε | ε = (⊥-elim (¬p (⌣refl _)))
 ... | ‼ | ⁇ l with apply-body ℓ b1 v
-lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | no ¬p | ‼ | ⁇ l | succ v₁ with (` P3) ⌣? (` P4)
-lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | no ¬p | ‼ | ⁇ l | succ v₁ | yes p = ⊥-elim (¬p p)
-lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | no ¬p | ‼ | ⁇ l | succ v₁ | no ¬p₁ = refl
-lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | no ¬p | ‼ | ⁇ l | fail l₁ = refl
+lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | no ¬p | ‼ | ⁇ l | just v₁ with (` P3) ⌣? (` P4)
+lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | no ¬p | ‼ | ⁇ l | just v₁ | yes p = ⊥-elim (¬p p)
+lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | no ¬p | ‼ | ⁇ l | just v₁ | no ¬p₁ = refl
+lem-seq' {P1} {P2} {P3} {P4} v ℓ b1 t1 h2 b2 t2 | no ¬p | ‼ | ⁇ l | error l₁ = refl
 
 lem-seq : ∀ {T1 T2 T3}
   → (c1 : Cast T1 T2)
@@ -389,9 +390,9 @@ lem-seq : ∀ {T1 T2 T3}
   → apply-cast (mk-seq c1 c2) v ≡ apply-cast c1 v >>= λ u → apply-cast c2 u
 lem-seq id* id* v = refl
 lem-seq id* (↷ (⁇ l) r) v = refl
-lem-seq (↷ h (rest b (last ‼))) id* v = sym (>>=-succ _)
-lem-seq (↷ (⁇ l₁) (rest b (fail l))) c2 (dyn P _ v) = lem-seq-fail v (inj₂ l₁) b l _
-lem-seq (↷ ε (rest b (fail l))) c2 v = lem-seq-fail v _ b l _
+lem-seq (↷ h (rest b (last ‼))) id* v = sym (>>=just _)
+lem-seq (↷ (⁇ l₁) (rest b (fail l))) c2 (dyn P _ v) = lem-seq-error v (inj₂ l₁) b l _
+lem-seq (↷ ε (rest b (fail l))) c2 v = lem-seq-error v _ b l _
 lem-seq (↷ (⁇ l) (rest {Q = P1} b (last t))) (↷ h₁ (rest {_} b₁ t₁)) (dyn P _ v) = lem-seq' v (inj₂ l) b t h₁ b₁ t₁
 lem-seq (↷ ε (rest {Q = P1} b (last t))) (↷ h₁ (rest {_} b₁ t₁)) v = lem-seq' v (inj₁ refl) b t h₁ b₁ t₁
 
@@ -399,28 +400,28 @@ lem-cast-¬⌣ : ∀ {T1 T2}
   → (l : Label)
   → ¬ (T1 ⌣ T2)
   → (v : Val T1)
-  → apply-cast (mk-cast l T1 T2) v ≡ fail l
+  → apply-cast (mk-cast l T1 T2) v ≡ error l
 lem-cast-¬⌣ {*} {*} l ¬p v = ⊥-elim (¬p *⌣*)
 lem-cast-¬⌣ {*} {` P} l ¬p v = ⊥-elim (¬p (*⌣P P))
 lem-cast-¬⌣ {` P} {*} l ¬p v = ⊥-elim (¬p (P⌣* P))
 lem-cast-¬⌣ {` P} {` P₁} l ¬p v with (` P) ⌣? (` P₁)
 lem-cast-¬⌣ {` P} {` P₁} l ¬p v | yes p = ⊥-elim (¬p p)
 lem-cast-¬⌣ {` P} {` P₁} l ¬p v | no ¬p₁
-  rewrite sym (>>=-succ (apply-body (inj₁ refl) (mk-id-body P) v))
+  rewrite sym (>>=just (apply-body (inj₁ refl) (mk-id-body P) v))
         | lem-id (` P) v
   = refl
 
 lem-cast-id* : ∀ l
   → (v : Val *)
-  → apply-cast (mk-cast l * *) v ≡ succ v
+  → apply-cast (mk-cast l * *) v ≡ just v
 lem-cast-id* l v = refl
 
 lem-cast-inj : ∀ {P}
   → (l : Label)
   → (v : Val (` P))  
-  → apply-cast (mk-cast l (` P) *) v ≡ succ (dyn P _ v)
+  → apply-cast (mk-cast l (` P) *) v ≡ just (dyn P _ v)
 lem-cast-inj {P} l v
-  rewrite sym (>>=-succ (apply-body (inj₁ refl) (mk-id-body P) v))
+  rewrite sym (>>=just (apply-body (inj₁ refl) (mk-id-body P) v))
         | lem-id (` P) v
   = refl
 
@@ -449,7 +450,7 @@ lem-cast-proj l (T1 ⇒ T2) (T3 ⇒ T4) (lam c₁ c₂ e E) | yes ⌣⇒
 lem-cast-proj l P P₁ v | no ¬p rewrite lem-id-body P₁ v = refl
 
 lem-cast-U : ∀ l
-  → apply-cast (mk-cast l (` U) (` U)) unit ≡ succ unit
+  → apply-cast (mk-cast l (` U) (` U)) unit ≡ just unit
 lem-cast-U l = refl
 
 lem-cast-⇒ : ∀ T11 T12 T21 T22
@@ -461,7 +462,7 @@ lem-cast-⇒ : ∀ T11 T12 T21 T22
   → (e : (Γ , S) ⊢ T)
   → (E : Env Γ)
   → apply-cast (mk-cast l (` (T11 ⇒ T12)) (` (T21 ⇒ T22))) (lam c₁ c₂ e E) ≡
-    succ (lam (mk-seq (mk-cast l T21 T11) c₁) (mk-seq c₂ (mk-cast l T12 T22)) e E)
+    just (lam (mk-seq (mk-cast l T21 T11) c₁) (mk-seq c₂ (mk-cast l T12 T22)) e E)
 lem-cast-⇒ T11 T12 T21 T22 l E c₁ b c₂ = refl
 
 cast-adt : CastADT

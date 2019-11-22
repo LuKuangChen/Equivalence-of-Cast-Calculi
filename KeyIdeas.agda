@@ -31,7 +31,6 @@ open BlameStrategy LazyDBS using ()
 open BlameStrategy LazyUDBS using ()
   renaming (Injectable to LUDInjectable)
 
-
 -- For all implementations of CastADT C, If
 --   * C is LazyD
 --   * C satisfies basic properties

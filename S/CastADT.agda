@@ -11,6 +11,7 @@ module S.CastADT
 
 open import Variables
 open import Terms Label
+open import Error Label
 open import Cast Label using (it) renaming (Cast to SrcCast)
 import S.Values
 
@@ -50,7 +51,7 @@ record CastADTBasic (CADT : CastADT) : Set₁ where
     lem-apply-id : ∀ {T}
       → (v : Val T)  
       -----------------------------
-      → apply-cast v (id T) ≡ succ v
+      → apply-cast v (id T) ≡ just v
 
 -- only required for the bisim between D and S(C)
 record CastIdIsId (CR : CastADT) : Set where

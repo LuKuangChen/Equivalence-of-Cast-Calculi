@@ -19,6 +19,7 @@ open import Variables
 open import Terms Label
 open import Cast Label
 open import Observe Label
+open import Error Label
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Data.Product using (_×_; ∃-syntax)
@@ -33,7 +34,7 @@ mk-cont : ∀ {T1 T2}
 mk-cont k = cast (done k)
 
 load : ∀ {T} → (e : ∅ ⊢ T) → StateRelate (L.load e) (R.load e)
-load e = ` inspect e [] (mk-cont done)
+load e = ` expr e [] (mk-cont done)
 
 module LP = L
 module RP where
@@ -110,8 +111,8 @@ lem-do-app-cod : ∀ {Γ T1 T2 T3 T4 T5 T6}
     ≡
     R.do-app (R.lam c₁ c₂ e E) v (R.ext-cont c₃ k)
 lem-do-app-cod c₁ c₂ c₃ e E v k with R.apply-cast v c₁
-... | R.succ u rewrite lem-ext-cont-seq c₂ c₃ k = refl
-... | R.fail l = refl
+... | just u rewrite lem-ext-cont-seq c₂ c₃ k = refl
+... | error l = refl
                  
 do-app : ∀ {T1 T2 Z}
   → {lu : L.Val (` T1 ⇒ T2)}
@@ -127,14 +128,14 @@ do-app : ∀ {T1 T2 Z}
                  (RP.do-app ru rv rk)
 do-app (lam T1 T2 e E) v k
   rewrite RP.lem-apply-id (rval v)
-  = ss-done (` inspect e (v ∷ E) (ext-cont-id k))
+  = ss-done (` expr e (v ∷ E) (ext-cont-id k))
 do-app (cast-lam l T3 T4 T5 T6 c1 c2 e rE u') v k
   = ss-step further
   where
     further :
       StateRelate*
         (LP.progress
-          (L.return (lval v)
+          (L.cont (lval v)
             (L.step (L.cast₁ (L.it l T5 T3))
             (L.step (L.app₂ (lval u'))
             (L.step (L.cast₁ (L.it l T4 T6)) (lcont k))))))
@@ -149,8 +150,8 @@ do-app (cast-lam l T3 T4 T5 T6 c1 c2 e rE u') v k
       with L.apply-cast (lval v) (L.it l T5 T3)
         |  R.apply-cast (rval v) (R.mk-cast (it l T5 T3))
         |  lem-apply-cast v (it l T5 T3)
-    ... | .(L.fail _) | .(R.fail _) | fail l' = ss-done (halt (blame l'))
-    ... | .(L.succ _) | .(R.succ _) | succ v'
+    ... | .(error _) | .(error _) | error l' = ss-done (halt (blame l'))
+    ... | .(just _) | .(just _) | just v'
       rewrite lem-do-app-cod c1 c2 (R.mk-cast (it l T4 T6)) e rE (rval v') (rcont k)
       = ss-step (do-app u' v' (ext-cont (it l T4 T6) k))
                                                                      
@@ -164,7 +165,7 @@ apply-cont : ∀ {S T}
   ---
   → StateRelate* (LP.apply-cont lv lk) (RP.apply-cont rv rk)
 apply-cont v done rewrite observe-val v = ss-done (halt (done _))
-apply-cont v (step (app₁ e E) k) = ss-done (` inspect e E (mk-cont (step (app₂ v) k)))
+apply-cont v (step (app₁ e E) k) = ss-done (` expr e E (mk-cont (step (app₂ v) k)))
 apply-cont v (step (app₂ u) k) = do-app u v k
                                             
 apply-cast-cont : ∀ {T1 T2 T3}
@@ -175,15 +176,15 @@ apply-cast-cont : ∀ {T1 T2 T3}
   → {rc : R.Cast T1 T2}
   → {rk : R.PreCont T2 T3}
   → CastContRelate lk rc rk
-  → StateRelate* (LP.progress (L.return lv lk))
-                 (RP.progress (R.return rv (R.cast T2 rc rk)))
+  → StateRelate* (LP.progress (L.cont lv lk))
+                 (RP.progress (R.cont rv (R.cast T2 rc rk)))
 apply-cast-cont v (step c {rc = rc} k)
   rewrite RP.lem-apply-seq (rval v) (R.mk-cast c) rc
   with apply-cast (lval v) c
     | R.apply-cast (rval v) (R.mk-cast c)
     | lem-apply-cast v c
-... | .(L.succ _) | .(RP.succ _) | succ v' = ss-step (apply-cast-cont v' k)
-... | .(L.fail _) | .(RP.fail _) | fail l' = ss-done (halt (blame l'))
+... | .(just _) | .(just _) | just v' = ss-step (apply-cast-cont v' k)
+... | .(error _) | .(error _) | error l' = ss-done (halt (blame l'))
 apply-cast-cont v (done k)
   rewrite RP.lem-apply-id (rval v)
   = apply-cont v k
@@ -193,21 +194,21 @@ progress* : ∀ {T}
   → {rS : R.Nonhalting T}
   → NonhaltingRelate lS rS
   → StateRelate* (LP.progress lS) (RP.progress rS)
-progress* (inspect (var x) E κ)
-  = ss-done (` return (E [ x ]) κ)
-progress* (inspect unit E κ)
-  = ss-done (` return unit κ)
-progress* (inspect (lam T1 T2 e) E κ)
-  = ss-done (` return (lam T1 T2 e E) κ)
-progress* (inspect (app e1 e2) E κ)
-  = ss-done (` inspect e1 E (mk-cont (step (app₁ e2 E) κ)))
-progress* (inspect (cast e c) E κ)
-  = ss-done (` inspect e E (ext-cont c κ))
-progress* (inspect (blame l) E κ)
+progress* (expr (var x) E κ)
+  = ss-done (` cont (E [ x ]) κ)
+progress* (expr unit E κ)
+  = ss-done (` cont unit κ)
+progress* (expr (lam T1 T2 e) E κ)
+  = ss-done (` cont (lam T1 T2 e E) κ)
+progress* (expr (app e1 e2) E κ)
+  = ss-done (` expr e1 E (mk-cont (step (app₁ e2 E) κ)))
+progress* (expr (cast e c) E κ)
+  = ss-done (` expr e E (ext-cont c κ))
+progress* (expr (blame l) E κ)
   = ss-done (halt (blame l))
-progress* (return v (cast k))
+progress* (cont v (cast k))
   = apply-cast-cont v k
-                      
+
 lem-both-progress : ∀ {T}
   → {ls ls' : L.State T}
   → {rs rs' : R.State T}

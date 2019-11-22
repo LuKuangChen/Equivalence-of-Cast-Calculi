@@ -6,6 +6,7 @@ open import Types
 
 open import Variables
 open import Terms Label
+open import Error Label
 open import Cast Label using (it)
 
 open import X.BlameStrategies Label using (BlameStrategy; LazyDBS)
@@ -27,16 +28,16 @@ record LazyD (ADT : CastADT) : Set where
       → ¬ (T1 ⌣ T2)
       → (v : Val T1)
       ---
-      → apply-cast v (mk-cast (it l T1 T2)) ≡ fail l
+      → apply-cast v (mk-cast (it l T1 T2)) ≡ error l
 
     lem-cast-id* : ∀ l
       → (v : Val *)
-      → apply-cast v (mk-cast (it l * *)) ≡ succ v
+      → apply-cast v (mk-cast (it l * *)) ≡ just v
 
     lem-cast-inj : ∀ {P}
       → (l : Label)
       → (v : Val (` P))  
-      → apply-cast v (mk-cast (it l (` P) *)) ≡ succ (dyn P _ v)
+      → apply-cast v (mk-cast (it l (` P) *)) ≡ just (dyn P _ v)
       
     lem-cast-proj : ∀ Q P l v
       → apply-cast (dyn P tt v) (mk-cast (it l * (` Q)))
@@ -44,7 +45,7 @@ record LazyD (ADT : CastADT) : Set where
         apply-cast v (mk-cast (it l (` P) (` Q)))
 
     lem-cast-U : ∀ l
-      → apply-cast unit (mk-cast (it l (` U) (` U))) ≡ succ unit
+      → apply-cast unit (mk-cast (it l (` U) (` U))) ≡ just unit
 
     lem-cast-⇒ : ∀ T21 T22 T11 T12
       → ∀ {S T}
@@ -56,7 +57,7 @@ record LazyD (ADT : CastADT) : Set where
       → (E : Env Γ)
       → apply-cast (lam c₁ c₂ e E) (mk-cast (it l (` T11 ⇒ T12) (` T21 ⇒ T22)))
         ≡
-        succ (lam (seq (mk-cast (it l T21 T11)) c₁) (seq c₂ (mk-cast (it l T12 T22))) e E)
+        just (lam (seq (mk-cast (it l T21 T11)) c₁) (seq c₂ (mk-cast (it l T12 T22))) e E)
 
 -- module ApplyCast 
 --   (LADT : CastADT)
@@ -83,8 +84,8 @@ record LazyD (ADT : CastADT) : Set where
 --     → {g : R.Val T1 → (R.CastResult T2)}
 --     → ({v : L.Val T1} → {u : R.Val T1} → ValRelate v u → CastResultRelate (f v) (g u))
 --     → CastResultRelate (R L.>>= f) (S R.>>= g)
---   succ v lem->>= f = f v
---   fail l lem->>= f = fail l
+--   just v lem->>= f = f v
+--   error l lem->>= f = error l
 
 --   lem-simple-cast' : ∀ Q P l
 --     → {lv : L.Val (` P)}
@@ -95,14 +96,14 @@ record LazyD (ADT : CastADT) : Set where
 --   lem-simple-cast' Q P l v with (` P) ⌣? (` Q)
 --   lem-simple-cast' .U .U l unit | yes ⌣U
 --     rewrite LP.lem-cast-U l | RP.lem-cast-U l
---     = succ unit
+--     = just unit
 --   lem-simple-cast' (T21 ⇒ T22) (T11 ⇒ T12) l (lam c1 c2 e E) | yes ⌣⇒
 --     rewrite LP.lem-cast-⇒ T21 T22 T11 T12 l (lcast c1) (lcast c2) e (lenv E)
 --           | RP.lem-cast-⇒ T21 T22 T11 T12 l (rcast c1) (rcast c2) e (renv E)
---     = succ (lam (seq (cast l T21 T11) c1) (seq c2 (cast l T12 T22)) e E)
+--     = just (lam (seq (cast l T21 T11) c1) (seq c2 (cast l T12 T22)) e E)
 --   lem-simple-cast' Q P l v | no ¬p
 --     rewrite LP.lem-cast-¬⌣ l ¬p (lval v) | RP.lem-cast-¬⌣ l ¬p (rval v)
---     = fail l
+--     = error l
   
 --   lem-simple-cast : ∀ T S l
 --     → {lv : L.Val S}
@@ -111,10 +112,10 @@ record LazyD (ADT : CastADT) : Set where
 --     → CastResultRelate (L.apply-cast lv (L.mk-cast l S T))
 --                        (R.apply-cast rv (R.mk-cast l S T))
 --   lem-simple-cast * * l v
---     rewrite LP.lem-cast-id* l (lval v) | RP.lem-cast-id* l (rval v) = succ v
+--     rewrite LP.lem-cast-id* l (lval v) | RP.lem-cast-id* l (rval v) = just v
 --   lem-simple-cast * (` P) l v
 --     rewrite LP.lem-cast-inj l (lval v) | RP.lem-cast-inj l (rval v)
---     = succ (dyn P tt v)
+--     = just (dyn P tt v)
 --   lem-simple-cast (` Q) (` P) l v = lem-simple-cast' Q P l v
 --   lem-simple-cast (` Q) * l (dyn P tt v)
 --     rewrite LP.lem-cast-proj Q P l (lval v) | RP.lem-cast-proj Q P l (rval v)
@@ -131,7 +132,7 @@ record LazyD (ADT : CastADT) : Set where
 --   lem-apply-cast v (cast l T1 T2) = lem-simple-cast T2 T1 l v
 --   lem-apply-cast v (id T)
 --     rewrite LP.lem-id T (lval v) | RP.lem-id T (rval v)
---     = succ v
+--     = just v
 --   lem-apply-cast v (seq c1 c2)
 --     rewrite LP.lem-seq (lval v) (lcast c1) (lcast c2)
 --           | RP.lem-seq (rval v) (rcast c1) (rcast c2)

@@ -21,6 +21,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; sym;
 open import Variables
 open import Types
 open import Terms Label
+open import Error Label
 open import Cast Label using (Cast; it)
 open import Observe Label
 
@@ -188,12 +189,12 @@ data CastRelate : {T1 T2 : Type} → L.Cast T1 T2 → R.Cast T1 T2 → Set where
     → CastRelate c (R.mk-cast c)
 
 data CastResultRelate {T : Type} : L.CastResult T → R.CastResult T → Set where
-  succ :
+  just :
       {v : L.Val T}{u : R.Val T}
     → ValRelate v u
-    → CastResultRelate (L.succ v) (R.succ u)
-  fail : (l : Label)
-    → CastResultRelate (L.fail l) (R.fail l)
+    → CastResultRelate (just v) (just u)
+  error : (l : Label)
+    → CastResultRelate (error l) (error l)
 
 data FrameRelate : ∀ {S T} → L.Frame S T → R.Frame S T → Set where
   app₁ : ∀ {Γ S T}
@@ -278,7 +279,7 @@ data NonhaltingRelate : {T : Type}
   → Set
   where
   
-  inspect : ∀ {Γ T1 T3}
+  expr : ∀ {Γ T1 T3}
     → (e : Γ ⊢ T1)
     → {lE : L.Env Γ}
     → {rE : R.Env Γ}
@@ -287,9 +288,9 @@ data NonhaltingRelate : {T : Type}
     → {rκ : R.Cont T1 T3}
     → (κ : ContRelate lκ rκ)
     ------------
-    → NonhaltingRelate (L.inspect e lE lκ) (R.inspect e rE rκ)
+    → NonhaltingRelate (L.expr e lE lκ) (R.expr e rE rκ)
     
-  return : ∀ {T1 T2}
+  cont : ∀ {T1 T2}
     → {lv : L.Val T1}
     → {rv : R.Val T1}
     → (v : ValRelate lv rv)
@@ -297,7 +298,7 @@ data NonhaltingRelate : {T : Type}
     → {rκ : R.Cont T1 T2}
     → (κ : ContRelate lκ rκ)
     ------------
-    → NonhaltingRelate (L.return lv lκ) (R.return rv rκ)
+    → NonhaltingRelate (L.cont lv lκ) (R.cont rv rκ)
 
 data StateRelate : {T : Type} → L.State T → R.State T → Set where
 

@@ -5,8 +5,8 @@ module Error
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
 data Error (A : Set) : Set where
-  succ : (v : A) → Error A
-  fail : (l : Label) → Error A
+  just : (v : A) → Error A
+  error : (l : Label) → Error A
 
 Handler : (A B : Set) → Set
 Handler A B = A → Error B
@@ -15,8 +15,8 @@ _>>=_ : ∀ {A B}
   → Error A
   → Handler A B
   → Error B
-succ x >>= h = h x
-fail l >>= h = fail l
+just x >>= h = h x
+error l >>= h = error l
 
 >>=assoc : ∀ {A B C}
   → (r : Error A)
@@ -25,11 +25,11 @@ fail l >>= h = fail l
   → (r >>= f) >>= g
     ≡
     r >>= λ v → (f v) >>= g
->>=assoc (succ v) f g = refl
->>=assoc (fail l) f g = refl
+>>=assoc (just v) f g = refl
+>>=assoc (error l) f g = refl
 
->>=succ : ∀ {A}
+>>=just : ∀ {A}
   → (r : Error A)
-  → r >>= succ ≡ r
->>=succ (succ v) = refl
->>=succ (fail l) = refl
+  → r >>= just ≡ r
+>>=just (just v) = refl
+>>=just (error l) = refl

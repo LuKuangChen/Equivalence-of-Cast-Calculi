@@ -53,8 +53,8 @@ mutual
       → Env (Γ , T)
    
 _[_] : ∀ {Γ T} → Env Γ → Γ ∋ T → Val T
-(c ∷ E) [ Z ] = c
-(c ∷ E) [ S x ] = E [ x ]
+(c ∷ E) [ zero ] = c
+(c ∷ E) [ suc x ] = E [ x ]
 
 data CastResult (T : Type) : Set where
   succ : (v : Val T) → CastResult T

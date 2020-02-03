@@ -133,8 +133,8 @@ _[_] : ∀ {Γ T}
   → (E : EnvRelate lE rE)
   → (x : Γ ∋ T)
   → ValRelate (lE LV.[ x ]) (rE RV.[ x ])
-(c ∷ E) [ Z ] = c
-(c ∷ E) [ S x ] = E [ x ]
+(c ∷ E) [ zero ] = c
+(c ∷ E) [ suc x ] = E [ x ]
 
 
 data CastResultRelate {T : Type} : LV.CastResult T → RV.CastResult T → Set where

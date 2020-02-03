@@ -4,6 +4,7 @@
 
 ## TODO
 
+* state on top of error
 * use denotational notation for applyCast
 * include Lazy UD
 * move cast representations to their own folder

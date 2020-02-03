@@ -184,8 +184,8 @@ _[_] : ∀ {Γ T}
   → (E : EnvRelate lE rE)
   → (x : Γ ∋ T)
   → ValRelate (lE L.[ x ]) (rE R.[ x ])
-(c ∷ E) [ Z ] = c
-(c ∷ E) [ S x ] = E [ x ]
+(c ∷ E) [ zero ] = c
+(c ∷ E) [ suc x ] = E [ x ]
 
 data CastRelate : {T1 T2 : Type} → L.Cast T1 T2 → R.Cast T1 T2 → Set where
   cast : ∀ l T1 T2

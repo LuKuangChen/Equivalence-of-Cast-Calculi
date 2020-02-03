@@ -1,16 +1,16 @@
 open import S.CastADT
 
 module S.Bisimulation
-  (Label : Set)
-  (LCR : CastADT Label)
-  (LCS : LazyD Label LCR)
-  (RCR : CastADT Label)
-  (RCS : LazyD Label RCR)
+  (LCR : CastADT)
+  (LCS : LazyD LCR)
+  (RCR : CastADT)
+  (RCS : LazyD RCR)
   where
 
 open import Type
-open import Statics Label
-open import Observable Label
+open import Label
+open import Statics
+open import Observable
 open import S.Machine using ()
 open import S.Value using (succ; fail)
 
@@ -20,7 +20,7 @@ open import Data.Nat using (ℕ; suc; zero)
 open import Data.Product using ( _×_ ; Σ-syntax; ∃-syntax)
   renaming (_,_ to ⟨_,_⟩)
 
-module Values = S.Value Label
+module Values = S.Value
 
 -- an abstract machine specialized for an representation
 
@@ -28,8 +28,8 @@ module L where
   open CastADT LCR public
   open LazyD LCS public
 
-module LV = S.Value Label L.Cast
-module LM = S.Machine Label LCR
+module LV = S.Value L.Cast
+module LM = S.Machine LCR
 
 -- an abstract machine specialized for another representation
 
@@ -37,8 +37,8 @@ module R where
   open CastADT RCR public
   open LazyD RCS public
 
-module RV = S.Value Label R.Cast
-module RM = S.Machine Label RCR
+module RV = S.Value R.Cast
+module RM = S.Machine RCR
 
 data CastRelate : ∀ {T1 T2} → L.Cast T1 T2 → R.Cast T1 T2 → Set where
   id : ∀ {T}

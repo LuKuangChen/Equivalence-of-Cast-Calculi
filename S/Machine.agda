@@ -1,16 +1,16 @@
 open import S.CastADT
 
 module S.Machine
-  (Label : Set)
-  (cast-adt : CastADT Label)
+  (cast-adt : CastADT)
   where
 
 open CastADT cast-adt using (Cast; mk-cast; mk-id; mk-seq; apply-cast)
 
+open import Label
 open import Type
-open import Statics Label
-open import Observable Label
-open import S.Value Label Cast
+open import Statics
+open import Observable
+open import S.Value Cast
 
 open import Data.Nat using (ℕ; zero; suc; _+_)
 open import Data.Product using (Σ; _×_ ; Σ-syntax; ∃-syntax)

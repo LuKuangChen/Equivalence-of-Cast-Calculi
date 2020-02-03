@@ -1,7 +1,8 @@
-module S.HCast (Label : Set) where
-open import Types
-open import Statics Label
-open import S.CastADT Label
+module S.HCast where
+open import Label
+open import Type
+open import Statics
+open import S.CastADT
 
 open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -295,7 +296,7 @@ mutual
   seq-assoc (↷ h (rest {Q = _} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ | inj₂ y | no ¬p₂ | inj₁ refl = ⊥-elim (¬p₂ (⌣refl (` _)))
   seq-assoc (↷ h (rest {Q = P1} b (last t))) ℓ1 (↷ h₁ (rest {_} {P3} b₁ (last t₁))) ℓ2 (↷ h₂ (rest {_} b₂ t₂)) | no ¬p | no ¬p₁ | inj₂ y | no ¬p₂ | inj₂ y₁ = refl 
 
-open import S.Values Label Cast
+open import S.Value Cast
   
 module AlternativeApplyCast where
  

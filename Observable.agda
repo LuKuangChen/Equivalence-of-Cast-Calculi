@@ -1,7 +1,6 @@
-module Observable
-  (Label : Set)
-  where
+module Observable where
 
+open import Label
 open import Type
 
 data Value : Type → Set where

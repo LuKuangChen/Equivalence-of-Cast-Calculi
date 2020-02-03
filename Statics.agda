@@ -1,7 +1,6 @@
-module Statics
-  (Label : Set)
-  where
+module Statics where
 
+open import Label
 open import Type
 
 data Context : Set where

@@ -4,7 +4,6 @@
 
 ## TODO
 
-* change module names to singular form
 * postulate labels
 * use denotational notation for applyCast
 * include Lazy UD

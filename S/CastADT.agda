@@ -1,10 +1,9 @@
-module S.CastADT
-  (Label : Set)
-  where
+module S.CastADT where
 
 open import Type
-open import Statics Label
-open import S.Value Label
+open import Label
+open import Statics
+open import S.Value
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
 open import Relation.Nullary using (Dec; yes; no; ¬_)

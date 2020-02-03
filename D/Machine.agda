@@ -1,13 +1,11 @@
 open import Type
 
-module D.Machine
-  (Label : Set)
-  where
+module D.Machine where
 
-open import D.TCast Label
-open import Statics Label
-open import Observable Label
-open import D.Value Label Cast
+open import D.TCast
+open import Statics
+open import Observable
+open import D.Value Cast
 
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (Σ; _×_ ; Σ-syntax; ∃-syntax)

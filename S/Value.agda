@@ -1,11 +1,11 @@
 open import Type
 
 module S.Value
-  (Label : Set)
   (Cast : Type → Type → Set)
   where
   
-open import Statics Label
+open import Label
+open import Statics
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
 mutual

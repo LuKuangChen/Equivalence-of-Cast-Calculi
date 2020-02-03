@@ -1,11 +1,10 @@
 open import S.CastADT
 
 module Bisimulation
-  (Label : Set)
-  (LCR : CastADT Label)
-  (LCM : Monoid Label LCR)
-  (LCS : LazyD Label LCR)
-  (Extras : CastIdIsId Label LCR)
+  (LCR : CastADT)
+  (LCM : Monoid LCR)
+  (LCS : LazyD LCR)
+  (Extras : CastIdIsId LCR)
   where
 
 open import Data.Empty using (⊥; ⊥-elim)
@@ -15,9 +14,10 @@ open import Data.Product using (Σ; _×_ ; Σ-syntax; ∃-syntax; _,_)
 open import Data.Sum using (_⊎_ ; inj₁; inj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; sym; subst)
 
+open import Label
 open import Type
-open import Statics Label
-open import Observable Label
+open import Statics
+open import Observable
 
 import S.Machine
 import S.Value
@@ -33,15 +33,15 @@ module L where
     renaming (lem-id-l to monoid-id-l; lem-id-r to monoid-id-r; lem-assoc to monoid-assoc)
     public
   open CastIdIsId Extras public
-  open S.Value Label Cast public
-  open S.Machine Label LCR public
+  open S.Value Cast public
+  open S.Machine LCR public
 
 -- instantiate CEKc
 
 module R where
-  open import D.TCast Label public
-  open import D.Value Label Cast public
-  open import D.Machine Label public
+  open import D.TCast public
+  open import D.Value Cast public
+  open import D.Machine public
 
 mutual
 

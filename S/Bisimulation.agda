@@ -8,11 +8,11 @@ module S.Bisimulation
   (RCS : LazyD Label RCR)
   where
 
-open import Types
+open import Type
 open import Statics Label
-open import Observables Label
-import S.Machine
-import S.Values
+open import Observable Label
+open import S.Machine using ()
+open import S.Value using (succ; fail)
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; sym)
 open import Relation.Nullary using (Dec; yes; no)
@@ -20,7 +20,7 @@ open import Data.Nat using (ℕ; suc; zero)
 open import Data.Product using ( _×_ ; Σ-syntax; ∃-syntax)
   renaming (_,_ to ⟨_,_⟩)
 
-module Values = S.Values Label
+module Values = S.Value Label
 
 -- an abstract machine specialized for an representation
 
@@ -28,7 +28,7 @@ module L where
   open CastADT LCR public
   open LazyD LCS public
 
-module LV = S.Values Label L.Cast
+module LV = S.Value Label L.Cast
 module LM = S.Machine Label LCR
 
 -- an abstract machine specialized for another representation
@@ -37,7 +37,7 @@ module R where
   open CastADT RCR public
   open LazyD RCS public
 
-module RV = S.Values Label R.Cast
+module RV = S.Value Label R.Cast
 module RM = S.Machine Label RCR
 
 data CastRelate : ∀ {T1 T2} → L.Cast T1 T2 → R.Cast T1 T2 → Set where
@@ -470,8 +470,8 @@ do-app : ∀ {T1 T2 Z}
   → ContRelate lk rk
   → StateRelate (LM.do-app lv1 lv2 lk) (RM.do-app rv1 rv2 rk)
 do-app (fun env c₁ b c₂) rand κ with L.apply-cast (lcast c₁) (lval rand) | R.apply-cast (rcast c₁) (rval rand) | apply-cast c₁ rand
-do-app (fun env c₁ b c₂) rand κ | S.Values.succ _ | S.Values.succ _ | succ v = ` inspect b (v ∷ env) (ext-cont c₂ κ)
-do-app (fun env c₁ b c₂) rand κ | S.Values.fail _ | S.Values.fail _ | fail l = halt (blame l)
+do-app (fun env c₁ b c₂) rand κ | succ _ | succ _ | succ v = ` inspect b (v ∷ env) (ext-cont c₂ κ)
+do-app (fun env c₁ b c₂) rand κ | fail _ | fail _ | fail l = halt (blame l)
 
 do-car : ∀ {T1 T2 Z}
   → {lv : LV.Val (` T1 ⊗ T2)}

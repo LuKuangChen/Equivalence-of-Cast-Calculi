@@ -15,14 +15,14 @@ open import Data.Product using (Σ; _×_ ; Σ-syntax; ∃-syntax; _,_)
 open import Data.Sum using (_⊎_ ; inj₁; inj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; sym; subst)
 
-open import Types
+open import Type
 open import Statics Label
-open import Observables Label
+open import Observable Label
 
 import S.Machine
-import S.Values
+import S.Value
 import D.Machine
-import D.Values
+import D.Value
 
 -- instantiate CEKcc
 
@@ -33,14 +33,14 @@ module L where
     renaming (lem-id-l to monoid-id-l; lem-id-r to monoid-id-r; lem-assoc to monoid-assoc)
     public
   open CastIdIsId Extras public
-  open S.Values Label Cast public
+  open S.Value Label Cast public
   open S.Machine Label LCR public
 
 -- instantiate CEKc
 
 module R where
   open import D.TCast Label public
-  open import D.Values Label Cast public
+  open import D.Value Label Cast public
   open import D.Machine Label public
 
 mutual

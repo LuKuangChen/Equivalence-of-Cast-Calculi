@@ -2,7 +2,7 @@ module Statics
   (Label : Set)
   where
 
-open import Types
+open import Type
 
 data Context : Set where
   ∅   : Context

@@ -6,9 +6,9 @@ module Correctness
   (CS : LazyD Label CR)
   where
 
-open import Types
+open import Type
 open import Statics Label
-open import Observables Label
+open import Observable Label
 
 open import S.LCast Label
   using ()

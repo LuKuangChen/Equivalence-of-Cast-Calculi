@@ -1,4 +1,15 @@
-# Inventory
+# README
+
+## DONE
+
+## TODO
+
+* change module names to singular form
+* postulate labels
+* use denotational notation for applyCast
+* include Lazy UD
+* move cast representations to their own folder
+* use boolean instead of sum
 
 ## Where to find the definitions?
 

@@ -2,13 +2,13 @@ module D.TCast
   (Label : Set)
   where
 
-open import Types
+open import Type
 
 data Cast : Type → Type → Set where
   cast : (l : Label)(T1 T2 : Type) → Cast T1 T2
 
 open import Statics Label
-open import D.Values Label Cast
+open import D.Value Label Cast
 
 open import Relation.Nullary using (Dec; yes; no)
 

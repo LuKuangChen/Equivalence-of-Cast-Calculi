@@ -1,4 +1,4 @@
-open import Types
+open import Type
 
 module D.Machine
   (Label : Set)
@@ -6,8 +6,8 @@ module D.Machine
 
 open import D.TCast Label
 open import Statics Label
-open import Observables Label
-open import D.Values Label Cast
+open import Observable Label
+open import D.Value Label Cast
 
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (Σ; _×_ ; Σ-syntax; ∃-syntax)

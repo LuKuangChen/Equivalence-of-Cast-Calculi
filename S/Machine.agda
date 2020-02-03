@@ -7,10 +7,10 @@ module S.Machine
 
 open CastADT cast-adt using (Cast; mk-cast; mk-id; mk-seq; apply-cast)
 
-open import Types
+open import Type
 open import Statics Label
-open import Observables Label
-open import S.Values Label Cast
+open import Observable Label
+open import S.Value Label Cast
 
 open import Data.Nat using (ℕ; zero; suc; _+_)
 open import Data.Product using (Σ; _×_ ; Σ-syntax; ∃-syntax)

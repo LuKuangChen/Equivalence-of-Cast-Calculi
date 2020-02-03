@@ -1,7 +1,7 @@
 module Types where
+
 open import Relation.Nullary using (Dec; yes; no)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
-open import Data.Product using (Σ; _×_ ; Σ-syntax; ∃-syntax; _,_)
 
 infix 100 _⇒_
 infix 100 _⊗_
@@ -9,7 +9,7 @@ infix 100 _⊕_
 
 mutual
   data Type : Set where
-    * : Type
+    ⋆ : Type
     `_ : (P : PreType) → Type
     
   data PreType : Set where
@@ -18,38 +18,14 @@ mutual
     _⊗_ : (T₁ T₂ : Type) → PreType
     _⊕_ : (T₁ T₂ : Type) → PreType
 
-data TypeConstructor : Set where
-  `U : TypeConstructor
-  `⇒ : TypeConstructor
-  `⊗ : TypeConstructor
-  `⊕ : TypeConstructor
-
-data Ground : PreType → Set where
-  `U : Ground (U)
-  `⇒ : Ground (* ⇒ *)
-  `⊗ : Ground (* ⊗ *)
-  `⊕ : Ground (* ⊕ *)
-
-ground? : (P : PreType) → Dec (Ground P)
-ground? U = yes `U
-ground? (* ⇒ *) = yes `⇒
-ground? (* ⇒ (` P)) = no λ ()
-ground? ((` P) ⇒ T₂) = no (λ ())
-ground? (* ⊗ *) = yes `⊗
-ground? (* ⊗ (` P)) = no (λ ())
-ground? ((` P) ⊗ T₂) = no (λ ())
-ground? (* ⊕ *) = yes `⊕
-ground? (* ⊕ (` P)) = no (λ ())
-ground? ((` P) ⊕ T₂) = no (λ ())
-
 mutual
   -- _≡?_ : (P1 P2 : PreType) → Dec (P1 ≡ P2)
   -- P1 P≡? P2 = {!!}
 
   _≡?_ : (T1 T2 : Type) → Dec (T1 ≡ T2)
-  * ≡? * = yes refl
-  * ≡? (` P) = no (λ ())
-  (` P) ≡? * = no (λ ())
+  ⋆ ≡? ⋆ = yes refl
+  ⋆ ≡? (` P) = no (λ ())
+  (` P) ≡? ⋆ = no (λ ())
   (` U) ≡? (` U) = yes refl
   (` U) ≡? (` (T₁ ⇒ T₂)) = no (λ ())
   (` U) ≡? (` (T₁ ⊗ T₂)) = no (λ ())
@@ -79,18 +55,18 @@ mutual
 -- shallow consistency
 
 data _⌣_ : (T1 T2 : Type) → Set where
-  *⌣* : * ⌣ *
-  *⌣P : ∀ P → * ⌣ (` P)
-  P⌣* : ∀ P → (` P) ⌣ *
+  ⋆⌣⋆ : ⋆ ⌣ ⋆
+  ⋆⌣P : ∀ P → ⋆ ⌣ (` P)
+  P⌣⋆ : ∀ P → (` P) ⌣ ⋆
   ⌣U : (` U) ⌣ (` U)
   ⌣⇒ : ∀ {T1 T2 T3 T4} → (` T1 ⇒ T2) ⌣ (` T3 ⇒ T4)
   ⌣⊗ : ∀ {T1 T2 T3 T4} → (` T1 ⊗ T2) ⌣ (` T3 ⊗ T4)
   ⌣⊕ : ∀ {T1 T2 T3 T4} → (` T1 ⊕ T2) ⌣ (` T3 ⊕ T4)
 
 _⌣?_ : ∀ T1 T2 → Dec (T1 ⌣ T2)
-* ⌣? * = yes *⌣*
-* ⌣? (` P) = yes (*⌣P P)
-(` P) ⌣? * = yes (P⌣* P)
+⋆ ⌣? ⋆ = yes ⋆⌣⋆
+⋆ ⌣? (` P) = yes (⋆⌣P P)
+(` P) ⌣? ⋆ = yes (P⌣⋆ P)
 (` U) ⌣? (` U) = yes ⌣U
 (` U) ⌣? (` (T₁ ⇒ T₂)) = no (λ ())
 (` U) ⌣? (` (T₁ ⊗ T₂)) = no (λ ())
@@ -109,7 +85,7 @@ _⌣?_ : ∀ T1 T2 → Dec (T1 ⌣ T2)
 (` (T₁ ⊕ T₂)) ⌣? (` (T₃ ⊕ T₄)) = yes ⌣⊕
 
 ⌣refl : ∀ T → T ⌣ T
-⌣refl * = *⌣*
+⌣refl ⋆ = ⋆⌣⋆
 ⌣refl (` U) = ⌣U
 ⌣refl (` (T₁ ⇒ T₂)) = ⌣⇒
 ⌣refl (` (T₁ ⊗ T₂)) = ⌣⊗
@@ -119,74 +95,11 @@ _⌣?_ : ∀ T1 T2 → Dec (T1 ⌣ T2)
   → (p1 p2 : T1 ⌣ T2)
   ---
   → p1 ≡ p2
-⌣unique *⌣* *⌣* = refl
-⌣unique (*⌣P P) (*⌣P .P) = refl
-⌣unique (P⌣* P) (P⌣* .P) = refl
+⌣unique ⋆⌣⋆ ⋆⌣⋆ = refl
+⌣unique (⋆⌣P P) (⋆⌣P .P) = refl
+⌣unique (P⌣⋆ P) (P⌣⋆ .P) = refl
 ⌣unique ⌣U ⌣U = refl
 ⌣unique ⌣⇒ ⌣⇒ = refl
 ⌣unique ⌣⊗ ⌣⊗ = refl
 ⌣unique ⌣⊕ ⌣⊕ = refl
-
-ground : (P : PreType) → PreType
-ground U = U
-ground (T₁ ⇒ T₂) = (* ⇒ *)
-ground (T₁ ⊗ T₂) = (* ⊗ *)
-ground (T₁ ⊕ T₂) = (* ⊕ *)
-
--- subtype
-
-data _≤_ : Type → Type → Set where
-
-  *≤* : * ≤ *
-  
-  P≤* : ∀ P → (` P) ≤ *
-  
-  ≤U : (` U) ≤ (` U)
-  
-  ≤⇒ : ∀ {T1 T2 T3 T4}
-    → T3 ≤ T1
-    → T2 ≤ T4
-    ---
-    → (` T1 ⇒ T2) ≤ (` T3 ⇒ T4)
-    
-  ≤⊗ : ∀ {T1 T2 T3 T4}
-    → T1 ≤ T3
-    → T2 ≤ T4
-    ---
-    → (` T1 ⊗ T2) ≤ (` T3 ⊗ T4)
-    
-  ≤⊕ : ∀ {T1 T2 T3 T4}
-    → T1 ≤ T3
-    → T2 ≤ T4
-    ---
-    → (` T1 ⊕ T2) ≤ (` T3 ⊕ T4)
-
--- imprecise
-
-data _⊑_ : Type → Type → Set where
-
-  *⊑* : * ⊑ *
-  
-  P⊑* : ∀ P → (` P) ⊑ *
-  
-  ⊑U : (` U) ⊑ (` U)
-  
-  ⊑⇒ : ∀ {T1 T2 T3 T4}
-    → T1 ⊑ T3
-    → T2 ⊑ T4
-    ---
-    → (` T1 ⇒ T2) ⊑ (` T3 ⇒ T4)
-    
-  ⊑⊗ : ∀ {T1 T2 T3 T4}
-    → T1 ⊑ T3
-    → T2 ⊑ T4
-    ---
-    → (` T1 ⊗ T2) ⊑ (` T3 ⊗ T4)
-    
-  ⊑⊕ : ∀ {T1 T2 T3 T4}
-    → T1 ⊑ T3
-    → T2 ⊑ T4
-    ---
-    → (` T1 ⊕ T2) ⊑ (` T3 ⊕ T4)
-
   

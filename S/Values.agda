@@ -5,15 +5,13 @@ module S.Values
   (Cast : Type → Type → Set)
   where
   
+open import Statics Label
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
-
-open import Terms Label
-open import Variables
 
 mutual
   
   data Val : Type → Set where
-    dyn : ∀ P → Val (` P) → Val *
+    inj : ∀ P → Val (` P) → Val ⋆
     fun : ∀ {Γ}
       → {T1 T2 T3 T4 : Type}
       → (env : Env Γ)

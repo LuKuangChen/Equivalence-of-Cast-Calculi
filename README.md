@@ -4,7 +4,6 @@
 
 ## TODO
 
-* postulate labels
 * use denotational notation for applyCast
 * include Lazy UD
 * move cast representations to their own folder

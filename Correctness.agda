@@ -22,11 +22,11 @@ open import S.Bisimulation CR CS LC LC-LazyD
   using ()
   renaming (equiv-l to SC-SL; equiv-r to SL-SC)
 
-import D.Machine
-import D.TCast
+import X.Machine
+import X.TCast
 
 module L where
-  open import D.Machine public
+  open import X.Machine public
 
 module R where
   open import S.Machine CR public

@@ -21,8 +21,8 @@ open import Observable
 
 import S.Machine
 import S.Value
-import D.Machine
-import D.Value
+import X.Machine
+import X.Value
 
 -- instantiate CEKcc
 
@@ -39,9 +39,9 @@ module L where
 -- instantiate CEKc
 
 module R where
-  open import D.TCast public
-  open import D.Value Cast public
-  open import D.Machine public
+  open import X.TCast public
+  open import X.Value Cast public
+  open import X.Machine public
 
 mutual
 

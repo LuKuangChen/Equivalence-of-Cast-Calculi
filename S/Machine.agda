@@ -7,15 +7,17 @@ module S.Machine
   (cast-adt : CastADT Label Injectable)
   where
 
-open CastADT cast-adt using (Cast; mk-cast; id; seq; apply-cast)
+open CastADT cast-adt using (Cast; id; ⌈_⌉; _⨟_; ⟦_⟧)
 
-open import Error Label
+open import Error
 
-open import Variables
-open import Cast Label using (it)
+open import Variables using (∅)
+open import Cast Label using (_⟹[_]_)
 open import Terms Label
-open import Observe Label
+open import Observables Label using (Observable; ValueDisplay; dyn; #t; #f; lam; cons)
 open import S.Values Label Injectable Cast
+
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong)
 
 data Frame : Type → Type → Set where
       
@@ -26,182 +28,212 @@ data Frame : Type → Type → Set where
     → Frame (` S ⇒ T) T
                           
   app₂ : ∀ {S T}
-    → (v1 : Val (` S ⇒ T))
+    → (v1 : Value (` S ⇒ T))
     --------
     → Frame S T
     
+  if₁ : ∀ {Γ T}
+    → (e2 : Γ ⊢ T)
+    → (e3 : Γ ⊢ T)
+    → (E : Env Γ)
+    ---------
+    → Frame (` B) T
+
+  cons₁ : ∀ {Γ T1 T2}
+    → (e2 : Γ ⊢ T2)
+    → (E : Env Γ)
+    -----
+    → Frame T1 (` T1 ⊗ T2)
+
+  cons₂ : ∀ {T1 T2}
+    → (v1 : Value T1)
+    -----
+    → Frame T2 (` T1 ⊗ T2)
+
+  car₁ : ∀ {T1 T2} → Frame (` T1 ⊗ T2) T1
+  cdr₁ : ∀ {T1 T2} → Frame (` T1 ⊗ T2) T2
+
 mutual
   data PreCont : Type → Type → Set where
   
-    step : ∀ {R S T}
-      → Frame R S
-      → Cont S T
+    [_]_ : ∀ {R S T}
+      → (F : Frame R S)
+      → (k : Cont S T)
       ---
       → PreCont R T
 
-    done : ∀ {Z}
+    □ : ∀ {Z}
       ----------
       → PreCont Z Z
 
-  record Cont (S Z : Type) : Set where
+  record Cont (T1 T2 : Type) : Set where
     inductive
-    constructor cast
+    constructor [□⟨_⟩]_
     field
-      T : Type
-      c : Cast S T
-      k : PreCont T Z
-           
-
+      {T} : Type
+      c : Cast T1 T
+      k : PreCont T T2
   -- data Cont : Type → Type → Set where
-  --   cast : ∀ {R S T}
-  --     → (c : Cast R S)
-  --     → (k : PreCont S T)
-  --     ---
-  --     → Cont R T
+  --   `_ : ∀ {T Z}
+  --     → (k : PreCont T Z)
+  --     → Cont T Z
 
-  --   -- just : ∀ {S T}
-  --   --   → (k : PreCont S T)
-  --   --   ---
-  --   --   → Cont S T
+  --   [□⟨_⟩]_ : ∀ {T1 T2 Z}
+  --     → (c : Cast T1 T2)
+  --     → (k : PreCont T2 Z)
+  --     → Cont T1 Z
                  
-mk-cont : ∀ {T1 T2} → PreCont T1 T2 → Cont T1 T2
-mk-cont {T1 = T1} k = cast T1 (id T1) k
-
 ext-cont : ∀ {T1 T2 T3} → Cast T1 T2 → Cont T2 T3 → Cont T1 T3
-ext-cont c (cast T c' k) = cast T (seq c c') k
--- ext-cont c (just k) = cast c k
+-- ext-cont c (` k)     = [□⟨ c ⟩] k
+ext-cont c ([□⟨ d ⟩] k) = [□⟨ c ⨟ d ⟩] k
 
-data Nonhalting : Type → Set where 
-  expr : ∀ {Γ T1 T3}
-    → (e : Γ ⊢ T1)
+data OrdinaryState (Z : Type) : Set where 
+  expr : ∀ {Γ T}
+    → (e : Γ ⊢ T)
     → (E : Env Γ)
-    → (κ : Cont T1 T3)
+    → (κ : Cont T Z)
     ------------
-    → Nonhalting T3
+    → OrdinaryState Z
     
-  cont : ∀ {T1 T2}
-    → (v : Val T1)
-    → (κ : Cont T1 T2)
+  cont : ∀ {T}
+    → (v : Value T)
+    → (κ : Cont T Z)
     ------------
-    → Nonhalting T2
+    → OrdinaryState Z
 
-data State : Type → Set where
+  halt : (v : Value Z) → OrdinaryState Z
 
-  `_ : ∀ {T}
-    → Nonhalting T
-    → State T
+State : Type → Set
+State T = Error Label (OrdinaryState T)
 
-  halt : ∀ {T}
-    → Observe T
-    → State T
+data Final {Z : Type} : State Z →  Set where
+  halt : ∀ v
+    → Final (return (halt v))
+      
+  error : ∀ l
+    → Final (raise l)
+
+data Progressing {Z : Type} : State Z →  Set where
+  expr : ∀ {Γ T}
+    → (e : Γ ⊢ T)
+    → (E : Env Γ)
+    → (κ : Cont T Z)
+    ------------
+    → Progressing (return (expr e E κ))
+    
+  cont : ∀ {T}
+    → (v : Value T)
+    → (k : Cont T Z)
+    ------------
+    → Progressing (return (cont v k))
+
+progressing-unique : ∀ {T} → {s : State T} → (sp1 sp2 : Progressing s) → sp1 ≡ sp2
+progressing-unique (expr e E κ) (expr .e .E .κ) = refl
+progressing-unique (cont v k) (cont .v .k) = refl
+
+open import Data.Empty using (⊥; ⊥-elim)
+
+final-progressing-absurd : ∀ {T} → {s : State T}
+  → Final s
+  → Progressing s
+  → ⊥
+final-progressing-absurd (halt v) ()
+final-progressing-absurd (error l) ()
 
 load : ∀ {T} → ∅ ⊢ T → State T
-load e = ` expr e [] (mk-cont done)
-
-bind : ∀ {S T}
-  → CastResult S
-  → (Val S → State T)
-  → State T
-bind (just v) k = k v
-bind (error l) k = halt (blame l)
+load e = return (expr e [] ([□⟨ id ⟩] □))
 
 do-app : ∀ {T1 T2 Z}
-  → Val (` T1 ⇒ T2)
-  → Val T1
+  → Value (` T1 ⇒ T2)
+  → Value T1
   → Cont T2 Z
   → State Z
-do-app (lam c₁ c₂ e E) v κ
-  = bind (apply-cast v c₁) λ u →
-    ` expr e (u ∷ E) (ext-cont c₂ κ)
--- with apply-cast v c₁
--- ... | just u = ` expr e (u ∷ E) (ext-cont c₂ κ)
--- ... | error l = halt (blame l)
+-- do-app (lam e E) v κ
+--   = return (expr e (v ∷ E) κ)
+do-app (lam⟨ c1 ⇒ c2 ⟩ e E) v κ
+  = ⟦ c1 ⟧ v >>= λ u →
+    return (expr e (u ∷ E) (ext-cont c2 κ))
 
--- do-car : ∀ {T1 T2 Z}
---   → Val (` T1 ⊗ T2)
---   → Cont T1 Z
---   → State Z
--- do-car (cons v₁ c₁ v₂ c₂) κ = ` cont v₁ (ext-cont c₁ κ)
+cnd : {A : Set} → Value (` B) → (x y : A) → A
+cnd #t x y = x
+cnd #f x y = y
 
--- do-cdr : ∀ {T1 T2 Z}
---   → Val (` T1 ⊗ T2)
---   → Cont T2 Z
---   → State Z
--- do-cdr (cons v₁ c₁ v₂ c₂) κ = ` cont v₂ (ext-cont c₂ κ)
+apply-cont : ∀ {T1 T2}
+  → Value T1
+  → PreCont T1 T2
+  → State T2
+apply-cont v ([ app₁ e2 E ] k) = return (expr e2 E ([□⟨ id ⟩] [ app₂ v ] k))
+apply-cont v ([ app₂ v1 ] k) = do-app v1 v k
+apply-cont v ([ if₁ e2 e3 E ] k) = return (expr (cnd v e2 e3) E k)
+apply-cont v ([ cons₁ e2 E ] k) = return (expr e2 E ([□⟨ id ⟩] [ cons₂ v ] k))
+apply-cont v ([ cons₂ v1 ] k) = return (cont (cons⟨ id ⊗ id ⟩ v1 v) k)
+apply-cont (cons⟨ c1 ⊗ c2 ⟩ v1 v2) ([ car₁ ] k) = ⟦ c1 ⟧ v1 >>= λ v1' → return (cont v1' k)
+apply-cont (cons⟨ c1 ⊗ c2 ⟩ v1 v2) ([ cdr₁ ] k) = ⟦ c2 ⟧ v2 >>= λ v2' → return (cont v2' k)
+apply-cont v □ = return (halt v)
 
--- do-case : ∀ {T1 T2 T3 Z}
---   → Val (` T1 ⊕ T2)
---   → Val (` T1 ⇒ T3)
---   → Val (` T2 ⇒ T3)
---   → Cont T3 Z
---   → State Z
--- do-case (inl v1 c) (fun env c₁ b c₂) v3 k
---   = ` cont v1 (mk-cont (app₂ (fun env (mk-seq c c₁) b c₂) k))
--- do-case (inr v1 c) v2 (fun env c₁ b c₂) k
---   = ` cont v1 (mk-cont (app₂ (fun env (mk-seq c c₁) b c₂) k))
+-- apply-cont : ∀ {T1 T2 T3}
+--   → Value T1
+--   → Frame T1 T2
+--   → Cont T2 T3
+--   ---
+--   → State T3
+-- apply-cont v (app₁ e E)    k = return (expr e E ([□⟨ id ⟩] [ app₂ v ] k))
+-- apply-cont v (app₂ u)      k = do-app u v k
+-- apply-cont v (if₁ e2 e3 E) κ = return (expr (cnd v e2 e3) E κ)
+-- apply-cont v (cons₁ e2 E)  κ = return (expr e2 E ([□⟨ id ⟩] [ cons₂ v ] κ))
+-- apply-cont v (cons₂ v1)    κ = return (cont (cons⟨ id ⊗ id ⟩ v1 v) κ)
+-- apply-cont (cons⟨ c1 ⊗ c2 ⟩ v1 v2) car₁ k = ⟦ c1 ⟧ v1 >>= λ v1' → return (cont v1' k)
+-- apply-cont (cons⟨ c1 ⊗ c2 ⟩ v1 v2) cdr₁ k = ⟦ c2 ⟧ v2 >>= λ v2' → return (cont v2' k)
 
-observe-val : ∀ {T} → Val T → Value T
-observe-val (dyn P Pi v) = dyn
-observe-val unit = unit
-observe-val (lam c₁ c₂ e E) = lam
--- observe-val (cons v c₁ v₁ c₂) = cons
--- observe-val (inl v c) = inl
--- observe-val (inr v c) = inr
+progress : ∀ {Z} → {s : State Z} → Progressing s → State Z
+progress (expr (var x) E κ)       = return (cont (lookup E x) κ)
+progress (expr #t E κ)            = return (cont #t κ)
+progress (expr #f E κ)            = return (cont #f κ)
+progress (expr (if e1 e2 e3) E κ) = return (expr e1 E ([□⟨ id ⟩] ([ if₁ e2 e3 E ] κ)))
+progress (expr (lam e) E κ)       = return (cont (lam⟨ id ⇒ id ⟩ e E)  κ)
+progress (expr (app e1 e2) E κ)   = return (expr e1 E ([□⟨ id ⟩] [ app₁ e2 E ] κ))
+progress (expr (cons e1 e2) E κ)  = return (expr e1 E ([□⟨ id ⟩] ([ cons₁ e2 E ] κ)))
+progress (expr (e ⟨ c ⟩) E κ)     = return (expr e E (ext-cont ⌈ c ⌉ κ))
+progress (expr (blame l) E κ)     = raise l
+progress (cont v ([□⟨ c ⟩] k)) = ⟦ c ⟧ v >>= λ v' → apply-cont v' k
 
-apply-cont : ∀ {T Z}
-  → Val T
-  → PreCont T Z
-  ---
-  → State Z
-apply-cont v done = halt (done (observe-val v))
--- apply-cont v (cons₁ E e1 κ) = ` expr e1 E (mk-cont (cons₂ v κ))
--- apply-cont v (cons₂ {T1} {T2} v1 κ) = ` cont (cons v1 (mk-id T1) v (mk-id T2)) κ
--- apply-cont v (inl κ) = ` cont (inl v (mk-id _)) κ
--- apply-cont v (inr κ) = ` cont (inr v (mk-id _)) κ
-apply-cont v (step (app₁ e2 E) κ) = ` expr e2 E (mk-cont (step (app₂ v) κ))
-apply-cont v (step (app₂ v₁) κ) = do-app v₁ v κ
--- apply-cont v (car κ) = do-car v κ
--- apply-cont v (cdr κ) = do-cdr v κ
--- apply-cont v (case₁ E e2 e3 κ) = ` expr e2 E (mk-cont (case₂ E v e3 κ))
--- apply-cont v (case₂ E v1 e3 κ) = ` expr e3 E (mk-cont (case₃ v1 v κ))
--- apply-cont v (case₃ v1 v2 κ) = do-case v1 v2 v κ
+data _−→_ {T : Type} : State T → State T → Set where
+  it : ∀ {s}
+    → (sp : Progressing s)
+    → s −→ progress sp
 
--- reduction
-progress : {T : Type} → Nonhalting T → State T
-progress (expr unit E κ) = ` cont unit κ
-progress (expr (var X) E κ) = ` cont (E [ X ]) κ
-progress (expr (lam T1 T2 e) E κ) = ` cont (lam (id T1) (id T2) e E) κ
--- progress (expr (cons e1 e2) E κ) = ` expr e1 E (mk-cont (cons₁ E e2 κ))
--- progress (expr (inl e) E κ) = ` expr e E (mk-cont (inl κ))
--- progress (expr (inr e) E κ) = ` expr e E (mk-cont (inr κ))
-progress (expr (app e1 e2) E κ) = ` expr e1 E (mk-cont (step (app₁ e2 E) κ))
--- progress (expr (car e) E κ) = ` expr e E (mk-cont (car κ))
--- progress (expr (cdr e) E κ) = ` expr e E (mk-cont (cdr κ))
--- progress (expr (case e1 e2 e3) E κ) = ` expr e1 E (mk-cont (case₁ E e2 e3 κ))
-progress (expr (cast e c) E κ) = ` expr e E (ext-cont (mk-cast c) κ)
-progress (expr (blame l) E κ) = halt (blame l)
-progress (cont v (cast T c k)) with apply-cast v c
-progress (cont v (cast T c k)) | just u = apply-cont u k
-progress (cont v (cast T c k)) | error l = halt (blame l)
+open import Bisimulation using (System)
 
-data _−→_ : ∀ {T} → State T → State T → Set where
-  it : ∀ {T}
-    → (s : Nonhalting T)
-    → (` s) −→ progress s
+deterministic : ∀ {T}
+  → {s t1 t2 : State T}
+  → s −→ t1
+  → s −→ t2
+  → t1 ≡ t2
+deterministic (it sp1) (it sp2) = cong progress (progressing-unique sp1 sp2)
 
-data _−→*_ : ∀ {T} → State T → State T → Set where
-  refl : ∀ {T}
-    → (s : State T)
-    ---
-    → s −→* s
+system : ∀ {T} → System (State T)
+system = record
+           { _−→_ = _−→_
+           ; Final = Final
+           ; final-progressing-absurd = λ { sf (it sp) → final-progressing-absurd sf sp }
+           ; deterministic = deterministic
+           }
 
-  step : ∀ {T}
-    → {r s t : State T}
-    → (x : r −→ s)
-    → (xs : s −→* t)
-    ---
-    → r −→* t
+module Eval {T : Type} where
+  open import Data.Product using (∃-syntax)
+  open System (system {T}) using (_−→*_; []; _∷_; _−→+_; _++_) public
 
-data Evalo {T : Type} (e : ∅ ⊢ T) (o : Observe T) : Set where
-  it : (load e) −→* halt o → Evalo e o
+  observe : Value T → ValueDisplay T
+  observe (dyn P Pi v) = dyn
+  observe #t = #t
+  observe #f = #f
+  -- observe (lam e E) = lam
+  observe (lam⟨ c1 ⇒ c2 ⟩ e E) = lam
+  -- observe (cons v1 v2) = cons
+  observe (cons⟨ c1 ⊗ c2 ⟩ v1 v2) = cons
 
+  data Evalo (e : ∅ ⊢ T) : Observable T → Set where
+    val : ∀ {v} → (load e) −→* return (halt v) → Evalo e (return (observe v))
+    err : ∀ {l} → (load e) −→* raise l → Evalo e (raise l)
+
+open Eval public

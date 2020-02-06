@@ -5,6 +5,4 @@ module Cast
 open import Types
 
 data Cast : Type → Type → Set where
-  it : (l : Label)
-    → (S T : Type)
-    → Cast S T
+  _⟹[_]_ : (S : Type) → (l : Label) → (T : Type) → Cast S T

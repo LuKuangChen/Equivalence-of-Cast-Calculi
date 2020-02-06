@@ -8,16 +8,16 @@ module ApplyCastBisimulate
   where
 
 open import BisimulationRelation Label BS CADT
+  using (module L; module R; ValueRelate; CastResultRelate)
 
 open import Cast Label using (Cast)
 open BlameStrategy BS using (Injectable) public
 
 the-apply-cast-lemma : Set
 the-apply-cast-lemma = ∀ {S T}
-    → {lv : L.Val S}
-    → {rv : R.Val S}
-    → ValRelate lv rv
+    → {lv : L.Value S}
+    → {rv : R.Value S}
+    → ValueRelate lv rv
     → (c : Cast S T)
-    → CastResultRelate (L.apply-cast lv c)
-                       (R.apply-cast rv (R.mk-cast c))
+    → CastResultRelate (L.⟦ c ⟧ lv) (R.⟦ R.⌈ c ⌉ ⟧ rv)
 

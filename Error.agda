@@ -1,35 +1,39 @@
-module Error
-  (Label : Set)
-  where
+module Error where
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
-data Error (A : Set) : Set where
-  just : (v : A) → Error A
-  error : (l : Label) → Error A
+data Error (Label : Set) (A : Set) : Set where
+  return : (v : A) → Error Label A
+  raise : (l : Label) → Error Label A
 
-Handler : (A B : Set) → Set
-Handler A B = A → Error B
+Handler : ∀ (Label A B : Set) → Set
+Handler Label A B = A → Error Label B
 
-_>>=_ : ∀ {A B}
-  → Error A
-  → Handler A B
-  → Error B
-just x >>= h = h x
-error l >>= h = error l
+_>>=_ : ∀ {L A B}
+  → Error L A
+  → Handler L A B
+  → Error L B
+return x >>= h = h x
+raise l >>= h = raise l
 
->>=assoc : ∀ {A B C}
-  → (r : Error A)
-  → (f : Handler A B)
-  → (g : Handler B C)
+>>=-assoc : ∀ {L A B C}
+  → (r : Error L A)
+  → (f : Handler L A B)
+  → (g : Handler L B C)
   → (r >>= f) >>= g
     ≡
     r >>= λ v → (f v) >>= g
->>=assoc (just v) f g = refl
->>=assoc (error l) f g = refl
+>>=-assoc (return v) f g = refl
+>>=-assoc (raise l) f g = refl
 
->>=just : ∀ {A}
-  → (r : Error A)
-  → r >>= just ≡ r
->>=just (just v) = refl
->>=just (error l) = refl
+>>=-return : ∀ {L A}
+  → (r : Error L A)
+  → r >>= return ≡ r
+>>=-return (return v) = refl
+>>=-return (raise l) = refl
+
+_>=>_ : ∀ {L A B C}
+  → Handler L A B
+  → Handler L B C
+  → Handler L A C
+(f >=> g) x = f x >>= g

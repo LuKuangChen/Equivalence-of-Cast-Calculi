@@ -6,8 +6,8 @@ data Context : Set where
   ∅   : Context
   _,_ : Context → Type → Context
 
-
 infix  4 _∋_
+infix 99 _,_
 
 data _∋_ : Context → Type → Set where
 

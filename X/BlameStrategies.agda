@@ -3,18 +3,21 @@ module X.BlameStrategies
   where
 
 open import Types
-
 open import X.Values Label
 open import Cast Label
-open import Error Label
+open import Error using (Error; return; raise; _>>=_)
+
+open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+open import Data.Empty using (⊥-elim)
 
 record BlameStrategy : Set₁ where
   field
     Injectable : PreType → Set
-    apply-cast : ∀ {S T}
-      → Val Injectable S
+    ⟦_⟧ : ∀ {S T}
       → Cast S T
-      → CastResult Injectable T
+      -----
+      → Value Injectable S
+      → Error Label (Value Injectable T)
 
 module LazyD where
   open import Types
@@ -24,19 +27,19 @@ module LazyD where
   I? : PreType → Set
   I? P = ⊤
   
-  apply-cast' : ∀ {P Q} → Val I? (` P) → Cast (` P) (` Q) → CastResult I? (` Q)
-  apply-cast' v (it l (` P) (` Q)) with (` P) ⌣? (` Q)
-  ... | yes p = just (proxy v (it l (` P) (` Q)) p)
-  ... | no ¬p = error l
+  apply-cast' : ∀ {P Q} → Value I? (` P) → Cast (` P) (` Q) → Error Label (Value I? (` Q))
+  apply-cast' v ((` P) ⟹[ l ] (` Q)) with (` P) ⌣? (` Q)
+  ... | yes p = return (add-proxy I? v ((` P) ⟹[ l ] (` Q)) p)
+  ... | no ¬p = raise l
 
-  apply-cast : ∀ {S T} → Val I? S → Cast S T → CastResult I? T
-  apply-cast v (it l * *) = just v
-  apply-cast v (it l (` P) *) = just (dyn P tt v)
-  apply-cast v (it l (` P) (` Q)) = apply-cast' v (it l (` P) (` Q))
-  apply-cast (dyn P I v) (it l * (` Q)) = apply-cast' v (it l (` P) (` Q))
+  ⟦_⟧ : ∀ {S T} → Cast S T → Value I? S → Error Label (Value I? T)
+  ⟦ * ⟹[ l ] * ⟧ v = return v
+  ⟦ * ⟹[ l ] (` Q) ⟧ (dyn P I v) = apply-cast' v ((` P) ⟹[ l ] (` Q))
+  ⟦ (` P) ⟹[ l ] * ⟧ v = return (dyn P tt v)
+  ⟦ (` P) ⟹[ l ] (` Q) ⟧ v = apply-cast' v ((` P) ⟹[ l ] (` Q))
 
 LazyDBS : BlameStrategy
-LazyDBS = record { Injectable = LazyD.I? ; apply-cast = LazyD.apply-cast }
+LazyDBS = record { Injectable = LazyD.I? ; ⟦_⟧ = LazyD.⟦_⟧ }
 
 module LazyUD where
   open import Types
@@ -47,25 +50,25 @@ module LazyUD where
   open import Relation.Nullary using (yes; no)
   open import Relation.Binary.PropositionalEquality using (refl)
 
-  project : Val I? * → Label → (Q : PreType) → Ground Q → CastResult I? (` Q)
+  project : Value I? * → Label → (Q : PreType) → Ground Q → Error Label (Value I? (` Q))
   project (dyn P Pg v) l Q Qg with (` P) ≡? (` Q)
-  ... | yes refl = just v
-  ... | no ¬p = error l
+  ... | yes refl = return v
+  ... | no ¬p = raise l
   
-  apply-cast : ∀ {S T} → Val I? S → Cast S T → CastResult I? T
-  apply-cast v (it l * *) = just v
-  apply-cast v (it l (` P) *) with ground? P
-  ... | yes Pg = just (dyn P Pg v)
-  ... | no ¬Pg = just (dyn _ (ground-Ground P)
-                      (proxy v (it l (` P) (` ground P)) (ground-⌣ P)))
-  apply-cast v (it l (` P) (` Q)) with (` P) ⌣? (` Q)
-  ... | yes p = just (proxy v (it l (` P) (` Q)) p)
-  ... | no ¬p = error l
-  apply-cast v (it l * (` Q)) with ground? Q
-  apply-cast v (it l .* (` Q)) | yes Qg = project v l Q Qg
-  apply-cast v (it l .* (` Q)) | no ¬Qg
+  ⟦_⟧ : ∀ {S T} → Cast S T → Value I? S → Error Label (Value I? T)
+  ⟦ * ⟹[ l ] * ⟧ v = return v
+  ⟦ (` P) ⟹[ l ] * ⟧ v with ground? P
+  ... | yes Pg = return (dyn P Pg v)
+  ... | no ¬Pg = return (dyn _ (ground-Ground P)
+                      (add-proxy I? v ((` P) ⟹[ l ] (` ground P)) (ground-⌣ P)))
+  ⟦ (` P) ⟹[ l ] (` Q) ⟧ v with (` P) ⌣? (` Q)
+  ... | yes p = return (add-proxy I? v ((` P) ⟹[ l ] (` Q)) p)
+  ... | no ¬p = raise l
+  ⟦ * ⟹[ l ] (` Q) ⟧ v with ground? Q
+  ⟦ * ⟹[ l ] (` Q) ⟧ v | yes Qg = project v l Q Qg
+  ⟦ * ⟹[ l ] (` Q) ⟧ v | no ¬Qg
     = project v l (ground Q) (ground-Ground Q) >>= λ u →
-      just (proxy u (it l (` ground Q) (` Q)) (⌣sym (ground-⌣ Q)))
+      return (add-proxy I? u ((` ground Q) ⟹[ l ] (` Q)) (⌣sym (ground-⌣ Q)))
 
 LazyUDBS : BlameStrategy
-LazyUDBS = record { Injectable = LazyUD.I? ; apply-cast = LazyUD.apply-cast }
+LazyUDBS = record { Injectable = LazyUD.I? ; ⟦_⟧ = LazyUD.⟦_⟧ }

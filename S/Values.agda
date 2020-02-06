@@ -10,40 +10,60 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
 open import Terms Label
 open import Variables
-open import Error Label
 
 mutual
   
-  data Val : Type → Set where
+  data Value : Type → Set where
     dyn : ∀ P
       → (Pi : Injectable P)
-      → (v : Val (` P))
+      → (v  : Value (` P))
       ---
-      → Val *
+      → Value *
 
-    unit :
+    #t :
       --------
-        Val (` U)
+        Value (` B)
 
-    lam : ∀ {Γ}
-      → {T1 T2 T3 T4 : Type}
-      → (c₁ : Cast T3 T1)
-      → (c₂ : Cast T2 T4)
+    #f :
+      --------
+        Value (` B)
+
+    -- lam : ∀ {Γ T1 T2}
+    --   → (e : (Γ , T1) ⊢ T2)
+    --   → (E : Env Γ)
+    --   -------------
+    --   → Value (` T1 ⇒ T2)
+
+    lam⟨_⇒_⟩ : ∀ {Γ T1 T2 T3 T4}
+      → (c1 : Cast T3 T1)
+      → (c2 : Cast T2 T4)
       → (e : (Γ , T1) ⊢ T2)
       → (E : Env Γ)
       -------------
-      → Val (` T3 ⇒ T4)
+      → Value (` T3 ⇒ T4)
+
+    -- cons : ∀ {T1 T2}
+    --   → (v1 : Value T1)
+    --   → (v2 : Value T2)
+    --   ------
+    --   → Value (` T1 ⊗ T2)
+
+    cons⟨_⊗_⟩ : ∀ {T1 T2 T3 T4}
+      → (c1 : Cast T1 T3)
+      → (c2 : Cast T2 T4)
+      → (v1 : Value T1)
+      → (v2 : Value T2)
+      -------------
+      → Value (` T3 ⊗ T4)
 
   data Env : Context → Set where
     []  : Env ∅
     _∷_ : ∀ {Γ T}
-      → (v : Val T)
+      → (v : Value T)
       → Env Γ
       → Env (Γ , T)
    
-_[_] : ∀ {Γ T} → Env Γ → Γ ∋ T → Val T
-(c ∷ E) [ zero ] = c
-(c ∷ E) [ suc x ] = E [ x ]
+lookup : ∀ {Γ T} → Env Γ → Γ ∋ T → Value T
+lookup (c ∷ E) zero = c
+lookup (c ∷ E) (suc x) = lookup E x
 
-CastResult : Type → Set
-CastResult T = Error (Val T)

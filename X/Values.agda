@@ -5,66 +5,71 @@ module X.Values
   (Injectable : PreType → Set)
   where
   
-open import Relation.Binary.PropositionalEquality using (_≡_; refl)
-
 open import Terms Label
 open import Variables
-open import Cast Label
-open import Error Label
+open import Cast Label using (Cast; _⟹[_]_)
+open import Error
+
+open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+open import Relation.Nullary using (¬_)
 
 mutual
   
-  data Val : Type → Set where
+  data Value : Type → Set where
     dyn : ∀ P
       → (I : Injectable P)
-      → (v : Val (` P))
+      → (v : Value (` P))
       ---
-      → Val *
+      → Value *
 
-    proxy : ∀ {P Q}
-      → (v : Val (` P))
-      → (c : Cast (` P) (` Q))
-      → (p :  (` P) ⌣ (` Q))
-      ---
-      → Val (` Q)
+    #t : Value (` B)
+    #f : Value (` B)
 
-    unit :
-      --------
-        Val (` U)
+    -- unit :
+    --   --------
+    --     Value (` U)
    
-    lam : ∀ {Γ}
-      → (T1 T2 : Type)
+    lam : ∀ {Γ T1 T2}
       → (e : Γ , T1 ⊢ T2)
       → (E : Env Γ)
       -------------
-      → Val (` T1 ⇒ T2)
+      → Value (` T1 ⇒ T2)
 
-    -- cons : ∀ {S T}
-    --   → (u : Val S)
-    --   → (v : Val T)
-    --   ---
-    --   → Val (` S ⊗ T)
+    _f⟨_⟩ : ∀ {T1 T2 T3 T4}
+      → (v : Value (` T1 ⇒ T2))
+      → (c : Cast (` T1 ⇒ T2) (` T3 ⇒ T4))
+      -----
+      → Value (` T3 ⇒ T4)
 
-    -- inl : ∀ {S T}
-    --   → (v : Val S)
-    --   ---
-    --   → Val (` S ⊕ T)
+    cons : ∀ {T1 T2}
+      → (v1 : Value T1)
+      → (v2 : Value T2)
+      ------
+      → Value (` T1 ⊗ T2)
 
-    -- inr : ∀ {S T}
-    --   → (v : Val T)
-    --   ---
-    --   → Val (` S ⊕ T)
+    _p⟨_⟩ : ∀ {T1 T2 T3 T4}
+      → (v : Value (` T1 ⊗ T2))
+      → (c : Cast (` T1 ⊗ T2) (` T3 ⊗ T4))
+      -----
+      → Value (` T3 ⊗ T4)
+
+
 
   data Env : Context → Set where
     []  : Env ∅
     _∷_ : ∀ {Γ T}
-      → (v : Val T)
+      → (v : Value T)
       → Env Γ
       → Env (Γ , T)
    
-_[_] : ∀ {Γ T} → Env Γ → Γ ∋ T → Val T
-(c ∷ E) [ zero ] = c
-(c ∷ E) [ suc x ] = E [ x ]
+lookup : ∀ {Γ T} → Env Γ → Γ ∋ T → Value T
+lookup (c ∷ E) zero = c
+lookup (c ∷ E) (suc n) = lookup E n
 
-CastResult : Type → Set
-CastResult T = Error (Val T)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+open import Relation.Nullary using (yes; no)
+
+add-proxy : ∀ {P Q} → Value (` P) → Cast (` P) (` Q) → (` P) ⌣ (` Q) → Value (` Q)
+add-proxy v ((` B) ⟹[ l ] (` B)) ⌣B = v
+add-proxy v ((` (T1 ⇒ T2)) ⟹[ l ] (` (T3 ⇒ T4))) ⌣⇒ = v f⟨(` T1 ⇒ T2) ⟹[ l ] (` T3 ⇒ T4)⟩ 
+add-proxy v ((` (T1 ⊗ T2)) ⟹[ l ] (` (T3 ⊗ T4))) ⌣⊗ = v p⟨(` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4)⟩ 

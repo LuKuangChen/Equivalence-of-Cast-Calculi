@@ -13,7 +13,7 @@ open import X.BlameStrategies Label using (BlameStrategy; LazyUDBS)
 open BlameStrategy LazyUDBS using (Injectable)
 
 open import S.CastADT Label Injectable
-import S.Values using (Env; Value; dyn; unit; lam_,_; lam⟨_⇒_⟩_,_)
+import S.Values using (Env; Value; dyn; #t; #f; lam⟨_⇒_⟩; cons⟨_⊗_⟩)
 
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Nullary using (¬_; yes; no)
@@ -23,9 +23,9 @@ record LazyUD (ADT : CastADT) : Set where
   open S.Values Label Injectable Cast
   field      
     eq-¬⌣ : ∀ {T1 T2}
+      → (v : Value T1)
       → (l : Label)
       → ¬ (T1 ⌣ T2)
-      → (v : Value T1)
       ---
       → ⟦ ⌈ T1 ⟹[ l ] T2 ⌉ ⟧ v
           ≡
@@ -46,12 +46,12 @@ record LazyUD (ADT : CastADT) : Set where
         ⟦ ⌈ (` P) ⟹[ l ] (` ground P) ⌉ ⟧ v >>= ⟦ ⌈ (` ground P) ⟹[ l ] * ⌉ ⟧
 
     eq-I* : ∀ {P}
-      → (l : Label)
       → (v : Value (` P))
-      → (Pg : Ground P)
-      → ⟦ ⌈ (` P) ⟹[ l ] * ⌉ ⟧ v
+      → (l : Label)
+      → (gP : Ground P)
+      → ⟦ ⌈ ` P ⟹[ l ] * ⌉ ⟧ v
           ≡
-        return (dyn P Pg v)
+        return (dyn P gP v)
 
     eq-*P : ∀ {P}
       → (v : Value *)
@@ -64,36 +64,27 @@ record LazyUD (ADT : CastADT) : Set where
     eq-*I-succ : ∀ {P}
       → (v : Value (` P))
       → (l : Label)
-      → (Pg : Ground P)
-      → ⟦ ⌈ * ⟹[ l ] (` P) ⌉ ⟧ (dyn P Pg v)
+      → (gP : Ground P)
+      → ⟦ ⌈ * ⟹[ l ] (` P) ⌉ ⟧ (dyn P gP v)
           ≡
         return v
     
     eq-*I-fail : ∀ {P Q}
       → (v : Value (` P))  
       → (l : Label)
-      → (Pg : Ground P)
-      → (Qg : Ground Q)
+      → (gP : Ground P)
+      → (gQ : Ground Q)
       → ¬ (` P) ≡ (` Q)
-      → ⟦ ⌈ * ⟹[ l ] (` Q) ⌉ ⟧ (dyn P Pg v)
+      → ⟦ ⌈ * ⟹[ l ] (` Q) ⌉ ⟧ (dyn P gP v)
           ≡
         raise l
 
-    eq-U : ∀ l
-      → ⟦ ⌈ (` U) ⟹[ l ] (` U) ⌉ ⟧ unit
+    eq-B : ∀ l b
+      → ⟦ ⌈ (` B) ⟹[ l ] (` B) ⌉ ⟧ b
           ≡
-        return unit
+        return b
 
-    eq-⇒-wrap : ∀ T21 T22 T11 T12
-      → (l : Label)
-      → {Γ : Context}
-      → (e : (Γ , T11) ⊢ T12)
-      → (E : Env Γ)
-      → ⟦ ⌈ (` T11 ⇒ T12) ⟹[ l ] (` T21 ⇒ T22) ⌉ ⟧ (lam e , E)
-          ≡
-        return (lam⟨ ⌈ T21 ⟹[ l ] T11 ⌉ ⇒ ⌈ T12 ⟹[ l ] T22 ⌉ ⟩ e , E)
-
-    eq-⇒-extend : ∀ T21 T22 T11 T12
+    eq-⇒ : ∀ T21 T22 T11 T12
       → ∀ {S T}
       → (l : Label)
       → {Γ : Context}
@@ -101,6 +92,17 @@ record LazyUD (ADT : CastADT) : Set where
       → (c₂ : Cast T T12)
       → (e : (Γ , S) ⊢ T)
       → (E : Env Γ)
-      → ⟦ ⌈ (` T11 ⇒ T12) ⟹[ l ] (` T21 ⇒ T22) ⌉ ⟧ (lam⟨ c₁ ⇒ c₂ ⟩ e , E)
+      → ⟦ ⌈ (` T11 ⇒ T12) ⟹[ l ] (` T21 ⇒ T22) ⌉ ⟧ (lam⟨ c₁ ⇒ c₂ ⟩ e E)
           ≡
-        return (lam⟨ ⌈ T21 ⟹[ l ] T11 ⌉ ⨟ c₁ ⇒ c₂ ⨟ ⌈ T12 ⟹[ l ] T22 ⌉ ⟩ e , E)
+        return (lam⟨ ⌈ T21 ⟹[ l ] T11 ⌉ ⨟ c₁ ⇒ c₂ ⨟ ⌈ T12 ⟹[ l ] T22 ⌉ ⟩ e E)
+
+    eq-⊗ : ∀ T21 T22 T11 T12
+      → ∀ {S T}
+      → (l : Label)
+      → (c₁ : Cast S T11)
+      → (c₂ : Cast T T12)
+      → (v1 : Value S)
+      → (v2 : Value T)
+      → ⟦ ⌈ (` T11 ⊗ T12) ⟹[ l ] (` T21 ⊗ T22) ⌉ ⟧ (cons⟨ c₁ ⊗ c₂ ⟩ v1 v2)
+          ≡
+        return (cons⟨ c₁ ⨟ ⌈ T11 ⟹[ l ] T21 ⌉ ⊗ c₂ ⨟ ⌈ T12 ⟹[ l ] T22 ⌉ ⟩ v1 v2)

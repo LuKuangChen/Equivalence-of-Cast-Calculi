@@ -3,6 +3,7 @@ open import Relation.Nullary using (Dec; yes; no)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
 open import Data.Product using (Σ; _×_ ; Σ-syntax; ∃-syntax; _,_)
 
+infix  99 `_
 infix 100 _⇒_
 infix 100 _⊗_
 -- infix 100 _⊕_

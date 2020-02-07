@@ -201,7 +201,7 @@ data _−→_ {T : Type} : State T → State T → Set where
     → (sp : Progressing s)
     → s −→ progress sp
 
-open import Bisimulation using (System)
+open import Bisimulation.Bisimulation using (System)
 
 deterministic : ∀ {T}
   → {s t1 t2 : State T}

@@ -29,8 +29,8 @@ module LazyD where
   
   apply-cast' : ∀ {P Q} → Value I? (` P) → Cast (` P) (` Q) → Error Label (Value I? (` Q))
   apply-cast' v ((` P) ⟹[ l ] (` Q)) with (` P) ⌣? (` Q)
-  ... | yes p = return (add-proxy I? v ((` P) ⟹[ l ] (` Q)) p)
-  ... | no ¬p = raise l
+  ... | yes P⌣Q = return (add-proxy I? v ((` P) ⟹[ l ] (` Q)) P⌣Q)
+  ... | no ¬P⌣Q = raise l
 
   ⟦_⟧ : ∀ {S T} → Cast S T → Value I? S → Error Label (Value I? T)
   ⟦ * ⟹[ l ] * ⟧ v = return v
@@ -56,19 +56,19 @@ module LazyUD where
   ... | no ¬p = raise l
   
   ⟦_⟧ : ∀ {S T} → Cast S T → Value I? S → Error Label (Value I? T)
-  ⟦ * ⟹[ l ] * ⟧ v = return v
-  ⟦ (` P) ⟹[ l ] * ⟧ v with ground? P
+  ⟦ *   ⟹[ l ] * ⟧ v = return v
+  ⟦ ` P ⟹[ l ] * ⟧ v with ground? P
   ... | yes Pg = return (dyn P Pg v)
   ... | no ¬Pg = return (dyn _ (ground-Ground P)
                       (add-proxy I? v ((` P) ⟹[ l ] (` ground P)) (ground-⌣ P)))
-  ⟦ (` P) ⟹[ l ] (` Q) ⟧ v with (` P) ⌣? (` Q)
+  ⟦ ` P ⟹[ l ] ` Q ⟧ v with (` P) ⌣? (` Q)
   ... | yes p = return (add-proxy I? v ((` P) ⟹[ l ] (` Q)) p)
   ... | no ¬p = raise l
-  ⟦ * ⟹[ l ] (` Q) ⟧ v with ground? Q
-  ⟦ * ⟹[ l ] (` Q) ⟧ v | yes Qg = project v l Q Qg
-  ⟦ * ⟹[ l ] (` Q) ⟧ v | no ¬Qg
+  ⟦ * ⟹[ l ] ` Q ⟧ v with ground? Q
+  ⟦ * ⟹[ l ] ` Q ⟧ v | yes Qg = project v l Q Qg
+  ⟦ * ⟹[ l ] ` Q ⟧ v | no ¬Qg
     = project v l (ground Q) (ground-Ground Q) >>= λ u →
-      return (add-proxy I? u ((` ground Q) ⟹[ l ] (` Q)) (⌣sym (ground-⌣ Q)))
+      return (add-proxy I? u (` ground Q ⟹[ l ] ` Q) (⌣sym (ground-⌣ Q)))
 
 LazyUDBS : BlameStrategy
 LazyUDBS = record { Injectable = LazyUD.I? ; ⟦_⟧ = LazyUD.⟦_⟧ }

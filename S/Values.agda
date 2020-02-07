@@ -43,7 +43,7 @@ mutual
       → Value (` T3 ⇒ T4)
 
     -- cons : ∀ {T1 T2}
-    --   → (v1 : Value T1)
+    --   → x(v1 : Value T1)
     --   → (v2 : Value T2)
     --   ------
     --   → Value (` T1 ⊗ T2)

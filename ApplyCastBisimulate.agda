@@ -14,10 +14,8 @@ open import Cast Label using (Cast)
 open BlameStrategy BS using (Injectable) public
 
 the-apply-cast-lemma : Set
-the-apply-cast-lemma = ∀ {S T}
-    → {lv : L.Value S}
-    → {rv : R.Value S}
-    → ValueRelate lv rv
+the-apply-cast-lemma = ∀ {S T lv rv}
     → (c : Cast S T)
+    → ValueRelate {S} lv rv
     → CastResultRelate (L.⟦ c ⟧ lv) (R.⟦ R.⌈ c ⌉ ⟧ rv)
 

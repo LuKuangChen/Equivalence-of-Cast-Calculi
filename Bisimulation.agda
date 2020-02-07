@@ -84,9 +84,9 @@ module Lemmas
       ⊎
       ∃[ ls' ]
       ∃[ rs' ](
-        (ls' ~ rs') ×
         System._−→+_ lSystem ls ls' ×
-        System._−→+_ rSystem rs rs'))
+        System._−→+_ rSystem rs rs' ×        
+        (ls' ~ rs')))
   where
 
   open System using ([]; _∷_; zero; suc)
@@ -139,12 +139,12 @@ module Lemmas
     lem-final ss [] ls-halt with safety ss
     lem-final ss [] ls-halt | inj₁ (ls-halt' , rs-halt)
       = _ , [] , rs-halt , ss
-    lem-final ss [] ls-halt | inj₂ (ls' , rs' , ss' , (lx ∷ lxs) , (rx ∷ rxs))
+    lem-final ss [] ls-halt | inj₂ (ls' , rs' , (lx ∷ lxs) , (rx ∷ rxs) , ss')
       = ⊥-elim (L.final-progressing-absurd ls-halt lx)
     lem-final ss (lx ∷ lxs) ls'-halt with safety ss
     lem-final ss (lx ∷ lxs) ls'-halt | inj₁ (ls-halt , rs-halt)
       = ⊥-elim (L.final-progressing-absurd ls-halt lx)
-    lem-final ss (lx ∷ lxs) ls'-halt | inj₂ (ls' , rs' , ss' , (lx' ∷ lxs') , (rx' ∷ rxs'))
+    lem-final ss (lx ∷ lxs) ls'-halt | inj₂ (ls' , rs' , (lx' ∷ lxs') , (rx' ∷ rxs') , ss')
       with L.deterministic lx lx'
     ... | refl with lem-final-helper ss' lxs' lxs (prefix lxs ls'-halt lxs') ls'-halt
     ... | rs'' , rxs , rhalt , bis = rs'' , (rx' ∷ (rxs' R.++ rxs)) , rhalt , bis
@@ -161,9 +161,9 @@ module Theorems
       ⊎
       ∃[ ls' ]
       ∃[ rs' ](
-        (ls' ~ rs') ×
         System._−→+_ lSystem ls ls' ×
-        System._−→+_ rSystem rs rs'))
+        System._−→+_ rSystem rs rs' ×
+        (ls' ~ rs')))
   where
   
   module L where
@@ -178,10 +178,10 @@ module Theorems
     → ls L.−→* ls'
     → L.Final ls'
     → ∃[ rs' ](
-      rs R.−→* rs' ×
-      R.Final rs' ×
-      ls' ~ rs'
-    )
+         rs R.−→* rs' ×
+         R.Final rs' ×
+         ls' ~ rs'
+      )
   thm-final-LR = Lemmas.lem-final lSystem rSystem _~_ safety
 
   safety' : {rs : rState}{ls : lState}
@@ -190,13 +190,13 @@ module Theorems
       ⊎
       ∃[ rs' ]
       ∃[ ls' ](
-        (ls' ~ rs') ×
         System._−→+_ rSystem rs rs' ×
-        System._−→+_ lSystem ls ls')
+        System._−→+_ lSystem ls ls' ×        
+        (ls' ~ rs'))
   safety' ss with safety ss
   safety' ss | inj₁ (lh , rh) = inj₁ (rh , lh)
-  safety' ss | inj₂ (ls' , rs' , ss' , lxs , rxs)
-    = inj₂ (rs' , ls' , ss' , rxs , lxs)
+  safety' ss | inj₂ (ls' , rs' , lxs , rxs , ss')
+    = inj₂ (rs' , ls' , rxs , lxs , ss')
 
   thm-final-RL : ∀ {ls rs}
     → (ss : ls ~ rs)

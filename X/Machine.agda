@@ -135,6 +135,22 @@ do-app (v f⟨(` T1 ⇒ T2) ⟹[ l ] (` T3 ⇒ T4)⟩) u k
                     [ □⟨ T2 ⟹[ l ] T4 ⟩ ]
                     k))
 
+do-car : ∀ {T1 T2 Z}
+  → Value (` T1 ⊗ T2)
+  → Cont T1 Z
+  → State Z
+do-car (cons v1 v2) k = return (cont v1 k)
+do-car (v p⟨ (` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4) ⟩) k
+  = return (cont v ([ car₁ ] [ □⟨ T1 ⟹[ l ] T3 ⟩ ] k))
+  
+do-cdr : ∀ {T1 T2 Z}
+  → Value (` T1 ⊗ T2)
+  → Cont T2 Z
+  → State Z
+do-cdr (cons v1 v2) k = return (cont v2 k)
+do-cdr (v p⟨ (` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4) ⟩) k
+  = return (cont v ([ cdr₁ ] [ □⟨ T2 ⟹[ l ] T4 ⟩ ] k))
+
 do-cast : ∀ {T1 T2 Z}
   → Cast T1 T2
   → Value T1
@@ -156,14 +172,8 @@ apply-cont v ([ app₂ v1 ] k) = do-app v1 v k
 apply-cont v ([ if₁ e2 e3 E ] k) = return (expr (cnd v e2 e3) E k)
 apply-cont v ([ cons₁ e2 E ] k) = return (expr e2 E ([ cons₂ v ] k))
 apply-cont v ([ cons₂ v1 ] k) = return (cont (cons v1 v) k)
-apply-cont (cons v1 v2) ([ car₁ ] k)
-  = return (cont v1 k)
-apply-cont (v p⟨ (` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4) ⟩) ([ car₁ ] k)
-  = return (cont v ([ car₁ ] [ □⟨ T1 ⟹[ l ] T3 ⟩ ] k))
-apply-cont (cons v1 v2) ([ cdr₁ ] k)
-  = return (cont v2 k)
-apply-cont (v p⟨ (` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4) ⟩) ([ cdr₁ ] k)
-  = return (cont v ([ cdr₁ ] [ □⟨ T2 ⟹[ l ] T4 ⟩ ] k))
+apply-cont v ([ car₁ ] k) = do-car v k
+apply-cont v ([ cdr₁ ] k) = do-cdr v k
 apply-cont v ([ □⟨ c ⟩ ] k) = do-cast c v k
 apply-cont v □ = return (halt v)
 -- apply-cont v [ app₁ e E ] k = return (expr e E ([ app₂ v ] k))
@@ -222,7 +232,7 @@ module Eval {T : Type} where
   observe (v p⟨ c ⟩) = cons
 
   data Evalo (e : ∅ ⊢ T) : Observable T → Set where
-    val : ∀ {v} → (load e) −→* return (cont v □) → Evalo e (return (observe v))
+    val : ∀ {v} → (load e) −→* return (halt v) → Evalo e (return (observe v))
     err : ∀ {l} → (load e) −→* raise l → Evalo e (raise l)
 
 open Eval public

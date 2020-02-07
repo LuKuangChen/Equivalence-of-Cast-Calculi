@@ -154,6 +154,18 @@ do-app (lam⟨ c1 ⇒ c2 ⟩ e E) v κ
   = ⟦ c1 ⟧ v >>= λ u →
     return (expr e (u ∷ E) (ext-cont c2 κ))
 
+do-car : ∀ {T1 T2 Z}
+  → Value (` T1 ⊗ T2)
+  → Cont T1 Z
+  → State Z
+do-car (cons⟨ c1 ⊗ c2 ⟩ v1 v2) k = ⟦ c1 ⟧ v1 >>= λ v' → return (cont v' k)
+
+do-cdr : ∀ {T1 T2 Z}
+  → Value (` T1 ⊗ T2)
+  → Cont T2 Z
+  → State Z
+do-cdr (cons⟨ c1 ⊗ c2 ⟩ v1 v2) k = ⟦ c2 ⟧ v2 >>= λ v' → return (cont v' k)
+
 cnd : {A : Set} → Value (` B) → (x y : A) → A
 cnd #t x y = x
 cnd #f x y = y
@@ -167,8 +179,8 @@ apply-cont v ([ app₂ v1 ] k) = do-app v1 v k
 apply-cont v ([ if₁ e2 e3 E ] k) = return (expr (cnd v e2 e3) E k)
 apply-cont v ([ cons₁ e2 E ] k) = return (expr e2 E ([□⟨ id ⟩] [ cons₂ v ] k))
 apply-cont v ([ cons₂ v1 ] k) = return (cont (cons⟨ id ⊗ id ⟩ v1 v) k)
-apply-cont (cons⟨ c1 ⊗ c2 ⟩ v1 v2) ([ car₁ ] k) = ⟦ c1 ⟧ v1 >>= λ v1' → return (cont v1' k)
-apply-cont (cons⟨ c1 ⊗ c2 ⟩ v1 v2) ([ cdr₁ ] k) = ⟦ c2 ⟧ v2 >>= λ v2' → return (cont v2' k)
+apply-cont v ([ car₁ ] k) = do-car v k
+apply-cont v ([ cdr₁ ] k) = do-cdr v k
 apply-cont v □ = return (halt v)
 
 -- apply-cont : ∀ {T1 T2 T3}

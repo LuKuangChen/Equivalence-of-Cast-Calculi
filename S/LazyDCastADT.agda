@@ -13,7 +13,7 @@ open import X.BlameStrategies Label using (BlameStrategy; LazyDBS)
 open BlameStrategy LazyDBS using (Injectable)
 
 open import S.CastADT Label Injectable
-import S.Values using (Env; Value; dyn; unit; lam_,_; lam⟨_⇒_⟩_,_)
+import S.Values using (Env; Value; dyn; #t; #f; lam⟨_⇒_⟩)
 
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Nullary using (¬_; yes; no)
@@ -50,21 +50,21 @@ record LazyD (ADT : CastADT) : Set where
           ≡
         ⟦ ⌈ (` P) ⟹[ l ] (` Q) ⌉ ⟧ v
 
-    eq-U : ∀ l
-      → ⟦ ⌈ (` U) ⟹[ l ] (` U) ⌉ ⟧ unit
+    eq-B : ∀ l v
+      → ⟦ ⌈ (` B) ⟹[ l ] (` B) ⌉ ⟧ v
           ≡
-        return unit
+        return v
 
-    eq-⇒-wrap : ∀ T21 T22 T11 T12
-      → (l : Label)
-      → {Γ : Context}
-      → (e : (Γ , T11) ⊢ T12)
-      → (E : Env Γ)
-      → ⟦ ⌈ (` T11 ⇒ T12) ⟹[ l ] (` T21 ⇒ T22) ⌉ ⟧ (lam e , E)
-          ≡
-        return (lam⟨ ⌈ T21 ⟹[ l ] T11 ⌉ ⇒ ⌈ T12 ⟹[ l ] T22 ⌉ ⟩ e , E)
+    -- eq-⇒-wrap : ∀ T21 T22 T11 T12
+    --   → (l : Label)
+    --   → {Γ : Context}
+    --   → (e : (Γ , T11) ⊢ T12)
+    --   → (E : Env Γ)
+    --   → ⟦ ⌈ (` T11 ⇒ T12) ⟹[ l ] (` T21 ⇒ T22) ⌉ ⟧ (lam e E)
+    --       ≡
+    --     return (lam⟨ ⌈ T21 ⟹[ l ] T11 ⌉ ⇒ ⌈ T12 ⟹[ l ] T22 ⌉ ⟩ e , E)
 
-    eq-⇒-extend : ∀ T21 T22 T11 T12
+    eq-⇒ : ∀ T21 T22 T11 T12
       → ∀ {S T}
       → (l : Label)
       → {Γ : Context}
@@ -72,6 +72,6 @@ record LazyD (ADT : CastADT) : Set where
       → (c₂ : Cast T T12)
       → (e : (Γ , S) ⊢ T)
       → (E : Env Γ)
-      → ⟦ ⌈ (` T11 ⇒ T12) ⟹[ l ] (` T21 ⇒ T22) ⌉ ⟧ (lam⟨ c₁ ⇒ c₂ ⟩ e , E)
+      → ⟦ ⌈ (` T11 ⇒ T12) ⟹[ l ] (` T21 ⇒ T22) ⌉ ⟧ (lam⟨ c₁ ⇒ c₂ ⟩ e E)
           ≡
-        return (lam⟨ ⌈ T21 ⟹[ l ] T11 ⌉ ⨟ c₁ ⇒ c₂ ⨟ ⌈ T12 ⟹[ l ] T22 ⌉ ⟩ e , E)
+        return (lam⟨ ⌈ T21 ⟹[ l ] T11 ⌉ ⨟ c₁ ⇒ c₂ ⨟ ⌈ T12 ⟹[ l ] T22 ⌉ ⟩ e E)

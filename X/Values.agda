@@ -16,7 +16,7 @@ open import Relation.Nullary using (¬_)
 mutual
   
   data Value : Type → Set where
-    dyn : ∀ P
+    dyn : ∀ {P}
       → (I : Injectable P)
       → (v : Value (` P))
       ---

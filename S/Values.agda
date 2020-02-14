@@ -14,7 +14,7 @@ open import Variables
 mutual
   
   data Value : Type → Set where
-    dyn : ∀ P
+    dyn : ∀ {P}
       → (Pi : Injectable P)
       → (v  : Value (` P))
       ---

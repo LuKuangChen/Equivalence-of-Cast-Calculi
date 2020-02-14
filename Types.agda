@@ -19,12 +19,43 @@ mutual
     _⊗_ : (S T : Type) → PreType
     -- _⊕_ : (S T : Type) → PreType
 
+data Tag : PreType → Set where
+  `B : Tag B
+  `⇒ : ∀ {T1 T2} → Tag (T1 ⇒ T2)
+  `⊗ : ∀ {T1 T2} → Tag (T1 ⊗ T2)
+
+tag : ∀ P → Tag P
+tag B = `B
+tag (S ⇒ T) = `⇒
+tag (S ⊗ T) = `⊗
+
+tag-unique : ∀ {P} → (t1 : Tag P) → (t2 : Tag P) → t1 ≡ t2
+tag-unique `B `B = refl
+tag-unique `⇒ `⇒ = refl
+tag-unique `⊗ `⊗ = refl
+
+data Same : PreType → Set where
+  same : ∀ P → Same P
+
 data Ground : PreType → Set where
   `B : Ground (B)
   `⇒ : Ground (* ⇒ *)
   `⊗ : Ground (* ⊗ *)
   -- `⊕ : Ground (* ⊕ *)
-  
+
+unground : ∀ {P} → Ground P → PreType
+unground {P} gP = P
+
+unground' : ∀ {P} → Ground P → PreType
+unground' `B = B
+unground' `⇒ = * ⇒ *
+unground' `⊗ = * ⊗ *
+
+lem-unground : ∀ {P} → (gP : Ground P) → unground gP ≡ unground' gP
+lem-unground `B = refl
+lem-unground `⇒ = refl
+lem-unground `⊗ = refl
+
 ground? : (P : PreType) → Dec (Ground P)
 ground? B = yes `B
 ground? (* ⇒ *) = yes `⇒
@@ -37,35 +68,35 @@ ground? ((` P) ⊗ T) = no (λ ())
 -- ground? (* ⊕ (` P)) = no (λ ())
 -- ground? ((` P) ⊕ T) = no (λ ())
 
-_≡?_ : (T1 T2 : Type) → Dec (T1 ≡ T2)
-* ≡? * = yes refl
-* ≡? (` P) = no (λ ())
-(` P) ≡? * = no (λ ())
-(` B) ≡? (` B) = yes refl
-(` B) ≡? (` (T₁ ⇒ T₂)) = no (λ ())
-(` B) ≡? (` (T₁ ⊗ T₂)) = no (λ ())
--- (` B) ≡? (` (T₁ ⊕ T₂)) = no (λ ())
-(` (T₁ ⇒ T₂)) ≡? (` B) = no (λ ())
-(` (T₁ ⇒ T₂)) ≡? (` (T₃ ⇒ T₄)) with T₁ ≡? T₃ | T₂ ≡? T₄
-((` (T₁ ⇒ T₂)) ≡? (` (.T₁ ⇒ .T₂))) | yes refl | yes refl = yes refl
-((` (T₁ ⇒ T₂)) ≡? (` (.T₁ ⇒ T₄))) | yes refl | no ¬p = no λ { refl → ¬p refl }
-((` (T₁ ⇒ T₂)) ≡? (` (T₃ ⇒ T₄))) | no ¬p | p2 = no λ { refl → ¬p refl }
-(` (T₁ ⇒ T₂)) ≡? (` (T₃ ⊗ T₄)) = no (λ ())
--- (` (T₁ ⇒ T₂)) ≡? (` (T₃ ⊕ T₄)) = no (λ ())
-(` (T₁ ⊗ T₂)) ≡? (` B) = no (λ ())
-(` (T₁ ⊗ T₂)) ≡? (` (T₃ ⇒ T₄)) = no (λ ())
-(` (T₁ ⊗ T₂)) ≡? (` (T₃ ⊗ T₄)) with T₁ ≡? T₃ | T₂ ≡? T₄
-((` (T₁ ⊗ T₂)) ≡? (` (.T₁ ⊗ .T₂))) | yes refl | yes refl = yes refl
-((` (T₁ ⊗ T₂)) ≡? (` (.T₁ ⊗ T₄))) | yes refl | no ¬p = no λ { refl → ¬p refl }
-((` (T₁ ⊗ T₂)) ≡? (` (T₃ ⊗ T₄))) | no ¬p | p2 = no λ { refl → ¬p refl }
--- (` (T₁ ⊗ T₂)) ≡? (` (T₃ ⊕ T₄)) = no (λ ())
--- (` (T₁ ⊕ T₂)) ≡? (` B) = no (λ ())
--- (` (T₁ ⊕ T₂)) ≡? (` (T₃ ⇒ T₄)) = no (λ ())
--- (` (T₁ ⊕ T₂)) ≡? (` (T₃ ⊗ T₄)) = no (λ ())
--- (` (T₁ ⊕ T₂)) ≡? (` (T₃ ⊕ T₄)) with T₁ ≡? T₃ | T₂ ≡? T₄
--- ((` (T₁ ⊕ T₂)) ≡? (` (T₃ ⊕ T₄))) | yes refl | yes refl = yes refl
--- ((` (T₁ ⊕ T₂)) ≡? (` (T₃ ⊕ T₄))) | yes refl | no ¬p = no λ { refl → ¬p refl }
--- ((` (T₁ ⊕ T₂)) ≡? (` (T₃ ⊕ T₄))) | no ¬p | p2 = no λ { refl → ¬p refl }
+_≟_ : (T1 T2 : Type) → Dec (T1 ≡ T2)
+* ≟ * = yes refl
+* ≟ (` P) = no (λ ())
+(` P) ≟ * = no (λ ())
+(` B) ≟ (` B) = yes refl
+(` B) ≟ (` (T₁ ⇒ T₂)) = no (λ ())
+(` B) ≟ (` (T₁ ⊗ T₂)) = no (λ ())
+-- (` B) ≟ (` (T₁ ⊕ T₂)) = no (λ ())
+(` (T₁ ⇒ T₂)) ≟ (` B) = no (λ ())
+(` (T₁ ⇒ T₂)) ≟ (` (T₃ ⇒ T₄)) with T₁ ≟ T₃ | T₂ ≟ T₄
+((` (T₁ ⇒ T₂)) ≟ (` (.T₁ ⇒ .T₂))) | yes refl | yes refl = yes refl
+((` (T₁ ⇒ T₂)) ≟ (` (.T₁ ⇒ T₄))) | yes refl | no ¬p = no λ { refl → ¬p refl }
+((` (T₁ ⇒ T₂)) ≟ (` (T₃ ⇒ T₄))) | no ¬p | p2 = no λ { refl → ¬p refl }
+(` (T₁ ⇒ T₂)) ≟ (` (T₃ ⊗ T₄)) = no (λ ())
+-- (` (T₁ ⇒ T₂)) ≟ (` (T₃ ⊕ T₄)) = no (λ ())
+(` (T₁ ⊗ T₂)) ≟ (` B) = no (λ ())
+(` (T₁ ⊗ T₂)) ≟ (` (T₃ ⇒ T₄)) = no (λ ())
+(` (T₁ ⊗ T₂)) ≟ (` (T₃ ⊗ T₄)) with T₁ ≟ T₃ | T₂ ≟ T₄
+((` (T₁ ⊗ T₂)) ≟ (` (.T₁ ⊗ .T₂))) | yes refl | yes refl = yes refl
+((` (T₁ ⊗ T₂)) ≟ (` (.T₁ ⊗ T₄))) | yes refl | no ¬p = no λ { refl → ¬p refl }
+((` (T₁ ⊗ T₂)) ≟ (` (T₃ ⊗ T₄))) | no ¬p | p2 = no λ { refl → ¬p refl }
+-- (` (T₁ ⊗ T₂)) ≟ (` (T₃ ⊕ T₄)) = no (λ ())
+-- (` (T₁ ⊕ T₂)) ≟ (` B) = no (λ ())
+-- (` (T₁ ⊕ T₂)) ≟ (` (T₃ ⇒ T₄)) = no (λ ())
+-- (` (T₁ ⊕ T₂)) ≟ (` (T₃ ⊗ T₄)) = no (λ ())
+-- (` (T₁ ⊕ T₂)) ≟ (` (T₃ ⊕ T₄)) with T₁ ≟ T₃ | T₂ ≟ T₄
+-- ((` (T₁ ⊕ T₂)) ≟ (` (T₃ ⊕ T₄))) | yes refl | yes refl = yes refl
+-- ((` (T₁ ⊕ T₂)) ≟ (` (T₃ ⊕ T₄))) | yes refl | no ¬p = no λ { refl → ¬p refl }
+-- ((` (T₁ ⊕ T₂)) ≟ (` (T₃ ⊕ T₄))) | no ¬p | p2 = no λ { refl → ¬p refl }
                                                                       
 -- consistency
 

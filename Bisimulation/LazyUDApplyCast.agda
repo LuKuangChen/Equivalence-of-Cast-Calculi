@@ -26,9 +26,9 @@ lem-project : ∀ {Q lv rv}
   → (l : Label)
   → (gQ : Ground Q)
   → ValueRelate lv rv
-  → CastResultRelate (project lv l Q gQ)
+  → CastResultRelate (project lv l gQ)
                      (R.⟦ R.⌈ * ⟹[ l ] ` Q ⌉ ⟧ rv)
-lem-project {Q = Q} l gQ (dyn P gP v) with (` P) ≡? (` Q)
+lem-project {Q = Q} l gQ (dyn gP v) with (` unground gP) ≟ (` unground gQ)
 ... | yes refl
   rewrite eq-*I-succ (rvalue v) l gP
   = return v
@@ -64,7 +64,7 @@ lem-*P (* ⟹[ l ] ` Q) v
 ... | yes gQ = lem-project l gQ v
 ... | no ¬gQ
   rewrite eq-*P (rvalue v) l ¬gQ
-  with project (lvalue v) l (ground Q) (ground-Ground Q)
+  with project (lvalue v) l (ground-Ground Q)
      | R.⟦ R.⌈ * ⟹[ l ] (` ground Q) ⌉ ⟧ (rvalue v)
      | lem-project l (ground-Ground Q) v
 ... | .(raise  _) | .(raise  _) | raise l'  = raise l'
@@ -78,12 +78,12 @@ lem-P* : ∀ {P lv rv}
   → CastResultRelate (L.⟦ c ⟧ lv)
                      (R.⟦ R.⌈ c ⌉ ⟧ rv)
 lem-P* (` P ⟹[ l ] *) v with ground? P
-... | yes gP rewrite eq-I* (rvalue v) l gP = return (dyn P gP v)
+... | yes gP rewrite eq-I* (rvalue v) l gP = return (dyn gP v)
 ... | no ¬gP rewrite eq-P* (rvalue v) l ¬gP
   with lem-proxy v (` P ⟹[ l ] ` ground P) (ground-⌣ P)
 ... | _ , eq , v'
   rewrite eq | eq-I* (rvalue v') l (ground-Ground P)
-  = return (dyn (ground P) (ground-Ground P) v')
+  = return (dyn (ground-Ground P) v')
 
 lem-⟦_⟧ : ∀ {S T lv rv}
     → (c : Cast S T)

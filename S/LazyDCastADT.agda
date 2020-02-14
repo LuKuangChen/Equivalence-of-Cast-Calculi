@@ -43,10 +43,10 @@ record LazyD (ADT : CastADT) : Set where
       → (v : Value (` P))  
       → ⟦ ⌈ (` P) ⟹[ l ] * ⌉ ⟧ v
           ≡
-        return (dyn P _ v)
+        return (dyn (same P) v)
       
     eq-*P : ∀ Q P l v
-      → ⟦ ⌈ * ⟹[ l ] (` Q) ⌉ ⟧ (dyn P tt v)
+      → ⟦ ⌈ * ⟹[ l ] (` Q) ⌉ ⟧ (dyn (same P) v)
           ≡
         ⟦ ⌈ (` P) ⟹[ l ] (` Q) ⌉ ⟧ v
 
@@ -54,15 +54,6 @@ record LazyD (ADT : CastADT) : Set where
       → ⟦ ⌈ (` B) ⟹[ l ] (` B) ⌉ ⟧ v
           ≡
         return v
-
-    -- eq-⇒-wrap : ∀ T21 T22 T11 T12
-    --   → (l : Label)
-    --   → {Γ : Context}
-    --   → (e : (Γ , T11) ⊢ T12)
-    --   → (E : Env Γ)
-    --   → ⟦ ⌈ (` T11 ⇒ T12) ⟹[ l ] (` T21 ⇒ T22) ⌉ ⟧ (lam e E)
-    --       ≡
-    --     return (lam⟨ ⌈ T21 ⟹[ l ] T11 ⌉ ⇒ ⌈ T12 ⟹[ l ] T22 ⌉ ⟩ e , E)
 
     eq-⇒ : ∀ T21 T22 T11 T12
       → ∀ {S T}

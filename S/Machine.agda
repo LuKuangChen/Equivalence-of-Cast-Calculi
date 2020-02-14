@@ -66,22 +66,19 @@ mutual
       ----------
       → PreCont Z Z
 
-  record Cont (T1 T2 : Type) : Set where
-    inductive
-    constructor [□⟨_⟩]_
-    field
-      {T} : Type
-      c : Cast T1 T
-      k : PreCont T T2
-  -- data Cont : Type → Type → Set where
-  --   `_ : ∀ {T Z}
-  --     → (k : PreCont T Z)
-  --     → Cont T Z
+  data Cont (T1 T2 : Type) : Set where
+    [□⟨_⟩]_ : ∀ {T}
+      → (c : Cast T1 T)
+      → (k : PreCont T T2)
+      → Cont T1 T2
 
-  --   [□⟨_⟩]_ : ∀ {T1 T2 Z}
-  --     → (c : Cast T1 T2)
-  --     → (k : PreCont T2 Z)
-  --     → Cont T1 Z
+  -- record Cont (T1 T2 : Type) : Set where
+  --   inductive
+  --   constructor [□⟨_⟩]_
+  --   field
+  --     {T} : Type
+  --     c : Cast T1 T
+  --     k : PreCont T T2
                  
 ext-cont : ∀ {T1 T2 T3} → Cast T1 T2 → Cont T2 T3 → Cont T1 T3
 -- ext-cont c (` k)     = [□⟨ c ⟩] k
@@ -141,7 +138,7 @@ final-progressing-absurd (halt v) ()
 final-progressing-absurd (error l) ()
 
 load : ∀ {T} → ∅ ⊢ T → State T
-load e = return (expr e [] ([□⟨ id ⟩] □))
+load e = return (expr e [] ([□⟨ id _ ⟩] □))
 
 do-app : ∀ {T1 T2 Z}
   → Value (` T1 ⇒ T2)
@@ -174,37 +171,23 @@ apply-cont : ∀ {T1 T2}
   → Value T1
   → PreCont T1 T2
   → State T2
-apply-cont v ([ app₁ e2 E ] k) = return (expr e2 E ([□⟨ id ⟩] [ app₂ v ] k))
+apply-cont v ([ app₁ e2 E ] k) = return (expr e2 E ([□⟨ id _ ⟩] [ app₂ v ] k))
 apply-cont v ([ app₂ v1 ] k) = do-app v1 v k
 apply-cont v ([ if₁ e2 e3 E ] k) = return (expr (cnd v e2 e3) E k)
-apply-cont v ([ cons₁ e2 E ] k) = return (expr e2 E ([□⟨ id ⟩] [ cons₂ v ] k))
-apply-cont v ([ cons₂ v1 ] k) = return (cont (cons⟨ id ⊗ id ⟩ v1 v) k)
+apply-cont v ([ cons₁ e2 E ] k) = return (expr e2 E ([□⟨ id _ ⟩] [ cons₂ v ] k))
+apply-cont v ([ cons₂ v1 ] k) = return (cont (cons⟨ id _ ⊗ id _ ⟩ v1 v) k)
 apply-cont v ([ car₁ ] k) = do-car v k
 apply-cont v ([ cdr₁ ] k) = do-cdr v k
 apply-cont v □ = return (halt v)
-
--- apply-cont : ∀ {T1 T2 T3}
---   → Value T1
---   → Frame T1 T2
---   → Cont T2 T3
---   ---
---   → State T3
--- apply-cont v (app₁ e E)    k = return (expr e E ([□⟨ id ⟩] [ app₂ v ] k))
--- apply-cont v (app₂ u)      k = do-app u v k
--- apply-cont v (if₁ e2 e3 E) κ = return (expr (cnd v e2 e3) E κ)
--- apply-cont v (cons₁ e2 E)  κ = return (expr e2 E ([□⟨ id ⟩] [ cons₂ v ] κ))
--- apply-cont v (cons₂ v1)    κ = return (cont (cons⟨ id ⊗ id ⟩ v1 v) κ)
--- apply-cont (cons⟨ c1 ⊗ c2 ⟩ v1 v2) car₁ k = ⟦ c1 ⟧ v1 >>= λ v1' → return (cont v1' k)
--- apply-cont (cons⟨ c1 ⊗ c2 ⟩ v1 v2) cdr₁ k = ⟦ c2 ⟧ v2 >>= λ v2' → return (cont v2' k)
 
 progress : ∀ {Z} → {s : State Z} → Progressing s → State Z
 progress (expr (var x) E κ)       = return (cont (lookup E x) κ)
 progress (expr #t E κ)            = return (cont #t κ)
 progress (expr #f E κ)            = return (cont #f κ)
-progress (expr (if e1 e2 e3) E κ) = return (expr e1 E ([□⟨ id ⟩] ([ if₁ e2 e3 E ] κ)))
-progress (expr (lam e) E κ)       = return (cont (lam⟨ id ⇒ id ⟩ e E)  κ)
-progress (expr (app e1 e2) E κ)   = return (expr e1 E ([□⟨ id ⟩] [ app₁ e2 E ] κ))
-progress (expr (cons e1 e2) E κ)  = return (expr e1 E ([□⟨ id ⟩] ([ cons₁ e2 E ] κ)))
+progress (expr (if e1 e2 e3) E κ) = return (expr e1 E ([□⟨ id _ ⟩] ([ if₁ e2 e3 E ] κ)))
+progress (expr (lam e) E κ)       = return (cont (lam⟨ id _ ⇒ id _ ⟩ e E)  κ)
+progress (expr (app e1 e2) E κ)   = return (expr e1 E ([□⟨ id _ ⟩] [ app₁ e2 E ] κ))
+progress (expr (cons e1 e2) E κ)  = return (expr e1 E ([□⟨ id _ ⟩] ([ cons₁ e2 E ] κ)))
 progress (expr (e ⟨ c ⟩) E κ)     = return (expr e E (ext-cont ⌈ c ⌉ κ))
 progress (expr (blame l) E κ)     = raise l
 progress (cont v ([□⟨ c ⟩] k)) = ⟦ c ⟧ v >>= λ v' → apply-cont v' k
@@ -236,12 +219,10 @@ module Eval {T : Type} where
   open System (system {T}) using (_−→*_; []; _∷_; _−→+_; _++_) public
 
   observe : Value T → ValueDisplay T
-  observe (dyn P Pi v) = dyn
+  observe (dyn Pi v) = dyn
   observe #t = #t
   observe #f = #f
-  -- observe (lam e E) = lam
   observe (lam⟨ c1 ⇒ c2 ⟩ e E) = lam
-  -- observe (cons v1 v2) = cons
   observe (cons⟨ c1 ⊗ c2 ⟩ v1 v2) = cons
 
   data Evalo (e : ∅ ⊢ T) : Observable T → Set where

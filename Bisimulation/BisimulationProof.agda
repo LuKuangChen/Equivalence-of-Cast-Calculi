@@ -84,7 +84,7 @@ observe : ∀ {T}
   → {rv : R.Value T}
   → ValueRelate lv rv
   → L.observe lv ≡ R.observe rv
-observe (dyn P Pi v) = refl
+observe (dyn Pi v) = refl
 observe #t = refl
 observe #f = refl
 observe (lam⟨ [] , c ⇒ d ⟩ e E) = refl

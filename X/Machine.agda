@@ -223,7 +223,7 @@ module Eval {T : Type} where
   open System (system {T}) using (_−→*_; []; _∷_; _−→+_; _++_) public
 
   observe : Value T → ValueDisplay T
-  observe (dyn P I v) = dyn
+  observe (dyn I v) = dyn
   observe #t = #t
   observe #f = #f
   observe (lam e E) = lam

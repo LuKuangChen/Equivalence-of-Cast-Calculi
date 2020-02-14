@@ -47,7 +47,7 @@ _++_ : ∀ {T1 T2 T3} → CastList T1 T2 → CastList T2 T3 → CastList T1 T3
 
 data CastListRelate : {S T : Type} → CastList S T → R.Cast S T → Set where
   id : ∀ {T}
-    → CastListRelate {T} {T} [] R.id
+    → CastListRelate {T} {T} [] (R.id T)
 
   just : ∀ {T1 T2}
     → (c : L.Cast T1 T2)
@@ -134,13 +134,13 @@ mutual
       → EnvRelate (v ∷ E) (u ∷ F)
 
   data ValueRelate : ∀ {T} → L.Value T → R.Value T → Set where
-    dyn : ∀ P
+    dyn : ∀ {P}
       → (Pi : Injectable P)
       → {lv : L.Value (` P)}
       → {rv : R.Value (` P)}
       → ValueRelate lv rv
       ----------------
-      → ValueRelate (dyn P Pi lv) (dyn P Pi rv)
+      → ValueRelate (dyn Pi lv) (dyn Pi rv)
 
     #t : ValueRelate #t #t
     #f : ValueRelate #f #f
@@ -282,14 +282,10 @@ view-cont [] k    = k
 view-cont (c ∷ cs) k = [ □⟨ c ⟩ ] view-cont cs k
 
 mutual
-  data ContRelate : {T1 T2 T3 : Type} → L.Cont T1 T3 → R.Cont T2 T3 → Set where
-    [□⟨_⟩]_ : ∀ {T1 T2 T3}
-      → {lc : CastList  T1 T2}
-      → {rc : R.Cast T1 T2}
-      → (c : CastListRelate lc rc)
-      → {lk : L.Cont T2 T3}
-      → {rk : R.PreCont T2 T3}
-      → (k : PreContRelate lk rk)
+  data ContRelate : {T1 T2 : Type} → L.Cont T1 T2 → R.Cont T1 T2 → Set where
+    [□⟨_⟩]_ : ∀ {T1 T2 T3 lc rc lk rk}
+      → (c : CastListRelate {T1} {T2} lc rc)
+      → (k : PreContRelate {T3} lk rk)
       ---
       → ContRelate (view-cont lc lk) (R.[□⟨ rc ⟩] rk)
     

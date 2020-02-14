@@ -51,7 +51,7 @@ record LazyUD (ADT : CastADT) : Set where
       → (gP : Ground P)
       → ⟦ ⌈ ` P ⟹[ l ] * ⌉ ⟧ v
           ≡
-        return (dyn P gP v)
+        return (dyn gP v)
 
     eq-*P : ∀ {P}
       → (v : Value *)
@@ -65,7 +65,7 @@ record LazyUD (ADT : CastADT) : Set where
       → (v : Value (` P))
       → (l : Label)
       → (gP : Ground P)
-      → ⟦ ⌈ * ⟹[ l ] (` P) ⌉ ⟧ (dyn P gP v)
+      → ⟦ ⌈ * ⟹[ l ] (` P) ⌉ ⟧ (dyn gP v)
           ≡
         return v
     
@@ -75,7 +75,7 @@ record LazyUD (ADT : CastADT) : Set where
       → (gP : Ground P)
       → (gQ : Ground Q)
       → ¬ (` P) ≡ (` Q)
-      → ⟦ ⌈ * ⟹[ l ] (` Q) ⌉ ⟧ (dyn P gP v)
+      → ⟦ ⌈ * ⟹[ l ] (` Q) ⌉ ⟧ (dyn gP v)
           ≡
         raise l
 

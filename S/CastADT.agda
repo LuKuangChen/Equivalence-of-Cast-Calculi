@@ -16,7 +16,7 @@ record CastADT : Set₁ where
   field
     Cast : Type → Type → Set
 
-    id : {T : Type} → Cast T T
+    id : (T : Type) → Cast T T
     ⌈_⌉ : ∀ {S T} → SrcCast S T → Cast S T
     _⨟_ : ∀ {T1 T2 T3}
       → Cast T1 T2
@@ -35,7 +35,7 @@ record CastADTBasic (CADT : CastADT) : Set₁ where
   field
     lem-id : ∀ {T}
       → ∀ v
-      → ⟦ id {T} ⟧ v ≡ return v
+      → ⟦ id T ⟧ v ≡ return v
     lem-seq : ∀ {T1 T2 T3}
       → (c1 : Cast T1 T2)
       → (c2 : Cast T2 T3)

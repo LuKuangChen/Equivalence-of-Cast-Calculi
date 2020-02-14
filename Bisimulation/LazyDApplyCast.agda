@@ -39,8 +39,8 @@ lem-⟦_⟧ : ∀ {S T lv rv}
     → CastResultRelate (L.⟦ c ⟧ lv)
                        (R.⟦ R.⌈ c ⌉ ⟧ rv)
 lem-⟦_⟧ (*   ⟹[ l ] *)   v rewrite eq-** l (rvalue v) = return v
-lem-⟦_⟧ (` P ⟹[ l ] *)   v rewrite eq-P* l (rvalue v) = return (dyn P _ v)
+lem-⟦_⟧ (` P ⟹[ l ] *)   v rewrite eq-P* l (rvalue v) = return (dyn (same P) v)
 lem-⟦_⟧ (` P ⟹[ l ] ` Q) v = lem-⟦_⟧' (` P ⟹[ l ] ` Q) v
-lem-⟦_⟧ (*   ⟹[ l ] ` Q) (dyn P tt v)
+lem-⟦_⟧ (*   ⟹[ l ] ` Q) (dyn (same P) v)
   rewrite eq-*P Q P l (rvalue v)
   = lem-⟦_⟧' (` P ⟹[ l ] ` Q) v

@@ -1,5 +1,6 @@
 module Types where
-open import Relation.Nullary using (Dec; yes; no)
+open import Relation.Nullary using (Dec; yes; no; ¬_)
+open import Data.Empty using (⊥-elim)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
 open import Data.Product using (Σ; _×_ ; Σ-syntax; ∃-syntax; _,_)
 
@@ -150,6 +151,11 @@ _⌣?_ : ∀ T1 T2 → Dec (T1 ⌣ T2)
 -- (` (T₁ ⊕ T₂)) ⌣? (` (T₃ ⊗ T₄)) = no (λ ())
 -- (` (T₁ ⊕ T₂)) ⌣? (` (T₃ ⊕ T₄)) = yes ⌣⊕
 
+⌣trans : ∀ {P1 P2 P3} → (` P1) ⌣ (` P2) → (` P2) ⌣ (` P3) → (` P1) ⌣ (` P3)
+⌣trans ⌣B ⌣B = ⌣B
+⌣trans ⌣⇒ ⌣⇒ = ⌣⇒
+⌣trans ⌣⊗ ⌣⊗ = ⌣⊗
+
 ⌣refl : ∀ T → T ⌣ T
 ⌣refl * = *⌣*
 ⌣refl (` B) = ⌣B
@@ -204,6 +210,39 @@ ground-⌣ B = ⌣B
 ground-⌣ (T₁ ⇒ T₂) = ⌣⇒
 ground-⌣ (S ⊗ T) = ⌣⊗
 -- ground-⌣ (S ⊕ T) = ⌣⊕
+
+_≟G_ : ∀ {P Q} → Ground P → Ground Q → Dec (P ≡ Q)
+_≟G_ `B `B = yes refl
+_≟G_ `B `⇒ = no (λ ())
+_≟G_ `B `⊗ = no (λ ())
+_≟G_ `⇒ `B = no (λ ())
+_≟G_ `⇒ `⇒ = yes refl
+_≟G_ `⇒ `⊗ = no (λ ())
+_≟G_ `⊗ `B = no (λ ())
+_≟G_ `⊗ `⇒ = no (λ ())
+_≟G_ `⊗ `⊗ = yes refl
+
+ground-≢ : ∀ {P Q} → Ground P → Ground Q → ¬ (` P) ⌣ (` Q) → ¬ (` P) ≡ (` Q)
+ground-≢ `B `B ¬P⌣Q = ⊥-elim (¬P⌣Q ⌣B)
+ground-≢ `B `⇒ ¬P⌣Q = λ ()
+ground-≢ `B `⊗ ¬P⌣Q = λ ()
+ground-≢ `⇒ `B ¬P⌣Q = λ ()
+ground-≢ `⇒ `⇒ ¬P⌣Q = λ _ → ¬P⌣Q ⌣⇒
+ground-≢ `⇒ `⊗ ¬P⌣Q = λ ()
+ground-≢ `⊗ `B ¬P⌣Q = λ ()
+ground-≢ `⊗ `⇒ ¬P⌣Q = λ ()
+ground-≢ `⊗ `⊗ ¬P⌣Q = λ _ → ¬P⌣Q ⌣⊗
+
+¬⌣-¬ground⌣ : ∀ {P Q} → ¬ (` P) ⌣ (` Q) → ¬ (` ground P) ⌣ (` ground Q)
+¬⌣-¬ground⌣ {B} {B} ¬P⌣Q = λ _ → ¬P⌣Q ⌣B
+¬⌣-¬ground⌣ {B} {S ⇒ T} ¬P⌣Q = λ ()
+¬⌣-¬ground⌣ {B} {S ⊗ T} ¬P⌣Q = λ ()
+¬⌣-¬ground⌣ {S ⇒ T} {B} ¬P⌣Q = λ ()
+¬⌣-¬ground⌣ {S ⇒ T} {S₁ ⇒ T₁} ¬P⌣Q = λ _ → ¬P⌣Q ⌣⇒
+¬⌣-¬ground⌣ {S ⇒ T} {S₁ ⊗ T₁} ¬P⌣Q = λ ()
+¬⌣-¬ground⌣ {S ⊗ T} {B} ¬P⌣Q = λ ()
+¬⌣-¬ground⌣ {S ⊗ T} {S₁ ⇒ T₁} ¬P⌣Q = λ ()
+¬⌣-¬ground⌣ {S ⊗ T} {S₁ ⊗ T₁} ¬P⌣Q = λ _ → ¬P⌣Q ⌣⊗
 
 -- subtype
 

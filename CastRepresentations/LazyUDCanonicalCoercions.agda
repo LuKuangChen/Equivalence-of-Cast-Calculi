@@ -36,12 +36,13 @@ mutual
       → (g : CoeG P Q)
       → CoeI P (` Q)
   
-    ⊥ : ∀ {A P Q T}
+    ⊥ : ∀ {A P Q}
       → (A⌣G : (` A) ⌣ (` P))
       → (G : Ground P)
       → (l : Label)
       → (H : Ground Q)
       → (¬G≡H : ¬ (P ≡ Q))
+      → ∀ {T}
       → CoeI A T
   
   data CoeS : Type → Type → Set where
@@ -439,3 +440,33 @@ S-LazyUD = record
              ; eq-⇒ = λ T21 T22 T11 T12 {S} {T} l {Γ} c₁ c₂ e E → refl
              ; eq-⊗ = λ T21 T22 T11 T12 {S} {T} l c₁ c₂ v1 v2 → refl
              }
+
+-- -- L-UD Coercions in Normal Form is isomorphic to L-UD Hypercoercions
+-- open import Isomorphism
+-- open import CastRepresentations.LazyUDHypercoercions Label
+--   renaming (Cast to HCast)
+
+-- S≃H : ∀ {S T}
+--   → Cast S T ≃ HCast S T
+-- S≃H =
+--   record
+--     { to   = to
+--     ; from = {!!}
+--     ; from∘to = {!!}
+--     ; to∘from = {!!} }
+--   where
+--   mutual
+--     to-g  : ∀ {S T} → (x : CoeG S T) → PreBody S T
+--     to-g B = B
+--     to-g (s ⇒ t) = to s ⇒ to t
+--     to-g (s ⊗ t) = to s ⊗ to t
+    
+--     to : ∀ {S T} → (x : CoeS S T) → HCast S T
+--     to id* = id*
+--     to (G ⁇ l , (g , H ‼)) = ↷ (⁇ G l) (` to-g g) (‼ H)
+--     to (G ⁇ l , (` g)) = ↷ (⁇ G l) (` to-g g) ε
+--     to {T = *}   (G ⁇ l , ⊥ A⌣G' G' l' H' ¬G'≡H' {.*})
+--       = ↷ (⁇ G l) (⊥ l') (‼ {!ground!})
+--     to {T = ` P} (G ⁇ l , ⊥ A⌣G' G' l' H' ¬G'≡H' {.(` P)})
+--       = {!!}
+--     to (` i) = {!!}

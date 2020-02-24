@@ -16,17 +16,51 @@ Siek, Jeremy G., and Philip Wadler. "Threesomes, with and without blame." ACM Si
 open import Data.Maybe
 
 -- optional label
-OptionalLabel = Maybe Label
+data OptionalLabel : Type → PreType → Set where
+  just : ∀ {P}
+    → Label
+    → OptionalLabel * P
+  nothing : ∀ {P}
+    → OptionalLabel (` P) P
 
 -- labeled types
-data LTypes : Set
-  B : OptionalLabel → LTypes
-  _⇒_ : LType → LType → LTypes
-  _⊗_ : LType → LType → LTypes
-  ⊥ : ∀ {P} → Label → Ground P → OptionalLabel → LTypes
+data Tail : PreType → Type → Set where
+  ε : ∀ {P}
+      ------------
+    → Tail P (` P)
+    
+  ‼ : ∀ {P}
+    → (gP : Ground P)
+      ---------------
+    → Tail P *
 
+mutual
+  data LPreType : PreType → PreType → Set where
+    B   : LPreType B B
+    _⇒_ : ∀ {S1 T1 S2 T2}
+      → LType S2 S1
+      → LType T1 T2
+      → LPreType (S1 ⇒ T1) (S2 ⇒ T2)
+    _⊗_ : ∀ {L1 R1 L2 R2}
+      → LType L1 L2
+      → LType R1 R2
+      → LPreType (L1 ⊗ R1) (L2 ⊗ R2)
 
-  
+  data LType : Type → Type → Set where
+    Dyn : LType * *
+    _,_ : ∀ {S P Q T}
+      → OptionalLabel S P
+      → LPreType P Q
+      → {t : Tail Q T}
+      → LType (` P) (` Q)
+    ⊥ : ∀ {S P Q T}
+      → OptionalLabel S P
+      → Ground P
+      → {t : Tail Q T}
+      → LType (` P) (` Q)
+
+Cast : Type → Type → Set
+Cast = LType
 
 -- data Head : Type → PreType → Set where
 --   ε : ∀ {P}

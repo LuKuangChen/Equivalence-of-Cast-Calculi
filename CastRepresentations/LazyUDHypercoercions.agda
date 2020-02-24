@@ -21,12 +21,13 @@ data Head : Type → PreType → Set where
     → Head * P
 
 data Tail : PreType → Type → Set where
-  ε : ∀ {P} →
-    ---
-    Tail P (` P)
+  ε : ∀ {P}
+      ------------
+    → Tail P (` P)
+    
   ‼ : ∀ {P}
     → (gP : Ground P)
-      ---
+      ---------------
     → Tail P *
 
 mutual
@@ -266,13 +267,9 @@ mutual
   assoc-seq-m (` m1) t1 h2 (` m2) t2 h3 (⊥ l3) | none | none = refl
   assoc-seq-m (` B) t1 h2 (` B) t2 h3 (` B) | none | none = refl
   assoc-seq-m (` (c₁ ⇒ c₂)) t1 h2 (` (c₃ ⇒ c₄)) t2 h3 (` (c₅ ⇒ c₆)) | none | none
-    = cong₂ (λ □ ■ → (` □ ⇒ ■))
-            (sym (assoc c₅ c₃ c₁))
-            (assoc c₂ c₄ c₆) 
+    = cong₂ (λ □ ■ → (` □ ⇒ ■)) (sym (assoc c₅ c₃ c₁)) (assoc c₂ c₄ c₆) 
   assoc-seq-m (` (c₁ ⊗ c₂)) t1 h2 (` (c₃ ⊗ c₄)) t2 h3 (` (c₅ ⊗ c₆)) | none | none
-    = cong₂ (λ □ ■ → (` □ ⊗ ■))
-            (assoc c₁ c₃ c₅)
-            (assoc c₂ c₄ c₆) 
+    = cong₂ (λ □ ■ → (` □ ⊗ ■)) (assoc c₁ c₃ c₅) (assoc c₂ c₄ c₆) 
 
 lem-id-m : ∀ {P}
   → (v : Value (` P))  

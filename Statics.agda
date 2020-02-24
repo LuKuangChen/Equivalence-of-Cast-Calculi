@@ -1,11 +1,29 @@
-open import Types
+module Statics where
 
-module Terms
-  (Label : Set)
-  where
+open import Label
+open import Type
 
+<<<<<<< HEAD:Terms.agda
 open import Variables
 open import Cast Label
+=======
+data Context : Set where
+  ∅   : Context
+  _,_ : Context → Type → Context
+
+infix  4 _∋_
+
+data _∋_ : Context → Type → Set where
+
+  zero : ∀ {Γ A}
+      ----------
+    → Γ , A ∋ A
+
+  suc : ∀ {Γ A B}
+    → Γ ∋ A
+      ---------
+    → Γ , B ∋ A
+>>>>>>> 3a6456f2895084c56b39ebb3004d74c927a89071:Statics.agda
 
 infix  4 _⊢_
 

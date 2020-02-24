@@ -1,8 +1,13 @@
+<<<<<<< HEAD:Types.agda
 module Types where
 open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Data.Empty using (⊥-elim)
+=======
+module Type where
+
+open import Relation.Nullary using (Dec; yes; no)
+>>>>>>> 3a6456f2895084c56b39ebb3004d74c927a89071:Type.agda
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
-open import Data.Product using (Σ; _×_ ; Σ-syntax; ∃-syntax; _,_)
 
 infix  99 `_
 infix 100 _⇒_
@@ -11,7 +16,7 @@ infix 100 _⊗_
 
 mutual
   data Type : Set where
-    * : Type
+    ⋆ : Type
     `_ : (P : PreType) → Type
     
   data PreType : Set where
@@ -20,6 +25,7 @@ mutual
     _⊗_ : (S T : Type) → PreType
     -- _⊕_ : (S T : Type) → PreType
 
+<<<<<<< HEAD:Types.agda
 data Tag : PreType → Set where
   `B : Tag B
   `⇒ : ∀ {T1 T2} → Tag (T1 ⇒ T2)
@@ -126,11 +132,55 @@ data _⌣_ : (T1 T2 : Type) → Set where
   *⌣P : ∀ P → * ⌣ (` P)
   P⌣* : ∀ P → (` P) ⌣ *
   ⌣B : (` B) ⌣ (` B)
+=======
+mutual
+  -- _≡?_ : (P1 P2 : PreType) → Dec (P1 ≡ P2)
+  -- P1 P≡? P2 = {!!}
+
+  _≡?_ : (T1 T2 : Type) → Dec (T1 ≡ T2)
+  ⋆ ≡? ⋆ = yes refl
+  ⋆ ≡? (` P) = no (λ ())
+  (` P) ≡? ⋆ = no (λ ())
+  (` U) ≡? (` U) = yes refl
+  (` U) ≡? (` (T₁ ⇒ T₂)) = no (λ ())
+  (` U) ≡? (` (T₁ ⊗ T₂)) = no (λ ())
+  (` U) ≡? (` (T₁ ⊕ T₂)) = no (λ ())
+  (` (T₁ ⇒ T₂)) ≡? (` U) = no (λ ())
+  (` (T₁ ⇒ T₂)) ≡? (` (T₃ ⇒ T₄)) with T₁ ≡? T₃ | T₂ ≡? T₄
+  ((` (T₁ ⇒ T₂)) ≡? (` (.T₁ ⇒ .T₂))) | yes refl | yes refl = yes refl
+  ((` (T₁ ⇒ T₂)) ≡? (` (.T₁ ⇒ T₄))) | yes refl | no ¬p = no λ { refl → ¬p refl }
+  ((` (T₁ ⇒ T₂)) ≡? (` (T₃ ⇒ T₄))) | no ¬p | p2 = no λ { refl → ¬p refl }
+  (` (T₁ ⇒ T₂)) ≡? (` (T₃ ⊗ T₄)) = no (λ ())
+  (` (T₁ ⇒ T₂)) ≡? (` (T₃ ⊕ T₄)) = no (λ ())
+  (` (T₁ ⊗ T₂)) ≡? (` U) = no (λ ())
+  (` (T₁ ⊗ T₂)) ≡? (` (T₃ ⇒ T₄)) = no (λ ())
+  (` (T₁ ⊗ T₂)) ≡? (` (T₃ ⊗ T₄)) with T₁ ≡? T₃ | T₂ ≡? T₄
+  ((` (T₁ ⊗ T₂)) ≡? (` (.T₁ ⊗ .T₂))) | yes refl | yes refl = yes refl
+  ((` (T₁ ⊗ T₂)) ≡? (` (.T₁ ⊗ T₄))) | yes refl | no ¬p = no λ { refl → ¬p refl }
+  ((` (T₁ ⊗ T₂)) ≡? (` (T₃ ⊗ T₄))) | no ¬p | p2 = no λ { refl → ¬p refl }
+  (` (T₁ ⊗ T₂)) ≡? (` (T₃ ⊕ T₄)) = no (λ ())
+  (` (T₁ ⊕ T₂)) ≡? (` U) = no (λ ())
+  (` (T₁ ⊕ T₂)) ≡? (` (T₃ ⇒ T₄)) = no (λ ())
+  (` (T₁ ⊕ T₂)) ≡? (` (T₃ ⊗ T₄)) = no (λ ())
+  (` (T₁ ⊕ T₂)) ≡? (` (T₃ ⊕ T₄)) with T₁ ≡? T₃ | T₂ ≡? T₄
+  ((` (T₁ ⊕ T₂)) ≡? (` (T₃ ⊕ T₄))) | yes refl | yes refl = yes refl
+  ((` (T₁ ⊕ T₂)) ≡? (` (T₃ ⊕ T₄))) | yes refl | no ¬p = no λ { refl → ¬p refl }
+  ((` (T₁ ⊕ T₂)) ≡? (` (T₃ ⊕ T₄))) | no ¬p | p2 = no λ { refl → ¬p refl }
+  
+-- shallow consistency
+
+data _⌣_ : (T1 T2 : Type) → Set where
+  ⋆⌣⋆ : ⋆ ⌣ ⋆
+  ⋆⌣P : ∀ P → ⋆ ⌣ (` P)
+  P⌣⋆ : ∀ P → (` P) ⌣ ⋆
+  ⌣U : (` U) ⌣ (` U)
+>>>>>>> 3a6456f2895084c56b39ebb3004d74c927a89071:Type.agda
   ⌣⇒ : ∀ {T1 T2 T3 T4} → (` T1 ⇒ T2) ⌣ (` T3 ⇒ T4)
   ⌣⊗ : ∀ {T1 T2 T3 T4} → (` T1 ⊗ T2) ⌣ (` T3 ⊗ T4)
   -- ⌣⊕ : ∀ {T1 T2 T3 T4} → (` T1 ⊕ T2) ⌣ (` T3 ⊕ T4)
 
 _⌣?_ : ∀ T1 T2 → Dec (T1 ⌣ T2)
+<<<<<<< HEAD:Types.agda
 * ⌣? * = yes *⌣*
 * ⌣? (` P) = yes (*⌣P P)
 (` P) ⌣? * = yes (P⌣* P)
@@ -139,6 +189,16 @@ _⌣?_ : ∀ T1 T2 → Dec (T1 ⌣ T2)
 (` B) ⌣? (` (T₁ ⊗ T₂)) = no (λ ())
 -- (` B) ⌣? (` (T₁ ⊕ T₂)) = no (λ ())
 (` (T₁ ⇒ T₂)) ⌣? (` B) = no (λ ())
+=======
+⋆ ⌣? ⋆ = yes ⋆⌣⋆
+⋆ ⌣? (` P) = yes (⋆⌣P P)
+(` P) ⌣? ⋆ = yes (P⌣⋆ P)
+(` U) ⌣? (` U) = yes ⌣U
+(` U) ⌣? (` (T₁ ⇒ T₂)) = no (λ ())
+(` U) ⌣? (` (T₁ ⊗ T₂)) = no (λ ())
+(` U) ⌣? (` (T₁ ⊕ T₂)) = no (λ ())
+(` (T₁ ⇒ T₂)) ⌣? (` U) = no (λ ())
+>>>>>>> 3a6456f2895084c56b39ebb3004d74c927a89071:Type.agda
 (` (T₁ ⇒ T₂)) ⌣? (` (T₃ ⇒ T₄)) = yes ⌣⇒
 (` (T₁ ⇒ T₂)) ⌣? (` (T₃ ⊗ T₄)) = no (λ ())
 -- (` (T₁ ⇒ T₂)) ⌣? (` (T₃ ⊕ T₄)) = no (λ ())
@@ -157,8 +217,13 @@ _⌣?_ : ∀ T1 T2 → Dec (T1 ⌣ T2)
 ⌣trans ⌣⊗ ⌣⊗ = ⌣⊗
 
 ⌣refl : ∀ T → T ⌣ T
+<<<<<<< HEAD:Types.agda
 ⌣refl * = *⌣*
 ⌣refl (` B) = ⌣B
+=======
+⌣refl ⋆ = ⋆⌣⋆
+⌣refl (` U) = ⌣U
+>>>>>>> 3a6456f2895084c56b39ebb3004d74c927a89071:Type.agda
 ⌣refl (` (T₁ ⇒ T₂)) = ⌣⇒
 ⌣refl (` (T₁ ⊗ T₂)) = ⌣⊗
 -- ⌣refl (` (T₁ ⊕ T₂)) = ⌣⊕
@@ -176,6 +241,7 @@ _⌣?_ : ∀ T1 T2 → Dec (T1 ⌣ T2)
   → (p1 p2 : T1 ⌣ T2)
   ---
   → p1 ≡ p2
+<<<<<<< HEAD:Types.agda
 ⌣unique *⌣* *⌣* = refl
 ⌣unique (*⌣P P) (*⌣P .P) = refl
 ⌣unique (P⌣* P) (P⌣* .P) = refl
@@ -299,3 +365,13 @@ data _⊑_ : Type → Type → Set where
   --   → T2 ⊑ T4
   --   ---
   --   → (` T1 ⊕ T2) ⊑ (` T3 ⊕ T4)
+=======
+⌣unique ⋆⌣⋆ ⋆⌣⋆ = refl
+⌣unique (⋆⌣P P) (⋆⌣P .P) = refl
+⌣unique (P⌣⋆ P) (P⌣⋆ .P) = refl
+⌣unique ⌣U ⌣U = refl
+⌣unique ⌣⇒ ⌣⇒ = refl
+⌣unique ⌣⊗ ⌣⊗ = refl
+⌣unique ⌣⊕ ⌣⊕ = refl
+  
+>>>>>>> 3a6456f2895084c56b39ebb3004d74c927a89071:Type.agda

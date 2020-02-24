@@ -1,14 +1,18 @@
-open import Types
 open import S.CastADT
 
 module S.Machine
+<<<<<<< HEAD
   (Label : Set)
   (Injectable : PreType → Set)
   (cast-adt : CastADT Label Injectable)
+=======
+  (cast-adt : CastADT)
+>>>>>>> 3a6456f2895084c56b39ebb3004d74c927a89071
   where
 
 open CastADT cast-adt using (Cast; id; ⌈_⌉; _⨟_; ⟦_⟧)
 
+<<<<<<< HEAD
 open import Error
 
 open import Variables using (∅)
@@ -20,6 +24,20 @@ open import S.Values Label Injectable Cast
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong)
 
 data Frame : Type → Type → Set where
+=======
+open import Label
+open import Type
+open import Statics
+open import Observable
+open import S.Value Cast
+
+open import Data.Nat using (ℕ; zero; suc; _+_)
+open import Data.Product using (Σ; _×_ ; Σ-syntax; ∃-syntax)
+  renaming (_,_ to ⟨_,_⟩)
+open import Relation.Nullary using (¬_)
+  
+mutual
+>>>>>>> 3a6456f2895084c56b39ebb3004d74c927a89071
       
   app₁ : ∀ {Γ S T}
     → (e2 : Γ ⊢ S)
@@ -130,12 +148,18 @@ progressing-unique (cont v k) (cont .v .k) = refl
 
 open import Data.Empty using (⊥; ⊥-elim)
 
+<<<<<<< HEAD
 final-progressing-absurd : ∀ {T} → {s : State T}
   → Final s
   → Progressing s
   → ⊥
 final-progressing-absurd (halt v) ()
 final-progressing-absurd (error l) ()
+=======
+  halt : ∀ {T}
+    → Observable T
+    → State T
+>>>>>>> 3a6456f2895084c56b39ebb3004d74c927a89071
 
 load : ∀ {T} → ∅ ⊢ T → State T
 load e = return (expr e [] ([□⟨ id _ ⟩] □))
@@ -161,6 +185,7 @@ do-cdr : ∀ {T1 T2 Z}
   → Value (` T1 ⊗ T2)
   → Cont T2 Z
   → State Z
+<<<<<<< HEAD
 do-cdr (cons⟨ c1 ⊗ c2 ⟩ v1 v2) k = ⟦ c2 ⟧ v2 >>= λ v' → return (cont v' k)
 
 cnd : {A : Set} → Value (` B) → (x y : A) → A
@@ -199,11 +224,92 @@ data _−→_ {T : Type} : State T → State T → Set where
 
 open import Bisimulation.Bisimulation using (System)
 
+=======
+do-cdr (cons v₁ c₁ v₂ c₂) κ = ` return v₂ (ext-cont c₂ κ)
+
+do-case : ∀ {T1 T2 T3 Z}
+  → Val (` T1 ⊕ T2)
+  → Val (` T1 ⇒ T3)
+  → Val (` T2 ⇒ T3)
+  → Cont T3 Z
+  → State Z
+do-case (inl v1 c) (fun env c₁ b c₂) v3 k
+  = ` return v1 (mk-cont (app₂ (fun env (mk-seq c c₁) b c₂) k))
+do-case (inr v1 c) v2 (fun env c₁ b c₂) k
+  = ` return v1 (mk-cont (app₂ (fun env (mk-seq c c₁) b c₂) k))
+
+observe-val : ∀ {T} → Val T → Value T
+observe-val (inj P v) = inj
+observe-val (fun env c₁ b c₂) = fun
+observe-val sole = sole
+observe-val (cons v c₁ v₁ c₂) = cons
+observe-val (inl v c) = inl
+observe-val (inr v c) = inr
+
+-- cont(v,k)
+progress-return : ∀ {T Z}
+  → Val T
+  → PreCont T Z
+  ---
+  → State Z
+progress-return v mt = halt (done (observe-val v))
+progress-return v (cons₁ E e1 κ) = ` inspect e1 E (mk-cont (cons₂ v κ))
+progress-return v (cons₂ {T1} {T2} v1 κ) = ` return (cons v1 (mk-id T1) v (mk-id T2)) κ
+progress-return v (inl κ) = ` return (inl v (mk-id _)) κ
+progress-return v (inr κ) = ` return (inr v (mk-id _)) κ
+progress-return v (app₁ E e2 κ) = ` inspect e2 E (mk-cont (app₂ v κ))
+progress-return v (app₂ v₁ κ) = do-app v₁ v κ
+progress-return v (car κ) = do-car v κ
+progress-return v (cdr κ) = do-cdr v κ
+progress-return v (case₁ E e2 e3 κ) = ` inspect e2 E (mk-cont (case₂ E v e3 κ))
+progress-return v (case₂ E v1 e3 κ) = ` inspect e3 E (mk-cont (case₃ v1 v κ))
+progress-return v (case₃ v1 v2 κ) = do-case v1 v2 v κ
+
+-- reduction
+progress : {T : Type} → Nonhalting T → State T
+progress (inspect sole E κ) = ` return sole κ
+progress (inspect (var X) E κ) = ` return (E [ X ]) κ
+progress (inspect (lam T1 T2 e) E κ) = ` return (fun E (mk-id T1) e (mk-id T2)) κ
+progress (inspect (cons e1 e2) E κ) = ` inspect e1 E (mk-cont (cons₁ E e2 κ))
+progress (inspect (inl e) E κ) = ` inspect e E (mk-cont (inl κ))
+progress (inspect (inr e) E κ) = ` inspect e E (mk-cont (inr κ))
+progress (inspect (app e1 e2) E κ) = ` inspect e1 E (mk-cont (app₁ E e2 κ))
+progress (inspect (car e) E κ) = ` inspect e E (mk-cont (car κ))
+progress (inspect (cdr e) E κ) = ` inspect e E (mk-cont (cdr κ))
+progress (inspect (case e1 e2 e3) E κ) = ` inspect e1 E (mk-cont (case₁ E e2 e3 κ))
+progress (inspect (cast l T1 T2 e) E κ) = ` inspect e E (ext-cont (mk-cast l T1 T2) κ)
+progress (inspect (blame l) E κ) = halt (blame l)
+progress (return v (cont fst snd)) with apply-cast fst v
+progress (return v (cont fst snd)) | succ u = progress-return u snd
+progress (return v (cont fst snd)) | fail l = halt (blame l)
+-- progress (halt obs) = halt obs
+
+data _−→_ {T : Type} : State T → State T → Set where
+  it : {s : Nonhalting T}
+     → (` s) −→ progress s
+
+open import Bisim using (System)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+open import Data.Empty using (⊥; ⊥-elim)
+
+Final : ∀ {T}
+  → State T → Set
+Final = λ s → ∃[ o ](s ≡ halt o)
+
+final-nontransitional : ∀ {T}
+  → {s t : State T}
+  → Final s
+  → (s −→ t)
+  → ⊥
+final-nontransitional ⟨ o , refl ⟩ ()
+  
+>>>>>>> 3a6456f2895084c56b39ebb3004d74c927a89071
 deterministic : ∀ {T}
   → {s t1 t2 : State T}
   → s −→ t1
   → s −→ t2
   → t1 ≡ t2
+<<<<<<< HEAD
 deterministic (it sp1) (it sp2) = cong progress (progressing-unique sp1 sp2)
 
 system : ∀ {T} → System (State T)
@@ -230,3 +336,28 @@ module Eval {T : Type} where
     err : ∀ {l} → (load e) −→* raise l → Evalo e (raise l)
 
 open Eval public
+=======
+deterministic it it = refl
+                      
+system : ∀ {T} → System (State T)
+system = record
+  { _−→_ = _−→_
+  ; Final = Final
+  ; final-nontransitional = final-nontransitional
+  ; deterministic = deterministic
+  }
+
+module Foo {T : Type} where
+  
+  open System (system {T}) using (_−→*_; []; _∷_; _−→+_; _++_) public
+
+  -- halt-nonprog : ∀ {o}
+  --   → {s : State T}
+  --   → ¬ (halt o −→ s)
+  -- halt-nonprog ()
+
+  Evalo : (e : ∅ ⊢ T) (o : Observable T) → Set
+  Evalo e o = ∃[ o ] (load e −→* halt o)
+    
+open Foo public
+>>>>>>> 3a6456f2895084c56b39ebb3004d74c927a89071

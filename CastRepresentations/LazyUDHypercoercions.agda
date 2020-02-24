@@ -88,7 +88,7 @@ check-gap ε ε = none
 check-gap (‼ gP) (⁇ gQ l) with gP ≟G gQ
 check-gap (‼ gP) (⁇ gQ l) | yes refl = none
 check-gap (‼ gP) (⁇ gQ l) | no ¬P≡Q  = some ¬P≡Q l
-                                        
+                                   
 mutual
   _⨟_ : ∀ {T1 T2 T3} → Cast T1 T2 → Cast T2 T3 → Cast T1 T3
   id*        ⨟ d   = d
@@ -111,7 +111,7 @@ mutual
   B ⨟' B = B
   (c₁ ⇒ c₂) ⨟' (c₃ ⇒ c₄) = (c₃ ⨟ c₁) ⇒ (c₂ ⨟ c₄)
   (c₁ ⊗ c₂) ⨟' (c₃ ⊗ c₄) = (c₁ ⨟ c₃) ⊗ (c₂ ⨟ c₄)
-                                             
+                                      
 mutual
   ⇑* : Label → ∀ T → Cast T *
   ⇑* l *     = id*
@@ -155,15 +155,15 @@ mutual
     = id S ⇒ id T
   id-m (L ⊗ R)
     = (id L) ⊗ (id R)
-  
+
 open import X.BlameStrategies Label using (BlameStrategy; LazyUDBS)
 open BlameStrategy LazyUDBS using (Injectable)
 
 open import S.Values Label Injectable Cast
 
 open import Error
-  using (Error; return; raise; _>>=_; _>=>_; >>=-return; >>=-assoc; >=>-assoc; >=>->>=)
-open import Data.Unit using (tt)
+  using (Error; return; raise; _>>=_; _>=>_
+        ;>>=-return; >>=-assoc; >=>-assoc; >=>->>=)
 
 CastResult : Type → Set
 CastResult T = Error Label (Value T)
@@ -274,21 +274,20 @@ mutual
             (assoc c₁ c₃ c₅)
             (assoc c₂ c₄ c₆) 
 
-mutual
-  lem-id-m : ∀ {P}
-    → (v : Value (` P))  
-    -----------------------------
-    → proxy v (id-m P) ≡ v
-  lem-id-m {B} v = refl
-  lem-id-m {S ⇒ T} (lam⟨ c ⇒ d ⟩ e E)  rewrite identityˡ c | identityʳ d = refl
-  lem-id-m {S ⊗ T} (cons⟨ c ⊗ d ⟩ v u) rewrite identityʳ c | identityʳ d = refl
-  
-  lem-id : ∀ {T}
-    → (v : Value T)  
-    -----------------------------
-    → ⟦ id T ⟧ v ≡ return v
-  lem-id {*} v = refl
-  lem-id {` P} v rewrite lem-id-m v = refl
+lem-id-m : ∀ {P}
+  → (v : Value (` P))  
+  -----------------------------
+  → proxy v (id-m P) ≡ v
+lem-id-m {B} v = refl
+lem-id-m {S ⇒ T} (lam⟨ c ⇒ d ⟩ e E)  rewrite identityˡ c | identityʳ d = refl
+lem-id-m {S ⊗ T} (cons⟨ c ⊗ d ⟩ v u) rewrite identityʳ c | identityʳ d = refl
+
+lem-id : ∀ {T}
+  → (v : Value T)  
+  -----------------------------
+  → ⟦ id T ⟧ v ≡ return v
+lem-id {*} v = refl
+lem-id {` P} v rewrite lem-id-m v = refl
 
 lem-proxy : ∀ {P1 P2 P3}
   → (v : Value (` P1))

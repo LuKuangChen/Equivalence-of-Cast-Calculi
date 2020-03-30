@@ -188,8 +188,10 @@ progress (expr (if e1 e2 e3) E κ) = return (expr e1 E ([□⟨ id _ ⟩] ([ if�
 progress (expr (lam e) E κ)       = return (cont (lam⟨ id _ ⇒ id _ ⟩ e E)  κ)
 progress (expr (app e1 e2) E κ)   = return (expr e1 E ([□⟨ id _ ⟩] [ app₁ e2 E ] κ))
 progress (expr (cons e1 e2) E κ)  = return (expr e1 E ([□⟨ id _ ⟩] ([ cons₁ e2 E ] κ)))
+progress (expr (car e) E κ)       = return (expr e E ([□⟨ id _ ⟩] ([ car₁ ] κ)))
+progress (expr (cdr e) E κ)       = return (expr e E ([□⟨ id _ ⟩] ([ cdr₁ ] κ)))
 progress (expr (e ⟨ c ⟩) E κ)     = return (expr e E (ext-cont ⌈ c ⌉ κ))
-progress (expr (blame l) E κ)     = raise l
+-- progress (expr (blame l) E κ)     = raise l
 progress (cont v ([□⟨ c ⟩] k)) = ⟦ c ⟧ v >>= λ v' → apply-cont v' k
 
 data _−→_ {T : Type} : State T → State T → Set where

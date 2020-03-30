@@ -15,7 +15,9 @@ data ValueDisplay : Type → Set where
     → ValueDisplay (` T1 ⇒ T2)
     
   cons : ∀ {T1 T2}
-    ---
+    -- → ValueDisplay T1
+    -- → ValueDisplay T2
+      ---
     → ValueDisplay (` T1 ⊗ T2)
     
   -- inl : ∀ {T1 T2}

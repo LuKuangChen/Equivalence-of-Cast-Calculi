@@ -357,10 +357,18 @@ progress (expr (e ⟨ c ⟩) lE lκ)
          (expr (e ⟨ c ⟩) rE rκ)
          (return (expr (e ⟨ c ⟩) E κ))
          = done (return (expr e E (ext-cont c κ)))
-progress (expr (blame l) lE lκ)
-         (expr (blame l) rE rκ)
-         (return (expr (blame l) E κ))
-         = done (raise l)
+progress (expr (car e) lE lK)
+         (expr (car e) rE rK)
+         (return (expr (car e) E K))
+         = done (return (expr e E ([□⟨ id ⟩] [ car₁ ] K)))
+progress (expr (cdr e) lE lK)
+         (expr (cdr e) rE rK)
+         (return (expr (cdr e) E K))
+         = done (return (expr e E ([□⟨ id ⟩] [ cdr₁ ] K)))
+-- progress (expr (blame l) lE lκ)
+--          (expr (blame l) rE rκ)
+--          (return (expr (blame l) E κ))
+--          = done (raise l)
 progress (cont lv lk)
          (cont rv rk)
          (return (cont v k))
@@ -372,69 +380,69 @@ progress (cont lv lk)
 ... | .(raise _)  | .(raise _)  | raise l   = step lS⟼lS' [] (done (raise l))
 ... | .(return _) | .(return _) | return v' = step lS⟼lS' [] (apply-cont v' k')
 
-final-or-progressing : ∀ {T}
-  → {ls : L.State T}
-  → {rs : R.State T}
-  → StateRelate ls rs
-  → (L.Final ls × R.Final rs)
-    ⊎
-    (L.Progressing ls × R.Progressing rs)
-final-or-progressing (return (expr e E κ))
-  = inj₂ (expr e (lenv E) (lcont κ) , expr e (renv E) (rcont κ))
-final-or-progressing (return (cont v κ))
-  = inj₂ (cont (lvalue v) (lcont κ) , cont (rvalue v) (rcont κ))
-final-or-progressing (return (halt v))
-  = inj₁ (halt (lvalue v) , halt (rvalue v))
-final-or-progressing (raise l)
-  = inj₁ (error l , error l)
+-- final-or-progressing : ∀ {T}
+--   → {ls : L.State T}
+--   → {rs : R.State T}
+--   → StateRelate ls rs
+--   → (L.Final ls × R.Final rs)
+--     ⊎
+--     (L.Progressing ls × R.Progressing rs)
+-- final-or-progressing (return (expr e E κ))
+--   = inj₂ (expr e (lenv E) (lcont κ) , expr e (renv E) (rcont κ))
+-- final-or-progressing (return (cont v κ))
+--   = inj₂ (cont (lvalue v) (lcont κ) , cont (rvalue v) (rcont κ))
+-- final-or-progressing (return (halt v))
+--   = inj₁ (halt (lvalue v) , halt (rvalue v))
+-- final-or-progressing (raise l)
+--   = inj₁ (error l , error l)
 
-safety : ∀ {T}
-  → {ls : L.State T}
-  → {rs : R.State T}
-  → StateRelate ls rs
-  → (L.Final ls × R.Final rs)
-    ⊎
-    (∃[ ls' ]
-     ∃[ rs' ]
-       (ls L.−→+ ls' ×
-        rs R.−→+ rs' ×
-        StateRelate ls' rs'))
-safety S with final-or-progressing S
-safety S | inj₁ (lSf , rSf) = inj₁ (lSf , rSf)
-safety S | inj₂ (lSp , rSp) with progress lSp rSp S
-safety S | inj₂ (lSp , rSp) | lS'' , rS'' , lS'⟼lS'' , rS'⟼rS'' , S''
-  = inj₂ (lS'' , rS'' , (it lSp ∷ lS'⟼lS'') , (it rSp ∷ rS'⟼rS'') , S'')
+-- safety : ∀ {T}
+--   → {ls : L.State T}
+--   → {rs : R.State T}
+--   → StateRelate ls rs
+--   → (L.Final ls × R.Final rs)
+--     ⊎
+--     (∃[ ls' ]
+--      ∃[ rs' ]
+--        (ls L.−→+ ls' ×
+--         rs R.−→+ rs' ×
+--         StateRelate ls' rs'))
+-- safety S with final-or-progressing S
+-- safety S | inj₁ (lSf , rSf) = inj₁ (lSf , rSf)
+-- safety S | inj₂ (lSp , rSp) with progress lSp rSp S
+-- safety S | inj₂ (lSp , rSp) | lS'' , rS'' , lS'⟼lS'' , rS'⟼rS'' , S''
+--   = inj₂ (lS'' , rS'' , (it lSp ∷ lS'⟼lS'') , (it rSp ∷ rS'⟼rS'') , S'')
 
-module Foo {T : Type} where
-  import Bisimulation.Bisimulation
-  module CorrectnessTheorems =
-    Bisimulation.Bisimulation.Theorems (L.system {T = T}) R.system StateRelate safety
-  open CorrectnessTheorems using (thm-final-LR; thm-final-RL) public
+-- module Foo {T : Type} where
+--   import Bisimulation.Bisimulation
+--   module CorrectnessTheorems =
+--     Bisimulation.Bisimulation.Theorems (L.system {T = T}) R.system StateRelate safety
+--   open CorrectnessTheorems using (thm-final-LR; thm-final-RL) public
 
-correctness-l : ∀ {T}
-  → {e : ∅ ⊢ T}
-  → {o : Observable T}
-  → L.Evalo e o
-  ---
-  → R.Evalo e o
-correctness-l {e = e} (L.val xs) with Foo.thm-final-LR (load e) xs (halt _)
-correctness-l {e = e} (L.val xs) | _ , ys , (R.halt rv) , return (halt v)
-  rewrite observe v
-  = R.val ys
-correctness-l {e = e} (L.err xs) with Foo.thm-final-LR (load e) xs (error _)
-correctness-l {e = e} (L.err xs) | _ , ys , (R.error l) , raise l
-  = R.err ys
+-- correctness-l : ∀ {T}
+--   → {e : ∅ ⊢ T}
+--   → {o : Observable T}
+--   → L.Evalo e o
+--   ---
+--   → R.Evalo e o
+-- correctness-l {e = e} (L.val xs) with Foo.thm-final-LR (load e) xs (halt _)
+-- correctness-l {e = e} (L.val xs) | _ , ys , (R.halt rv) , return (halt v)
+--   rewrite observe v
+--   = R.val ys
+-- correctness-l {e = e} (L.err xs) with Foo.thm-final-LR (load e) xs (error _)
+-- correctness-l {e = e} (L.err xs) | _ , ys , (R.error l) , raise l
+--   = R.err ys
 
-correctness-r : ∀ {T}
-  → {e : ∅ ⊢ T}
-  → {o : Observable T}
-  → R.Evalo e o
-  ---
-  → L.Evalo e o
-correctness-r {e = e} (R.val xs) with Foo.thm-final-RL (load e) xs (halt _)
-correctness-r {e = e} (R.val xs) | _ , ys , (L.halt rv) , return (halt v)
-  rewrite sym (observe v)
-  = L.val ys
-correctness-r {e = e} (R.err xs) with Foo.thm-final-RL (load e) xs (error _)
-correctness-r {e = e} (R.err xs) | _ , ys , (L.error l) , raise l
-  = L.err ys
+-- correctness-r : ∀ {T}
+--   → {e : ∅ ⊢ T}
+--   → {o : Observable T}
+--   → R.Evalo e o
+--   ---
+--   → L.Evalo e o
+-- correctness-r {e = e} (R.val xs) with Foo.thm-final-RL (load e) xs (halt _)
+-- correctness-r {e = e} (R.val xs) | _ , ys , (L.halt rv) , return (halt v)
+--   rewrite sym (observe v)
+--   = L.val ys
+-- correctness-r {e = e} (R.err xs) with Foo.thm-final-RL (load e) xs (error _)
+-- correctness-r {e = e} (R.err xs) | _ , ys , (L.error l) , raise l
+--   = L.err ys

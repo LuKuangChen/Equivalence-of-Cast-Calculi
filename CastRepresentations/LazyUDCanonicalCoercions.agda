@@ -1,6 +1,6 @@
 module CastRepresentations.LazyUDCanonicalCoercions (Label : Set) where
 
-open import Types
+open import Types renaming (B to tB; _⇒_ to _t⇒_; _⊗_ to _t⊗_)
 open import Cast Label using (_⟹[_]_) renaming (Cast to SrcCast)
 open import Terms Label
 open import S.CastADT Label
@@ -9,32 +9,27 @@ open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Data.Empty using (⊥-elim)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
 
+infix  99 `_
+infix 100 _⇒_
+infix 100 _⊗_
+
 mutual
 
   data CoeG : PreType → PreType → Set where
   
-    B : CoeG B B
+    B : CoeG tB tB
     
     _⇒_ : ∀ {S1 T1 S2 T2}
       → (s : CoeS S2 S1)
       → (t : CoeS T1 T2)
-      → CoeG (S1 ⇒ T1) (S2 ⇒ T2)
+      → CoeG (S1 t⇒ T1) (S2 t⇒ T2)
       
     _⊗_ : ∀ {S1 T1 S2 T2}
       → (s : CoeS S1 S2)
       → (t : CoeS T1 T2)
-      → CoeG (S1 ⊗ T1) (S2 ⊗ T2)
+      → CoeG (S1 t⊗ T1) (S2 t⊗ T2)
 
   data CoeI : PreType → Type → Set where
-  
-    _,_‼ : ∀ {P Q}
-      → (g : CoeG P Q)
-      → (G : Ground Q)
-      → CoeI P *
-  
-    `_ : ∀ {P Q}
-      → (g : CoeG P Q)
-      → CoeI P (` Q)
   
     ⊥ : ∀ {A P Q}
       → (A⌣G : (` A) ⌣ (` P))
@@ -44,6 +39,15 @@ mutual
       → (¬G≡H : ¬ (P ≡ Q))
       → ∀ {T}
       → CoeI A T
+  
+    _,_‼ : ∀ {P Q}
+      → (g : CoeG P Q)
+      → (G : Ground Q)
+      → CoeI P *
+  
+    `_ : ∀ {P Q}
+      → (g : CoeG P Q)
+      → CoeI P (` Q)
   
   data CoeS : Type → Type → Set where
   
@@ -97,31 +101,31 @@ mutual
   ⇑* l (` P) = ⇑ l P
   
   ⇑ : Label → ∀ P → Cast (` P) *
-  ⇑ l B       = ` (B , `B ‼)
-  ⇑ l (S ⇒ T) = ` (⇓* l S ⇒ ⇑* l T , `⇒ ‼)
-  ⇑ l (S ⊗ T) = ` (⇑* l S ⊗ ⇑* l T , `⊗ ‼)
+  ⇑ l tB       = ` (B , `B ‼)
+  ⇑ l (S t⇒ T) = ` (⇓* l S ⇒ ⇑* l T , `⇒ ‼)
+  ⇑ l (S t⊗ T) = ` (⇑* l S ⊗ ⇑* l T , `⊗ ‼)
 
   ⇓* : Label → ∀ T → Cast * T
   ⇓* l *     = id*
   ⇓* l (` P) = ⇓ l P
   
   ⇓ : Label → ∀ P → Cast * (` P)
-  ⇓ l B       = (`B ⁇ l , ` B)                
-  ⇓ l (S ⇒ T) = (`⇒ ⁇ l , ` ⇑* l S ⇒ (⇓* l T))
-  ⇓ l (S ⊗ T) = (`⊗ ⁇ l , ` ⇓* l S ⊗ (⇓* l T))
+  ⇓ l tB       = (`B ⁇ l , ` B)                
+  ⇓ l (S t⇒ T) = (`⇒ ⁇ l , ` ⇑* l S ⇒ (⇓* l T))
+  ⇓ l (S t⊗ T) = (`⊗ ⁇ l , ` ⇓* l S ⊗ (⇓* l T))
 
 lem-¬⌣-ground : {P Q : PreType}
   → ¬ (` P) ⌣ (` Q)
   → ¬ (ground P ≡ ground Q)
-lem-¬⌣-ground {B} {B} ¬p = λ _ → ¬p ⌣B
-lem-¬⌣-ground {B} {S ⇒ T} ¬p = λ ()
-lem-¬⌣-ground {B} {S ⊗ T} ¬p = λ ()
-lem-¬⌣-ground {S ⇒ T} {B} ¬p = λ ()
-lem-¬⌣-ground {S ⇒ T} {S₁ ⇒ T₁} ¬p = λ _ → ¬p ⌣⇒
-lem-¬⌣-ground {S ⇒ T} {S₁ ⊗ T₁} ¬p = λ ()
-lem-¬⌣-ground {S ⊗ T} {B} ¬p = λ ()
-lem-¬⌣-ground {S ⊗ T} {S₁ ⇒ T₁} ¬p = λ ()
-lem-¬⌣-ground {S ⊗ T} {S₁ ⊗ T₁} ¬p = λ _ → ¬p ⌣⊗
+lem-¬⌣-ground {tB} {tB} ¬p = λ _ → ¬p ⌣B
+lem-¬⌣-ground {tB} {S t⇒ T} ¬p = λ ()
+lem-¬⌣-ground {tB} {S t⊗ T} ¬p = λ ()
+lem-¬⌣-ground {S t⇒ T} {tB} ¬p = λ ()
+lem-¬⌣-ground {S t⇒ T} {S₁ t⇒ T₁} ¬p = λ _ → ¬p ⌣⇒
+lem-¬⌣-ground {S t⇒ T} {S₁ t⊗ T₁} ¬p = λ ()
+lem-¬⌣-ground {S t⊗ T} {tB} ¬p = λ ()
+lem-¬⌣-ground {S t⊗ T} {S₁ t⇒ T₁} ¬p = λ ()
+lem-¬⌣-ground {S t⊗ T} {S₁ t⊗ T₁} ¬p = λ _ → ¬p ⌣⊗
 
 ⌈_⌉ : ∀ {T1 T2} → SrcCast T1 T2 → Cast T1 T2
 ⌈ *   ⟹[ l ] *   ⌉ = id*
@@ -129,9 +133,9 @@ lem-¬⌣-ground {S ⊗ T} {S₁ ⊗ T₁} ¬p = λ _ → ¬p ⌣⊗
 ⌈ ` P ⟹[ l ] *   ⌉ = ⇑ l P
 ⌈ ` P ⟹[ l ] ` Q ⌉ with (` P) ⌣? (` Q)
 ⌈ ` P ⟹[ l ] ` Q ⌉             | no P⌣̸Q = ` (⊥ (ground-⌣ P) (ground-Ground P) l (ground-Ground Q) (lem-¬⌣-ground P⌣̸Q))
-⌈ ` B       ⟹[ l ] ` B       ⌉ | yes ⌣B = ` (` B)
-⌈ ` S1 ⇒ T1 ⟹[ l ] ` S2 ⇒ T2 ⌉ | yes ⌣⇒ = ` (` ⌈ S2 ⟹[ l ] S1 ⌉ ⇒ ⌈ T1 ⟹[ l ] T2 ⌉)
-⌈ ` L1 ⊗ R1 ⟹[ l ] ` L2 ⊗ R2 ⌉ | yes ⌣⊗ = ` (` ⌈ L1 ⟹[ l ] L2 ⌉ ⊗ ⌈ R1 ⟹[ l ] R2 ⌉)
+⌈ ` tB       ⟹[ l ] ` tB       ⌉ | yes ⌣B = ` (` B)
+⌈ ` S1 t⇒ T1 ⟹[ l ] ` S2 t⇒ T2 ⌉ | yes ⌣⇒ = ` (` ⌈ S2 ⟹[ l ] S1 ⌉ ⇒ ⌈ T1 ⟹[ l ] T2 ⌉)
+⌈ ` L1 t⊗ R1 ⟹[ l ] ` L2 t⊗ R2 ⌉ | yes ⌣⊗ = ` (` ⌈ L1 ⟹[ l ] L2 ⌉ ⊗ ⌈ R1 ⟹[ l ] R2 ⌉)
 
 
 mutual
@@ -142,11 +146,11 @@ mutual
     = ` (` id-g P)
 
   id-g : ∀ P → CoeG P P
-  id-g B
+  id-g tB
     = B
-  id-g (S ⇒ T)
+  id-g (S t⇒ T)
     = id S ⇒ id T
-  id-g (S ⊗ T)
+  id-g (S t⊗ T)
     = (id S) ⊗ (id T)
 
 
@@ -232,24 +236,77 @@ mutual
   identityʳ (G ⁇ l , i) rewrite i-identityʳ i = refl
   identityʳ (` i) rewrite i-identityʳ i = refl
 
-postulate
+mutual
+  assoc-ggg : ∀ {T1 T2 T3 T4}
+    → (c1 : CoeG T1 T2)
+    → (c2 : CoeG T2 T3)
+    → (c3 : CoeG T3 T4)
+    → (c1 g⨟g c2) g⨟g c3 ≡ c1 g⨟g (c2 g⨟g c3)
+  assoc-ggg B B B = refl
+  assoc-ggg (s1 ⇒ t1) (s2 ⇒ t2) (s3 ⇒ t3)
+    rewrite assoc s3 s2 s1 | assoc t1 t2 t3
+    = refl
+  assoc-ggg (s1 ⊗ t1) (s2 ⊗ t2) (s3 ⊗ t3)
+    rewrite assoc s1 s2 s3 | assoc t1 t2 t3
+    = refl
+
+  assoc-ggi : ∀ {T1 T2 T3 T4}
+    → (c1 : CoeG T1 T2)
+    → (c2 : CoeG T2 T3)
+    → (c3 : CoeI T3 T4)
+    → (c1 g⨟g c2) g⨟i c3 ≡ c1 g⨟i (c2 g⨟i c3)
+  assoc-ggi g1 g2 (⊥ A⌣G G l H ¬G≡H) = cong (λ □ → ⊥ □ G l H ¬G≡H) (⌣unique _ _)
+  assoc-ggi g1 g2 (g , G ‼)
+    rewrite assoc-ggg g1 g2 g = refl
+  assoc-ggi g1 g2 (` g)
+    rewrite assoc-ggg g1 g2 g = refl
+  
+  assoc-gis : ∀ {T1 T2 T3 T4}
+    → (c1 : CoeG T1 T2)
+    → (c2 : CoeI T2 T3)
+    → (c3 : CoeS T3 T4)
+    → (c1 g⨟i c2) i⨟s c3 ≡ c1 g⨟i (c2 i⨟s c3)
+  assoc-gis g1 (⊥ A⌣G G l H ¬G≡H) s = refl
+  assoc-gis g1 (g2 , G ‼) id* = refl
+  assoc-gis g1 (g2 , G ‼) (H ⁇ l , i3) with G ≟G H
+  assoc-gis g1 (g2 , G ‼) (H ⁇ l , i3) | no ¬p
+    = cong (λ □ → ⊥ □ G l H ¬p) (⌣unique _ _)
+  assoc-gis g1 (g2 , G ‼) (H ⁇ l , i3) | yes refl
+    rewrite assoc-ggi g1 g2 i3 = refl
+  assoc-gis g1 (` g2) (` i3)
+    rewrite assoc-ggi g1 g2 i3 = refl
+
+  assoc-iss : ∀ {T1 T2 T3 T4}
+    → (c1 : CoeI T1 T2)
+    → (c2 : Cast T2 T3)
+    → (c3 : Cast T3 T4)
+    → (c1 i⨟s c2) i⨟s c3 ≡ c1 i⨟s (c2 ⨟ c3)
+  assoc-iss (⊥ A⌣G G l H ¬G≡H) s1 s2 = refl
+  assoc-iss (g , G ‼) id* s2 = refl
+  assoc-iss (g , G ‼) (H ⁇ l , i) s2 with G ≟G H
+  assoc-iss (g , G ‼) (H ⁇ l , i) s2 | no ¬G≡H  = refl
+  assoc-iss (g , G ‼) (H ⁇ l , i) s2 | yes refl rewrite assoc-gis g i s2 = refl
+  assoc-iss (` g) (` i) s2 rewrite assoc-gis g i s2 = refl
+
   assoc : ∀ {T1 T2 T3 T4}
     → (c1 : Cast T1 T2)
     → (c2 : Cast T2 T3)
     → (c3 : Cast T3 T4)
     → (c1 ⨟ c2) ⨟ c3 ≡ c1 ⨟ (c2 ⨟ c3)
-  -- Kuang-Chen conjectures this theorem has been proved in existing papers.
+  assoc id* c2 c3 = refl
+  assoc (G ⁇ l , i) c2 c3 rewrite assoc-iss i c2 c3 = refl
+  assoc (` i) c2 c3 rewrite assoc-iss i c2 c3 = refl
 
 lem-id : ∀ {T}
   → (v : Value T)  
   -----------------------------
   → ⟦ id T ⟧ v ≡ return v
 lem-id {*} v = refl
-lem-id {` B} v = refl
-lem-id {` S ⇒ T} (lam⟨ s ⇒ t ⟩ e E)
+lem-id {` tB} v = refl
+lem-id {` S t⇒ T} (lam⟨ s ⇒ t ⟩ e E)
   rewrite identityˡ s | identityʳ t
   = refl
-lem-id {` S ⊗ T} (cons⟨ s ⊗ t ⟩ v u)
+lem-id {` S t⊗ T} (cons⟨ s ⊗ t ⟩ v u)
   rewrite identityʳ s | identityʳ t
   = refl
 
@@ -334,12 +391,12 @@ lem-⇓* l (` P) = refl
 
 lem-⇑ : (l : Label)(P : PreType)
   → (⇑ l P) ≡ (⌈ (` P) ⟹[ l ] ` ground P ⌉ ⨟ ⌈ ` ground P ⟹[ l ] * ⌉)
-lem-⇑ l B = refl
-lem-⇑ l (S ⇒ T)
+lem-⇑ l tB = refl
+lem-⇑ l (S t⇒ T)
   rewrite lem-⇓* l S | lem-⇑* l T
     | identityʳ ⌈ T ⟹[ l ] * ⌉
   = refl
-lem-⇑ l (S ⊗ T)
+lem-⇑ l (S t⊗ T)
   rewrite lem-⇑* l S | lem-⇑* l T
     | identityʳ ⌈ T ⟹[ l ] * ⌉
     | identityʳ ⌈ S ⟹[ l ] * ⌉
@@ -347,12 +404,12 @@ lem-⇑ l (S ⊗ T)
 
 lem-⇓ : (l : Label)(P : PreType)
   → (⇓ l P) ≡ (⌈ * ⟹[ l ] ` ground P ⌉ ⨟ ⌈ ` ground P ⟹[ l ] ` P ⌉)
-lem-⇓ l B = refl
-lem-⇓ l (S ⇒ T)
+lem-⇓ l tB = refl
+lem-⇓ l (S t⇒ T)
   rewrite lem-⇑* l S | lem-⇓* l T
     | identityʳ ⌈ S ⟹[ l ] * ⌉
   = refl
-lem-⇓ l (S ⊗ T)
+lem-⇓ l (S t⊗ T)
   rewrite lem-⇓* l S | lem-⇓* l T
   = refl
 
@@ -374,11 +431,11 @@ eq-I* : ∀ {P}
   → ⟦ ⌈ ` P ⟹[ l ] * ⌉ ⟧ v
       ≡
     return (dyn gP v)
-eq-I* {.B} v l `B = refl
-eq-I* {.(* ⇒ *)} (lam⟨ c1 ⇒ c2 ⟩ e E) l `⇒
+eq-I* {.tB} v l `B = refl
+eq-I* {.(* t⇒ *)} (lam⟨ c1 ⇒ c2 ⟩ e E) l `⇒
   rewrite identityʳ c2
   = refl
-eq-I* {.(* ⊗ *)} (cons⟨ c1 ⊗ c2 ⟩ v v₁) l `⊗
+eq-I* {.(* t⊗ *)} (cons⟨ c1 ⊗ c2 ⟩ v v₁) l `⊗
   rewrite identityʳ c1 | identityʳ c2
   = refl
 
@@ -417,15 +474,15 @@ eq-*I-fail : {P Q : PreType}
   → ⟦ ⌈ * ⟹[ l ] (` Q) ⌉ ⟧ (dyn gP v)
       ≡
     raise l
-eq-*I-fail {B} v l `B `B ¬p = ⊥-elim (¬p refl)
-eq-*I-fail {B} v l `B `⇒ ¬p = refl
-eq-*I-fail {B} v l `B `⊗ ¬p = refl
-eq-*I-fail {.* ⇒ .*} v l `⇒ `B ¬p = refl
-eq-*I-fail {.* ⇒ .*} v l `⇒ `⇒ ¬p = ⊥-elim (¬p refl)
-eq-*I-fail {.* ⇒ .*} v l `⇒ `⊗ ¬p = refl
-eq-*I-fail {.* ⊗ .*} v l `⊗ `B ¬p = refl
-eq-*I-fail {.* ⊗ .*} v l `⊗ `⇒ ¬p = refl
-eq-*I-fail {.* ⊗ .*} v l `⊗ `⊗ ¬p = ⊥-elim (¬p refl)
+eq-*I-fail {tB} v l `B `B ¬p = ⊥-elim (¬p refl)
+eq-*I-fail {tB} v l `B `⇒ ¬p = refl
+eq-*I-fail {tB} v l `B `⊗ ¬p = refl
+eq-*I-fail {.* t⇒ .*} v l `⇒ `B ¬p = refl
+eq-*I-fail {.* t⇒ .*} v l `⇒ `⇒ ¬p = ⊥-elim (¬p refl)
+eq-*I-fail {.* t⇒ .*} v l `⇒ `⊗ ¬p = refl
+eq-*I-fail {.* t⊗ .*} v l `⊗ `B ¬p = refl
+eq-*I-fail {.* t⊗ .*} v l `⊗ `⇒ ¬p = refl
+eq-*I-fail {.* t⊗ .*} v l `⊗ `⊗ ¬p = ⊥-elim (¬p refl)
 
 S-LazyUD : LazyUD S
 S-LazyUD = record

@@ -3,22 +3,82 @@ open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Data.Empty using (⊥-elim)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
 open import Data.Product using (Σ; _×_ ; Σ-syntax; ∃-syntax; _,_)
+open import Data.Vec using (Vec; replicate; []; _∷_; map)
 
-infix  99 `_
-infix 100 _⇒_
-infix 100 _⊗_
 -- infix 100 _⊕_
 
-mutual
-  data Type : Set where
-    * : Type
-    `_ : (P : PreType) → Type
+module AlternativeType where
+  open import Data.Vec using (Vec; replicate; []; _∷_; map)
+  open import Data.Nat using (ℕ)
+
+  infix  99 `_
+  infix 101 _·_
+  infix 100 _⇒_
+  infix 100 _⊗_
+
+  data TypeOp : Set where
+    `B : TypeOp
+    `⊗ : TypeOp
+    `⇒ : TypeOp
+  
+  _≟op_ : (o1 o2 : TypeOp) → Dec (o1 ≡ o2)
+  `⊗ ≟op `⊗ = yes refl
+  `⊗ ≟op `⇒ = no (λ ())
+  `⇒ ≟op `⊗ = no (λ ())
+  `⇒ ≟op `⇒ = yes refl
+  `B ≟op `B = yes refl
+  `B ≟op `⊗ = no (λ ())
+  `B ≟op `⇒ = no (λ ())
+  `⊗ ≟op `B = no (λ ())
+  `⇒ ≟op `B = no (λ ())
+  
+  arity : TypeOp → ℕ
+  arity `B = 0
+  arity `⊗ = 2
+  arity `⇒ = 2
+  
+  mutual
+    record PreType : Set where
+      inductive
+      constructor _·_
+      field
+        op : TypeOp
+        T* : Vec Type (arity op)
+  
+    data Type : Set where
+      *  : Type
+      `_ : PreType → Type
+  
+  data Polarity : Set where
+    ⊝ : Polarity
+    ⊕ : Polarity
+  
+  polarity : (op : TypeOp) → Vec Polarity (arity op)
+  polarity `B = []
+  polarity `⊗ = ⊕ ∷ ⊕ ∷ []
+  polarity `⇒ = ⊝ ∷ ⊕ ∷ []
+  
+  choose : {A : Set} → Polarity → A → A → A
+  choose ⊝ a b = a
+  choose ⊕ a b = b
+
+  pattern B       = `B · []
+  pattern _⇒_ S T = `⇒ · (S ∷ T ∷ [])
+  pattern _⊗_ S T = `⊗ · (S ∷ T ∷ [])
+
+open AlternativeType public
+
+
+-- mutual
+--   data Type : Set where
+--     * : Type
+--     `_ : (P : PreType) → Type
     
-  data PreType : Set where
-    B : PreType
-    _⇒_ : (S T : Type) → PreType
-    _⊗_ : (S T : Type) → PreType
-    -- _⊕_ : (S T : Type) → PreType
+--   data PreType : Set where
+--     B : PreType
+--     _⇒_ : (S T : Type) → PreType
+--     _⊗_ : (S T : Type) → PreType
+--     -- _⊕_ : (S T : Type) → PreType
 
 data Tag : PreType → Set where
   `B : Tag B
@@ -43,6 +103,19 @@ data Ground : PreType → Set where
   `⇒ : Ground (* ⇒ *)
   `⊗ : Ground (* ⊗ *)
   -- `⊕ : Ground (* ⊕ *)
+
+op→ground : TypeOp → PreType
+op→ground op = op · replicate *
+
+op→ground-Ground : ∀ op → Ground (op→ground op)
+op→ground-Ground `B = `B
+op→ground-Ground `⊗ = `⊗
+op→ground-Ground `⇒ = `⇒
+
+inv-ground : ∀ {P} → Ground P → ∃[ o ](P ≡ o · (replicate *))
+inv-ground `B = `B , refl
+inv-ground `⇒ = `⇒ , refl
+inv-ground `⊗ = `⊗ , refl
 
 unground : ∀ {P} → Ground P → PreType
 unground {P} gP = P
@@ -221,6 +294,11 @@ _≟G_ `⇒ `⊗ = no (λ ())
 _≟G_ `⊗ `B = no (λ ())
 _≟G_ `⊗ `⇒ = no (λ ())
 _≟G_ `⊗ `⊗ = yes refl
+
+ground-≡ : ∀ {P Q} → Ground P → Ground Q → (` P) ⌣ (` Q) → P ≡ Q
+ground-≡ `B `B P⌣Q = refl
+ground-≡ `⇒ `⇒ P⌣Q = refl
+ground-≡ `⊗ `⊗ P⌣Q = refl
 
 ground-≢ : ∀ {P Q} → Ground P → Ground Q → ¬ (` P) ⌣ (` Q) → ¬ (` P) ≡ (` Q)
 ground-≢ `B `B ¬P⌣Q = ⊥-elim (¬P⌣Q ⌣B)

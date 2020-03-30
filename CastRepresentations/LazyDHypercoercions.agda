@@ -52,15 +52,15 @@ mutual
       Body P Q
 
   data PreBody : PreType → PreType → Set where
-    B :
+    B̂ :
       ---
       PreBody B B
-    _⇒_ : ∀ {S1 S2 T1 T2} →
+    _⇒̂_ : ∀ {S1 S2 T1 T2} →
       (c₁ : Cast S2 S1) →
       (c₂ : Cast T1 T2) →
       ---
       PreBody (S1 ⇒ T1) (S2 ⇒ T2)
-    _⊗_ : ∀ {S1 S2 T1 T2} →
+    _⊗̂_ : ∀ {S1 S2 T1 T2} →
       (c₁ : Cast S1 S2) →
       (c₂ : Cast T1 T2) →
       ---
@@ -174,6 +174,9 @@ mutual
   seq-m (` m1) .(some l _ _) m2 | bad ¬P⌣Q l = ⊥ l
   seq-m (` m1) g (⊥ l2) | good P⌣Q = ⊥ l2
   seq-m (` m1) g (` m2) | good P⌣Q = ` seq-mm P⌣Q m1 g m2
+  -- seq-m (` B̂) g (` B̂) | good ⌣B = ` B̂
+  -- seq-m (` (c₁ ⇒̂ c₂)) g (` (c₃ ⇒̂ c₄)) | good ⌣⇒ = ` (seq c₃ (g-dom g) c₁ ⇒̂ seq c₂ (g-cod g) c₄)
+  -- seq-m (` (c₁ ⊗̂ c₂)) g (` (c₃ ⊗̂ c₄)) | good ⌣⊗ = ` (seq c₁ (g-car g) c₃ ⊗̂ seq c₂ (g-cdr g) c₄)
   
   seq-mm : ∀ {P1 P2 P3 P4}
     → (` P2) ⌣ (` P3)
@@ -182,10 +185,9 @@ mutual
     → PreBody P3 P4
     ---
     → PreBody P1 P4
-  seq-mm ⌣B B g B = B
-  seq-mm ⌣⇒ (c₁ ⇒ c₂) g (c₃ ⇒ c₄) = (seq c₃ (g-dom g) c₁) ⇒ (seq c₂ (g-cod g) c₄)
-  seq-mm ⌣⊗ (c₁ ⊗ c₂) g (c₃ ⊗ c₄) = (seq c₁ (g-car g) c₃) ⊗ (seq c₂ (g-cdr g) c₄)
-
+  seq-mm ⌣B B̂ g B̂ = B̂
+  seq-mm ⌣⇒ (c₁ ⇒̂ c₂) g (c₃ ⇒̂ c₄) = (seq c₃ (g-dom g) c₁) ⇒̂ (seq c₂ (g-cod g) c₄)
+  seq-mm ⌣⊗ (c₁ ⊗̂ c₂) g (c₃ ⊗̂ c₄) = (seq c₁ (g-car g) c₃) ⊗̂ (seq c₂ (g-cdr g) c₄)
 
 mutual
   id : ∀ T → Cast T T
@@ -196,11 +198,11 @@ mutual
 
   id-m : ∀ P → PreBody P P
   id-m B
-    = B
+    = B̂
   id-m (T₁ ⇒ T₂)
-    = id T₁ ⇒ id T₂
+    = id T₁ ⇒̂ id T₂
   id-m (T₁ ⊗ T₂)
-    = id T₁ ⊗ id T₂
+    = id T₁ ⊗̂ id T₂
 
 ⌈_⌉ : ∀ {T1 T2} → SrcCast T1 T2 → Cast T1 T2
 ⌈ T1 ⟹[ l ] T2 ⌉ = seq (id T1) (some l T1 T2) (id T2)
@@ -213,17 +215,17 @@ mutual
   identityˡ id* = refl
   identityˡ (↷ (⁇ P l) m t2) = refl
   identityˡ (↷ ε (⊥ l) t2) = refl
-  identityˡ (↷ ε (` B) t2) = refl
-  identityˡ (↷ ε (` (c₁ ⇒ c₂)) t2) rewrite identityʳ c₁ | identityˡ c₂ = refl
-  identityˡ (↷ ε (` (c₁ ⊗ c₂)) t2) rewrite identityˡ c₁ | identityˡ c₂ = refl
+  identityˡ (↷ ε (` B̂) t2) = refl
+  identityˡ (↷ ε (` (c₁ ⇒̂ c₂)) t2) rewrite identityʳ c₁ | identityˡ c₂ = refl
+  identityˡ (↷ ε (` (c₁ ⊗̂ c₂)) t2) rewrite identityˡ c₁ | identityˡ c₂ = refl
   
   identityʳ : ∀ {T1 T2} → (c : Cast T1 T2) → c ⨟ id T2 ≡ c
   identityʳ id* = refl
   identityʳ (↷ t1 m (‼ P)) = refl
   identityʳ (↷ t1 (⊥ l) ε) = refl
-  identityʳ (↷ t1 (` B) ε) = refl
-  identityʳ (↷ t1 (` (c₁ ⇒ c₂)) ε) rewrite identityˡ c₁ | identityʳ c₂ = refl
-  identityʳ (↷ t1 (` (c₁ ⊗ c₂)) ε) rewrite identityʳ c₁ | identityʳ c₂ = refl
+  identityʳ (↷ t1 (` B̂) ε) = refl
+  identityʳ (↷ t1 (` (c₁ ⇒̂ c₂)) ε) rewrite identityˡ c₁ | identityʳ c₂ = refl
+  identityʳ (↷ t1 (` (c₁ ⊗̂ c₂)) ε) rewrite identityʳ c₁ | identityʳ c₂ = refl
 
 lem-link : ∀ {P1 T1 T2 P2}
   → (t1 : Tail P1 T1)
@@ -253,12 +255,12 @@ mutual
   seq-m-assoc (` m1) g1 (` m2) g2 m3 | good P⌣Q with check-gap g2
   seq-m-assoc (` m1) g1 (` m2) .(some l _ _) m3 | good P⌣Q | bad ¬P⌣Q l = refl
   seq-m-assoc (` m1) g1 (` m2) g2 (⊥ l3) | good P⌣Q | good P⌣Q' = refl
-  seq-m-assoc (` B) g1 (` B) g2 (` B) | good ⌣B | good ⌣B = refl
-  seq-m-assoc (` (c₁ ⇒ c₂)) g1 (` (c₃ ⇒ c₄)) g2 (` (c₅ ⇒ c₆)) | good ⌣⇒ | good ⌣⇒
+  seq-m-assoc (` B̂) g1 (` B̂) g2 (` B̂) | good ⌣B | good ⌣B = refl
+  seq-m-assoc (` (c₁ ⇒̂ c₂)) g1 (` (c₃ ⇒̂ c₄)) g2 (` (c₅ ⇒̂ c₆)) | good ⌣⇒ | good ⌣⇒
     rewrite seq-assoc c₅ (g-dom g2) c₃ (g-dom g1) c₁
           | seq-assoc c₂ (g-cod g1) c₄ (g-cod g2) c₆
     = refl
-  seq-m-assoc (` (c₁ ⊗ c₂)) g1 (` (c₃ ⊗ c₄)) g2 (` (c₅ ⊗ c₆)) | good ⌣⊗ | good ⌣⊗
+  seq-m-assoc (` (c₁ ⊗̂ c₂)) g1 (` (c₃ ⊗̂ c₄)) g2 (` (c₅ ⊗̂ c₆)) | good ⌣⊗ | good ⌣⊗
     rewrite seq-assoc c₁ (g-car g1) c₃ (g-car g2) c₅
           | seq-assoc c₂ (g-cdr g1) c₄ (g-cdr g2) c₆
     = refl
@@ -317,9 +319,9 @@ proxy : ∀ {P1 P2}
   → PreBody P1 P2
   ---
   → Value (` P2)
-proxy v B = v
-proxy (lam⟨ c1 ⇒ c2 ⟩ e E) (c3 ⇒ c4)    = lam⟨ c3 ⨟ c1 ⇒ c2 ⨟ c4 ⟩ e E
-proxy (cons⟨ c1 ⊗ c2 ⟩ v1 v2) (c3 ⊗ c4) = cons⟨ c1 ⨟ c3 ⊗ c2 ⨟ c4 ⟩ v1 v2
+proxy v B̂ = v
+proxy (lam⟨ c1 ⇒ c2 ⟩ e E) (c3 ⇒̂ c4)    = lam⟨ c3 ⨟ c1 ⇒ c2 ⨟ c4 ⟩ e E
+proxy (cons⟨ c1 ⊗ c2 ⟩ v1 v2) (c3 ⊗̂ c4) = cons⟨ c1 ⨟ c3 ⊗ c2 ⨟ c4 ⟩ v1 v2
 
 ⟦_⟧m : ∀ {P1 P2}
   → Body P1 P2
@@ -395,25 +397,25 @@ mutual
   lem-seq-m (` m1) (‼ P) (⁇ Q l) m2 v with (` P) ⌣? (` Q)
   lem-seq-m (` m1) (‼ P) (⁇ Q l) m2 v | no ¬p = refl
   lem-seq-m (` m1) (‼ P) (⁇ Q l) (⊥ l2) v | yes P⌣Q = refl
-  lem-seq-m (` B) (‼ .B) (⁇ .B l) (` B) v | yes ⌣B = refl
-  lem-seq-m (` (c2 ⇒ d2)) (‼ (S1 ⇒ T1)) (⁇ (S2 ⇒ T2) l) (` (c3 ⇒ d3)) (lam⟨  c1 ⇒ d1 ⟩ e E) | yes ⌣⇒
+  lem-seq-m (` B̂) (‼ .B) (⁇ .B l) (` B̂) v | yes ⌣B = refl
+  lem-seq-m (` (c2 ⇒̂ d2)) (‼ (S1 ⇒ T1)) (⁇ (S2 ⇒ T2) l) (` (c3 ⇒̂ d3)) (lam⟨  c1 ⇒ d1 ⟩ e E) | yes ⌣⇒
     rewrite sym (seq-assoc c3 none ⌈ S2 ⟹[ l ] S1 ⌉ none (c2 ⨟ c1))
       | lem1 l c3 (c2 ⨟ c1) | lem1 l (d1 ⨟ d2) d3
     = cong₂ (λ c d → return (lam⟨ c ⇒ d ⟩ e E))
             (seq-assoc c3 _ c2 _ c1)
             (sym (seq-assoc d1 _ d2 _ d3)) 
-  lem-seq-m (` (c2 ⊗ d2)) (‼ .(_ ⊗ _)) (⁇ .(_ ⊗ _) l) (` (c3 ⊗ d3)) (cons⟨ c1 ⊗ d1 ⟩ v u) | yes ⌣⊗
+  lem-seq-m (` (c2 ⊗̂ d2)) (‼ .(_ ⊗ _)) (⁇ .(_ ⊗ _) l) (` (c3 ⊗̂ d3)) (cons⟨ c1 ⊗ d1 ⟩ v u) | yes ⌣⊗
     rewrite lem1 l (c1 ⨟ c2) c3 | lem1 l (d1 ⨟ d2) d3
     = cong₂ (λ c d → return (cons⟨ c ⊗ d ⟩ v u))
             (sym (seq-assoc c1 _ c2 _ c3))
             (sym (seq-assoc d1 _ d2 _ d3))
   lem-seq-m (` m1) ε ε (⊥ l2) v = refl
-  lem-seq-m (` B) ε ε (` B) v = refl
-  lem-seq-m (` (c2 ⇒ d2)) ε ε (` (c3 ⇒ d3)) (lam⟨ c1 ⇒ d1 ⟩ e E)
+  lem-seq-m (` B̂) ε ε (` B̂) v = refl
+  lem-seq-m (` (c2 ⇒̂ d2)) ε ε (` (c3 ⇒̂ d3)) (lam⟨ c1 ⇒ d1 ⟩ e E)
     = cong₂ (λ c d → return (lam⟨ c ⇒ d ⟩ e E))
             (seq-assoc c3 none c2 none c1)
             (sym (seq-assoc d1 none d2 none d3))
-  lem-seq-m (` (c2 ⊗ d2)) ε ε (` (c3 ⊗ d3)) (cons⟨ c1 ⊗ d1 ⟩ v u)
+  lem-seq-m (` (c2 ⊗̂ d2)) ε ε (` (c3 ⊗̂ d3)) (cons⟨ c1 ⊗ d1 ⟩ v u)
     = cong₂ (λ c d → return (cons⟨ c ⊗ d ⟩ v u))
             (sym (seq-assoc c1 none c2 none c3))
             (sym (seq-assoc d1 none d2 none d3))

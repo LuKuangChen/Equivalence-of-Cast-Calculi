@@ -129,5 +129,3 @@ LazyUDHypercoercionIsCorrect-2 : ∀ {T}
   → EvaloS Ground LazyUDH e o
 LazyUDHypercoercionIsCorrect-2
   = LazyUD-CastADT-correct-2 LazyUDH LazyUDH-LazyUD LazyUDH-Basic
-
-               

@@ -186,14 +186,16 @@ apply-cont v □ = return (halt v)
 -- reduction
 progress : ∀ {Z} → {s : State Z} → Progressing s → State Z
 progress (expr (var x) E κ)       = return (cont (lookup E x) κ)
+progress (expr (lam e) E κ)       = return (cont (lam e E) κ)
+progress (expr (app e1 e2) E κ)   = return (expr e1 E ([ app₁ e2 E ] κ))
 progress (expr #t E κ)            = return (cont #t κ)
 progress (expr #f E κ)            = return (cont #f κ)
 progress (expr (if e1 e2 e3) E κ) = return (expr e1 E ([ if₁ e2 e3 E ] κ))
-progress (expr (lam e) E κ)       = return (cont (lam e E) κ)
-progress (expr (app e1 e2) E κ)   = return (expr e1 E ([ app₁ e2 E ] κ))
 progress (expr (cons e1 e2) E κ)  = return (expr e1 E (([ cons₁ e2 E ] κ)))
+progress (expr (car e) E κ)       = return (expr e E ([ car₁ ] κ))
+progress (expr (cdr e) E κ)       = return (expr e E ([ cdr₁ ] κ))
 progress (expr (e ⟨ c ⟩) E κ)     = return (expr e E ([ □⟨ c ⟩ ] κ))
-progress (expr (blame l) E κ)     = raise l
+-- progress (expr (blame l) E κ)     = raise l
 progress (cont v k)               = apply-cont v k
 
 data _−→_ {T : Type} : State T → State T → Set where

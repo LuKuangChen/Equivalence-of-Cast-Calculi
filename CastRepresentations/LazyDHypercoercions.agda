@@ -70,15 +70,14 @@ data GapT : Type → Type → Set where
   none : ∀ {T} → GapT T T
   some : (l : Label) → ∀ T1 T2 → GapT T1 T2
 
-data GapP : PreType → PreType → Set where
-  none : ∀ {P} → GapP P P
-  some : (l : Label) → ∀ P1 P2 → GapP P1 P2
+GapP : PreType → PreType → Set
+GapP P Q = GapT (` P) (` Q)
 
 data Check : ∀ {P Q} → GapP P Q → Set where
   bad : ∀ {P Q}
     → (¬P⌣Q : ¬ ((` P) ⌣ (` Q)))
     → (l    : Label)
-    → Check (some l P Q)
+    → Check (some l (` P) (` Q))
 
   good : ∀ {P Q}
     → (P⌣Q : (` P) ⌣ (` Q))
@@ -89,7 +88,7 @@ check-gap : ∀ {P Q}
   → (g : GapP P Q)
   → Check g
 check-gap none = good (⌣refl _)
-check-gap (some l P Q) with (` P) ⌣? (` Q)
+check-gap (some l (` P) (` Q)) with (` P) ⌣? (` Q)
 check-gap (some l P Q) | no ¬p = bad ¬p l
 check-gap (some l P Q) | yes p = good p
 
@@ -97,59 +96,58 @@ g-dom : ∀ {T1 T2 T3 T4}
   → GapP (T1 ⇒ T2) (T3 ⇒ T4)
   → GapT T3 T1
 g-dom none = none
-g-dom (some l (T1 ⇒ T2) (T3 ⇒ T4)) = some l T3 T1
+g-dom (some l (` T1 ⇒ T2) (` T3 ⇒ T4)) = some l T3 T1
 
 g-cod : ∀ {T1 T2 T3 T4}
   → GapP (T1 ⇒ T2) (T3 ⇒ T4)
   → GapT T2 T4
 g-cod none = none
-g-cod (some l (T1 ⇒ T2) (T3 ⇒ T4)) = some l T2 T4
+g-cod (some l (` T1 ⇒ T2) (` T3 ⇒ T4)) = some l T2 T4
 
 g-car : ∀ {T1 T2 T3 T4}
   → GapP (T1 ⊗ T2) (T3 ⊗ T4)
   → GapT T1 T3
 g-car none = none
-g-car (some l (T1 ⊗ T2) (T3 ⊗ T4)) = some l T1 T3
+g-car (some l (` T1 ⊗ T2) (` T3 ⊗ T4)) = some l T1 T3
 
 g-cdr : ∀ {T1 T2 T3 T4}
   → GapP (T1 ⊗ T2) (T3 ⊗ T4)
   → GapT T2 T4
 g-cdr none = none
-g-cdr (some l (T1 ⊗ T2) (T3 ⊗ T4)) = some l T2 T4
+g-cdr (some l (` T1 ⊗ T2) (` T3 ⊗ T4)) = some l T2 T4
 
-mk-head : ∀ {T P}
+mk-proj : ∀ {T P}
   → GapT * T
   → Head T P
   ---
   → Head * P
-mk-head g (⁇ P l) = (⁇ P l)
-mk-head (some l * (` P)) ε = ⁇ P l
+mk-proj g (⁇ P l) = (⁇ P l)
+mk-proj (some l * (` P)) ε = ⁇ P l
 
-mk-tail : ∀ {T P}
+mk-inj : ∀ {T P}
   → Tail P T
   → GapT T *
   ---
   → Tail P *
-mk-tail (‼ P) g = ‼ P
-mk-tail ε (some l (` P) *) = ‼ P
+mk-inj (‼ P) g = ‼ P
+mk-inj ε (some l (` P) *) = ‼ P
 
-mk-tail-none : ∀ {P}
+mk-inj-none : ∀ {P}
   → (t : Tail P *)
   ---
-  → mk-tail t none ≡ t
-mk-tail-none (‼ P) = refl
+  → mk-inj t none ≡ t
+mk-inj-none (‼ P) = refl
 
-link : ∀ {P S T Q}
+mk-gap : ∀ {P S T Q}
   → Tail P S
   → GapT S T
   → Head T Q
   -----------------
   → GapP P Q
-link ε none ε = none
-link (‼ P) g (⁇ Q l) = some l P Q
-link ε (some l' (` P) *) (⁇ Q l) = some l P Q
-link (‼ P) (some l * (` Q)) ε = some l P Q
-link ε (some l (` P) (` Q)) ε = some l P Q
+mk-gap ε g ε = g
+mk-gap ε (some l' (` P) *)    (⁇ Q l) = some l (` P) (` Q)
+mk-gap (‼ P) g                (⁇ Q l) = some l (` P) (` Q)
+mk-gap (‼ P) (some l * (` Q)) ε       = some l (` P) (` Q)
 
 mutual
   seq : ∀ {T1 T2 T3 T4}
@@ -159,9 +157,9 @@ mutual
   ----------------
     → Cast T1 T4
   seq id* g id* = id*
-  seq id* g (↷ h2 m2 t2) = ↷ (mk-head g h2) m2 t2
-  seq (↷ h1 m1 t1) g id* = ↷ h1 m1 (mk-tail t1 g)
-  seq (↷ h1 m1 t1) g (↷ h2 m2 t2) = ↷ h1 (seq-m m1 (link t1 g h2) m2) t2
+  seq id* g (↷ h2 m2 t2) = ↷ (mk-proj g h2) m2 t2
+  seq (↷ h1 m1 t1) g id* = ↷ h1 m1 (mk-inj t1 g)
+  seq (↷ h1 m1 t1) g (↷ h2 m2 t2) = ↷ h1 (seq-m m1 (mk-gap t1 g h2) m2) t2
   
   seq-m : ∀ {P1 P2 P3 P4}
     → Body P1 P2
@@ -174,9 +172,6 @@ mutual
   seq-m (` m1) .(some l _ _) m2 | bad ¬P⌣Q l = ⊥ l
   seq-m (` m1) g (⊥ l2) | good P⌣Q = ⊥ l2
   seq-m (` m1) g (` m2) | good P⌣Q = ` seq-mm P⌣Q m1 g m2
-  -- seq-m (` B̂) g (` B̂) | good ⌣B = ` B̂
-  -- seq-m (` (c₁ ⇒̂ c₂)) g (` (c₃ ⇒̂ c₄)) | good ⌣⇒ = ` (seq c₃ (g-dom g) c₁ ⇒̂ seq c₂ (g-cod g) c₄)
-  -- seq-m (` (c₁ ⊗̂ c₂)) g (` (c₃ ⊗̂ c₄)) | good ⌣⊗ = ` (seq c₁ (g-car g) c₃ ⊗̂ seq c₂ (g-cdr g) c₄)
   
   seq-mm : ∀ {P1 P2 P3 P4}
     → (` P2) ⌣ (` P3)
@@ -227,18 +222,18 @@ mutual
   identityʳ (↷ t1 (` (c₁ ⇒̂ c₂)) ε) rewrite identityˡ c₁ | identityʳ c₂ = refl
   identityʳ (↷ t1 (` (c₁ ⊗̂ c₂)) ε) rewrite identityʳ c₁ | identityʳ c₂ = refl
 
-lem-link : ∀ {P1 T1 T2 P2}
+lem-mk-gap : ∀ {P1 T1 T2 P2}
   → (t1 : Tail P1 T1)
   → (g1 : GapT T1 *)
   → (g2 : GapT *  T2)
   → (h2 : Head T2 P2)
-  → link (mk-tail t1 g1) g2 h2
+  → mk-gap (mk-inj t1 g1) g2 h2
     ≡
-    link t1 g1 (mk-head g2 h2)
-lem-link (‼ P1) g1 g2 (⁇ P2 l) = refl
-lem-link ε (some l' .(` _) .*) g2 (⁇ P l) = refl
-lem-link (‼ P) g1 (some l .* .(` _)) ε = refl
-lem-link ε (some l' .(` _) .*) (some l .* .(` _)) ε = refl
+    mk-gap t1 g1 (mk-proj g2 h2)
+lem-mk-gap (‼ P1) g1 g2 (⁇ P2 l) = refl
+lem-mk-gap ε (some l' .(` _) .*) g2 (⁇ P l) = refl
+lem-mk-gap (‼ P) g1 (some l .* .(` _)) ε = refl
+lem-mk-gap ε (some l' .(` _) .*) (some l .* .(` _)) ε = refl
 
 mutual
   seq-m-assoc : ∀ {T1 T2 T3 T4 T5 T6}
@@ -273,18 +268,18 @@ mutual
       → (c3 : Cast T5 T6)
     → seq (seq c1 g1 c2) g2 c3 ≡ seq c1 g1 (seq c2 g2 c3)
   seq-assoc id* g1 id* g2 id* = refl
-  seq-assoc id* g1 id* g2 (↷ h m t) with (mk-head g2 h)
+  seq-assoc id* g1 id* g2 (↷ h m t) with (mk-proj g2 h)
   seq-assoc id* g1 id* g2 (↷ h m t) | ⁇ P l = refl
   seq-assoc id* g1 (↷ h m t) g2 id* = refl
   seq-assoc id* g1 (↷ h m t) g2 (↷ h₁ m₁ t₁) = refl
-  seq-assoc (↷ h m t) g1 id* g2 id* with (mk-tail t g1)
+  seq-assoc (↷ h m t) g1 id* g2 id* with (mk-inj t g1)
   seq-assoc (↷ h m t) g1 id* g2 id* | (‼ P) = refl
   seq-assoc (↷ h1 m1 t1) g1 id* g2 (↷ h3 m3 t3)
-    rewrite lem-link t1 g1 g2 h3
+    rewrite lem-mk-gap t1 g1 g2 h3
     = refl
   seq-assoc (↷ h1 m1 t1) g1 (↷ h2 m2 t2) g2 id* = refl
   seq-assoc (↷ h1 m1 t1) g1 (↷ h2 m2 t2) g2 (↷ h3 m3 t3)
-    rewrite seq-m-assoc m1 (link t1 g1 h2) m2 (link t2 g2 h3) m3
+    rewrite seq-m-assoc m1 (mk-gap t1 g1 h2) m2 (mk-gap t2 g2 h3) m3
     = refl
 
 ⨟-assoc : ∀ {T1 T2 T3 T4}
@@ -335,7 +330,7 @@ proxy (cons⟨ c1 ⊗ c2 ⟩ v1 v2) (c3 ⊗̂ c4) = cons⟨ c1 ⨟ c3 ⊗ c2 ⨟
   → Value T
   → CastResult (` P)
 ⟦ ε      ⟧h v = return v
-⟦ ⁇ P2 l ⟧h (dyn (same P1) v) = ⟦ seq-m (` id-m P1) (some l P1 P2) (` id-m P2) ⟧m v 
+⟦ ⁇ P2 l ⟧h (dyn (same P1) v) = ⟦ seq-m (` id-m P1) (some l (` P1) (` P2)) (` id-m P2) ⟧m v 
 
 ⟦_⟧ : ∀ {T1 T2}
   → Cast T1 T2
@@ -390,7 +385,7 @@ mutual
     → (h2 : Head T  P3)
     → (m2 : Body P3 P4)
     → (∀ v →
-         ⟦ seq-m m1 (link t1 none h2) m2 ⟧m v
+         ⟦ seq-m m1 (mk-gap t1 none h2) m2 ⟧m v
            ≡
          (⟦ m1 ⟧m >=> ⟦ t1 ⟧t >=> ⟦ h2 ⟧h >=> ⟦ m2 ⟧m) v)
   lem-seq-m (⊥ l1) t1 h2 m2 v = refl
@@ -431,7 +426,7 @@ mutual
     = refl
   lem-seq (↷ h1 m1 t1) id* v
     rewrite identityʳ (↷ h1 m1 t1)
-    | mk-tail-none t1
+    | mk-inj-none t1
     | >>=-return (⟦ h1 ⟧h v >>= ⟦ m1 ⟧m >>= ⟦ t1 ⟧t)
     = refl
   lem-seq (↷ h1 m1 t1) (↷ h2 m2 t2) v with ⟦ h1 ⟧h v
@@ -478,7 +473,7 @@ eq-*P : ∀ Q P l v
   → ⟦ ⌈ *   ⟹[ l ] ` Q ⌉ ⟧ (dyn (same P) v)
       ≡
     ⟦ ⌈ ` P ⟹[ l ] ` Q ⌉ ⟧ v
-eq-*P Q P l v with ⟦ seq-m (` id-m P) (some l P Q) (` id-m Q) ⟧m v
+eq-*P Q P l v with ⟦ seq-m (` id-m P) (some l (` P) (` Q)) (` id-m Q) ⟧m v
 eq-*P Q P l v | raise  l' = refl
 eq-*P Q P l v | return v' rewrite lem-id-m v' = refl
 

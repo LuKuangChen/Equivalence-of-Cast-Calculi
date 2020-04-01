@@ -104,6 +104,11 @@ data Ground : PreType → Set where
   `⊗ : Ground (* ⊗ *)
   -- `⊕ : Ground (* ⊕ *)
 
+ground-unique : ∀ {P} → (G H : Ground P) → G ≡ H
+ground-unique `B `B = refl
+ground-unique `⇒ `⇒ = refl
+ground-unique `⊗ `⊗ = refl
+
 op→ground : TypeOp → PreType
 op→ground op = op · replicate *
 

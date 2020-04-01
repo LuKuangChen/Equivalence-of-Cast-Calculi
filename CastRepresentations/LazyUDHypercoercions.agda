@@ -8,6 +8,8 @@ open import S.CastADT Label
 
 open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Data.Empty using (⊥-elim)
+open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Product using (_×_; ∃-syntax; _,_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂)
 
 infix 100 _⇒_
@@ -71,6 +73,12 @@ mutual
       ---
       PreBody (S1 T⊗ T1) (S2 T⊗ T2)
 
+data CompatibleTailHead {P : PreType} : ∀ {T} → Tail P T → Head T P → Set where
+  none : CompatibleTailHead ε ε
+  some : ∀ {l}
+    → (G : Ground P)
+    → CompatibleTailHead (‼ G) (⁇ G l)
+
 data Gap : ∀ {P T Q} → Tail P T → Head T Q → Set where
   some : ∀ {P Q}
     → {gP : Ground P}
@@ -82,15 +90,16 @@ data Gap : ∀ {P T Q} → Tail P T → Head T Q → Set where
   none : ∀ {P T}
     → {t : Tail P T}
     → {h : Head T P}
+    → (p : CompatibleTailHead t h)
     → Gap t h
     
 check-gap : ∀ {P T Q}
   → (t : Tail P T)
   → (h : Head T Q)
   → Gap t h
-check-gap ε ε = none
+check-gap ε ε = none none
 check-gap (‼ gP) (⁇ gQ l) with gP ≟G gQ
-check-gap (‼ gP) (⁇ gQ l) | yes refl = none
+check-gap (‼ gP) (⁇ gQ l) | yes refl rewrite ground-unique gP gQ = none (some gQ)
 check-gap (‼ gP) (⁇ gQ l) | no ¬P≡Q  = some ¬P≡Q l
                                    
 mutual
@@ -107,9 +116,9 @@ mutual
     → Body P1 P4
   seq-m (⊥ l1) t1 h2 m2 = ⊥ l1
   seq-m (` m1) t1 h2 m2 with check-gap t1 h2
-  seq-m (` m1) t1 h2 m2     | some ¬P≡Q l = ⊥ l
-  seq-m (` m1) t1 h2 (⊥ l2) | none = ⊥ l2
-  seq-m (` m1) t1 h2 (` m2) | none = ` (m1 ⨟' m2)
+  seq-m (` m1) .(‼ _) .(⁇ _ l) m2 | some ¬P≡Q l = ⊥ l
+  seq-m (` m1) t1 h2 (⊥ l2) | none p = ⊥ l2
+  seq-m (` m1) t1 h2 (` m2) | none p = ` (m1 ⨟' m2)
                                               
   _⨟'_ : ∀ {T1 T2 T3} → PreBody T1 T2 → PreBody T2 T3 → PreBody T1 T3
   B ⨟' B = B
@@ -117,28 +126,22 @@ mutual
   (c₁ ⊗ c₂) ⨟' (c₃ ⊗ c₄) = (c₁ ⨟ c₃) ⊗ (c₂ ⨟ c₄)
 
 mutual
-  ⇑* : Label → ∀ T → Cast T *
-  ⇑* l *     = id*
-  ⇑* l (` P) = ⇑ l P
+  ⇑ : Label → ∀ T → Cast T *
+  ⇑ l *     = id*
+  ⇑ l (` TB)     = ↷ ε (` B)               (‼ `B)
+  ⇑ l (` S T⇒ T) = ↷ ε (` (⇓ l S ⇒ ⇑ l T)) (‼ `⇒)
+  ⇑ l (` S T⊗ T) = ↷ ε (` (⇑ l S ⊗ ⇑ l T)) (‼ `⊗)
   
-  ⇑ : Label → ∀ P → Cast (` P) *
-  ⇑ l TB       = ↷ ε (` B)               (‼ `B)
-  ⇑ l (S T⇒ T) = ↷ ε (` (⇓* l S ⇒ ⇑* l T)) (‼ `⇒)
-  ⇑ l (S T⊗ T) = ↷ ε (` (⇑* l S ⊗ ⇑* l T)) (‼ `⊗)
-
-  ⇓* : Label → ∀ T → Cast * T
-  ⇓* l *     = id*
-  ⇓* l (` P) = ⇓ l P
-  
-  ⇓ : Label → ∀ P → Cast * (` P)
-  ⇓ l TB       = ↷ (⁇ `B l) (` B)                 ε
-  ⇓ l (S T⇒ T) = ↷ (⁇ `⇒ l) (` ⇑* l S ⇒ (⇓* l T)) ε
-  ⇓ l (S T⊗ T) = ↷ (⁇ `⊗ l) (` ⇓* l S ⊗ (⇓* l T)) ε
+  ⇓ : Label → ∀ T → Cast * T
+  ⇓ l *     = id*
+  ⇓ l (` TB)     = ↷ (⁇ `B l) (` B)                 ε
+  ⇓ l (` S T⇒ T) = ↷ (⁇ `⇒ l) (` ⇑ l S ⇒ (⇓ l T)) ε
+  ⇓ l (` S T⊗ T) = ↷ (⁇ `⊗ l) (` ⇓ l S ⊗ (⇓ l T)) ε
 
 ⌈_⌉ : ∀ {T1 T2} → SrcCast T1 T2 → Cast T1 T2
 ⌈ *   ⟹[ l ] *   ⌉ = id*
-⌈ *   ⟹[ l ] ` Q ⌉ = ⇓ l Q
-⌈ ` P ⟹[ l ] *   ⌉ = ⇑ l P
+⌈ *   ⟹[ l ] ` Q ⌉ = ⇓ l (` Q)
+⌈ ` P ⟹[ l ] *   ⌉ = ⇑ l (` P)
 ⌈ ` P ⟹[ l ] ` Q ⌉ with (` P) ⌣? (` Q)
 ⌈ ` P ⟹[ l ] ` Q ⌉             | no P⌣̸Q = ↷ ε (⊥ l) ε
 ⌈ ` TB       ⟹[ l ] ` TB       ⌉ | yes ⌣B = ↷ ε (` B) ε
@@ -263,14 +266,14 @@ mutual
   assoc-seq-m (⊥ l1) t1 h2 m2 t2 h3 m3 = refl
   assoc-seq-m (` m1) t1 h2 m2 t2 h3 m3 with check-gap t1 h2
   assoc-seq-m (` m1) t1 h2 m2 t2 h3 m3 | some ¬P≡Q l = refl
-  assoc-seq-m (` m1) t1 h2 (⊥ l2) t2 h3 m3 | none = refl
-  assoc-seq-m (` m1) t1 h2 (` m2) t2 h3 m3 | none with check-gap t2 h3
-  assoc-seq-m (` m1) t1 h2 (` m2) t2 h3 m3 | none | some ¬P≡Q l = refl
-  assoc-seq-m (` m1) t1 h2 (` m2) t2 h3 (⊥ l3) | none | none = refl
-  assoc-seq-m (` B) t1 h2 (` B) t2 h3 (` B) | none | none = refl
-  assoc-seq-m (` (c₁ ⇒ c₂)) t1 h2 (` (c₃ ⇒ c₄)) t2 h3 (` (c₅ ⇒ c₆)) | none | none
+  assoc-seq-m (` m1) t1 h2 (⊥ l2) t2 h3 m3 | none p = refl
+  assoc-seq-m (` m1) t1 h2 (` m2) t2 h3 m3 | none p with check-gap t2 h3
+  assoc-seq-m (` m1) t1 h2 (` m2) t2 h3 m3 | none p | some ¬P≡Q l = refl
+  assoc-seq-m (` m1) t1 h2 (` m2) t2 h3 (⊥ l3) | none p | none q = refl
+  assoc-seq-m (` B) t1 h2 (` B) t2 h3 (` B) | none p | none q = refl
+  assoc-seq-m (` (c₁ ⇒ c₂)) t1 h2 (` (c₃ ⇒ c₄)) t2 h3 (` (c₅ ⇒ c₆)) | none p | none q
     = cong₂ (λ □ ■ → (` □ ⇒ ■)) (sym (assoc c₅ c₃ c₁)) (assoc c₂ c₄ c₆) 
-  assoc-seq-m (` (c₁ ⊗ c₂)) t1 h2 (` (c₃ ⊗ c₄)) t2 h3 (` (c₅ ⊗ c₆)) | none | none
+  assoc-seq-m (` (c₁ ⊗ c₂)) t1 h2 (` (c₃ ⊗ c₄)) t2 h3 (` (c₅ ⊗ c₆)) | none p | none q
     = cong₂ (λ □ ■ → (` □ ⊗ ■)) (assoc c₁ c₃ c₅) (assoc c₂ c₄ c₆) 
 
 lem-id-m : ∀ {P}
@@ -315,8 +318,8 @@ lem-seq-m (` m1) ε ε (⊥ l2) v = refl
 lem-seq-m (` m1) ε ε (` m2) v = cong return (lem-proxy v m1 m2)
 lem-seq-m (` m1) (‼ gP) (⁇ gQ l) m2 v with gP ≟G gQ
 lem-seq-m (` m1) (‼ gP) (⁇ gQ l) m2 v | no ¬p = refl
-lem-seq-m (` m1) (‼ gP) (⁇ gQ l) (⊥ l2) v | yes refl = refl
-lem-seq-m (` m1) (‼ gP) (⁇ gQ l) (` m2) v | yes refl = cong return (lem-proxy v m1 m2)
+lem-seq-m (` m1) (‼ gP) (⁇ gQ l) (⊥ l2) v | yes refl rewrite ground-unique gP gQ = refl
+lem-seq-m (` m1) (‼ gP) (⁇ gQ l) (` m2) v | yes refl rewrite ground-unique gP gQ = cong return (lem-proxy v m1 m2)
 
 lem-seq : ∀ {T1 T2 T3}
   → (c1 : Cast T1 T2)
@@ -354,38 +357,38 @@ eq-¬⌣ {` P} {` Q} v l ¬p with (` P) ⌣? (` Q)
 eq-¬⌣ {` P} {` Q} v l ¬p | yes p' = ⊥-elim (¬p p')
 eq-¬⌣ {` P} {` Q} v l ¬p | no ¬p' = refl
 
-lem-⇑* : (l : Label)(T : Type)
-  → (⇑* l T) ≡ ⌈ T ⟹[ l ] * ⌉
-lem-⇑* l * = refl
-lem-⇑* l (` P) = refl
+lem-rewrite-inj : (l : Label)(T : Type)
+  → (⇑ l T) ≡ ⌈ T ⟹[ l ] * ⌉
+lem-rewrite-inj l * = refl
+lem-rewrite-inj l (` P) = refl
 
-lem-⇓* : (l : Label)(T : Type)
-  → (⇓* l T) ≡ ⌈ * ⟹[ l ] T ⌉
-lem-⇓* l * = refl
-lem-⇓* l (` P) = refl
+lem-rewrite-proj : (l : Label)(T : Type)
+  → (⇓ l T) ≡ ⌈ * ⟹[ l ] T ⌉
+lem-rewrite-proj l * = refl
+lem-rewrite-proj l (` P) = refl
 
-lem-⇑ : (l : Label)(P : PreType)
-  → (⇑ l P) ≡ (⌈ (` P) ⟹[ l ] ` ground P ⌉ ⨟ ⌈ ` ground P ⟹[ l ] * ⌉)
-lem-⇑ l TB = refl
-lem-⇑ l (S T⇒ T)
-  rewrite lem-⇓* l S | lem-⇑* l T
+lem-expand-inj : (l : Label)(P : PreType)
+  → (⇑ l (` P)) ≡ (⌈ (` P) ⟹[ l ] ` ground P ⌉ ⨟ ⌈ ` ground P ⟹[ l ] * ⌉)
+lem-expand-inj l TB = refl
+lem-expand-inj l (S T⇒ T)
+  rewrite lem-rewrite-proj l S | lem-rewrite-inj l T
     | identityʳ ⌈ T ⟹[ l ] * ⌉
   = refl
-lem-⇑ l (S T⊗ T)
-  rewrite lem-⇑* l S | lem-⇑* l T
+lem-expand-inj l (S T⊗ T)
+  rewrite lem-rewrite-inj l S | lem-rewrite-inj l T
     | identityʳ ⌈ T ⟹[ l ] * ⌉
     | identityʳ ⌈ S ⟹[ l ] * ⌉
   = refl
 
-lem-⇓ : (l : Label)(P : PreType)
-  → (⇓ l P) ≡ (⌈ * ⟹[ l ] ` ground P ⌉ ⨟ ⌈ ` ground P ⟹[ l ] ` P ⌉)
-lem-⇓ l TB = refl
-lem-⇓ l (S T⇒ T)
-  rewrite lem-⇑* l S | lem-⇓* l T
+lem-expand-proj : (l : Label)(P : PreType)
+  → (⇓ l (` P)) ≡ (⌈ * ⟹[ l ] ` ground P ⌉ ⨟ ⌈ ` ground P ⟹[ l ] ` P ⌉)
+lem-expand-proj l TB = refl
+lem-expand-proj l (S T⇒ T)
+  rewrite lem-rewrite-inj l S | lem-rewrite-proj l T
     | identityʳ ⌈ S ⟹[ l ] * ⌉
   = refl
-lem-⇓ l (S T⊗ T)
-  rewrite lem-⇓* l S | lem-⇓* l T
+lem-expand-proj l (S T⊗ T)
+  rewrite lem-rewrite-proj l S | lem-rewrite-proj l T
   = refl
 
 eq-P* : ∀ {P}
@@ -396,7 +399,7 @@ eq-P* : ∀ {P}
       ≡
     ⟦ ⌈ (` P) ⟹[ l ] (` ground P) ⌉ ⟧ v >>= ⟦ ⌈ (` ground P) ⟹[ l ] * ⌉ ⟧
 eq-P* {P} v l ¬gP
-  rewrite lem-⇑ l P | lem-seq ⌈ (` P) ⟹[ l ] (` ground P) ⌉ ⌈ (` ground P) ⟹[ l ] * ⌉ v
+  rewrite lem-expand-inj l P | lem-seq ⌈ (` P) ⟹[ l ] (` ground P) ⌉ ⌈ (` ground P) ⟹[ l ] * ⌉ v
   = refl
 
 eq-I* : ∀ {P}
@@ -422,7 +425,7 @@ eq-*P : ∀ {P}
       ≡
     ⟦ ⌈ * ⟹[ l ] (` ground P) ⌉ ⟧ v >>= ⟦ ⌈ (` ground P) ⟹[ l ] (` P) ⌉ ⟧
 eq-*P {P} v l ¬gP
-  rewrite lem-⇓ l P | lem-seq ⌈ * ⟹[ l ] (` ground P) ⌉ ⌈ (` ground P) ⟹[ l ] (` P) ⌉ v
+  rewrite lem-expand-proj l P | lem-seq ⌈ * ⟹[ l ] (` ground P) ⌉ ⌈ (` ground P) ⟹[ l ] (` P) ⌉ v
   = refl
 
 eq-*I-succ : ∀ {P}

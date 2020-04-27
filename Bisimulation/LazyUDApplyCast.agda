@@ -49,10 +49,12 @@ lem-proxy : ∀ {P Q}
 lem-proxy v (` B ⟹[ l ] ` B) ⌣B rewrite eq-B l (rvalue v) = _ , refl , v
 lem-proxy (lam⟨ lcs , c1 ⇒ c2 ⟩ e E) (` S1 ⇒ T1 ⟹[ l ] ` S2 ⇒ T2) ⌣⇒
   rewrite eq-⇒ S2 T2 S1 T1 l (rcast c1) (rcast c2) e (renv E)
-  = _ , refl , lam⟨ lcs ⟪ _ , just (S2 ⟹[ l ] S1) ⨟ c1 ⇒ c2 ⨟ just (T1 ⟹[ l ] T2) ⟩ e E
+  = _ , refl
+  , lam⟨ lcs ⟪ _ , just (S2 ⟹[ l ] S1) ⨟ c1 ⇒ c2 ⨟ just (T1 ⟹[ l ] T2) ⟩ e E
 lem-proxy (cons⟨ lcs , c1 ⊗ c2 ⟩ v1 v2) (` L1 ⊗ R1 ⟹[ l ] ` L2 ⊗ R2) ⌣⊗
   rewrite eq-⊗ L2 R2 L1 R1 l (rcast c1) (rcast c2) (rvalue v1) (rvalue v2)
-  = _ , refl , cons⟨ lcs ⟪ _ , c1 ⨟ just (L1 ⟹[ l ] L2) ⊗ c2 ⨟ just (R1 ⟹[ l ] R2) ⟩ v1 v2
+  = _ , refl
+  , cons⟨ lcs ⟪ _ , c1 ⨟ just (L1 ⟹[ l ] L2) ⊗ c2 ⨟ just (R1 ⟹[ l ] R2) ⟩ v1 v2
 
 lem-*P : ∀ {P lv rv}
   → (c : Cast * (` P))

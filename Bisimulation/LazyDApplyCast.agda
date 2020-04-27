@@ -25,10 +25,14 @@ lem-⟦_⟧' (` P ⟹[ l ] ` Q) v with (` P) ⌣? (` Q)
 lem-⟦_⟧' (` B ⟹[ l ] ` B) v | yes ⌣B rewrite eq-B l (rvalue v) = return v
 lem-⟦_⟧' (` T11 ⇒ T12 ⟹[ l ] ` T21 ⇒ T22) (lam⟨ lcs , c1 ⇒ c2 ⟩ e E) | yes ⌣⇒
   rewrite eq-⇒ T21 T22 T11 T12 l (rcast c1) (rcast c2) e (renv E)
-  = return (lam⟨ lcs ⟪ _ , just (T21 ⟹[ l ] T11) ⨟ c1 ⇒ c2 ⨟ just (T12 ⟹[ l ] T22) ⟩ e E)
+  = return (lam⟨ lcs ⟪ _
+               , just (T21 ⟹[ l ] T11) ⨟ c1 ⇒ c2 ⨟ just (T12 ⟹[ l ] T22) ⟩
+               e E)
 lem-⟦_⟧' (` T11 ⊗ T12 ⟹[ l ] ` T21 ⊗ T22) (cons⟨ lcs , c1 ⊗ c2 ⟩ v1 v2) | yes ⌣⊗
   rewrite eq-⊗ T21 T22 T11 T12 l (rcast c1) (rcast c2) (rvalue v1) (rvalue v2)
-  = return (cons⟨ lcs ⟪ _ , c1 ⨟ just (T11 ⟹[ l ] T21) ⊗ c2 ⨟ just (T12 ⟹[ l ] T22) ⟩ v1 v2)
+  = return (cons⟨ lcs ⟪ _
+                , c1 ⨟ just (T11 ⟹[ l ] T21) ⊗ c2 ⨟ just (T12 ⟹[ l ] T22) ⟩
+                v1 v2)
 lem-⟦_⟧' (.(` _) ⟹[ l ] .(` _)) v | no ¬p
   rewrite eq-¬⌣ l ¬p (rvalue v)
   = raise l

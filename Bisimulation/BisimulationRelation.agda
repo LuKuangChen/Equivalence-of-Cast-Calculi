@@ -23,14 +23,15 @@ module L where
   open import Cast Label public
   open import X.Machine Label BS public
 
-open L hiding (_++_; lookup; _−→_; _−→*_; _−→+_)
+open L hiding (_++_; lookup; _—→_; _—→*_; _—→+_)
 
 module R where
   open import S.Values Label Injectable (CastADT.Cast CADT) public
   open CastADT CADT public
   open import S.Machine Label Injectable CADT public
 
-open R hiding (_++_; lookup; id; _⨟_; _−→_; _−→*_; _−→+_; [□⟨_⟩]_) renaming (Cast to DCast)
+open R hiding (_++_; lookup; id; _⨟_; _—→_; _—→*_; _—→+_; [□⟨_⟩]_)
+  renaming (Cast to DCast)
 
 data CastList : Type → Type → Set where
   [] : ∀ {T}
@@ -119,7 +120,8 @@ rht [] = []
 rht (cs ⟪ ((` T21 ⊗ T22) ⟹[ l ] (` T31 ⊗ T32)))
   = rht cs ++ ((T22 ⟹[ l ] T32) ∷ [])
 
-data ErrorRelate {A B : Set} (A~B : A → B → Set) : Error Label A → Error Label B → Set where
+data ErrorRelate {A B : Set} (A~B : A → B → Set) : Error Label A → Error Label B
+  → Set where
   return : {a : A}{b : B} → (a~b : A~B a b) → ErrorRelate A~B (return a) (return b)
   raise : ∀ l → ErrorRelate A~B (raise l) (raise l)
 
@@ -145,14 +147,6 @@ mutual
     #t : ValueRelate #t #t
     #f : ValueRelate #f #f
 
-    -- lam : ∀ {Γ T1 T2}
-    --   → (e : Γ , T1 ⊢ T2)
-    --   → {lE : L.Env Γ}
-    --   → {rE : R.Env Γ}
-    --   → (E : EnvRelate lE rE)
-    --   ----
-    --   → ValueRelate (L.lam e lE) (R.lam e rE)
-
     lam⟨_,_⇒_⟩ : ∀ {Γ T11 T12 T21 T22}
       → (lcs : FCastList T11 T12 T21 T22)
       → {rc1 : R.Cast T21 T11}
@@ -166,16 +160,6 @@ mutual
       ------
       → ValueRelate (view-lambda (lam e lE) lcs) (lam⟨ rc1 ⇒ rc2 ⟩ e rE)
 
-    -- cons : ∀ T1 T2
-    --   → {lv1 : L.Value T1}
-    --   → {rv1 : R.Value T1}
-    --   → (v1 : ValueRelate lv1 rv1)
-    --   → {lv2 : L.Value T2}
-    --   → {rv2 : R.Value T2}
-    --   → (v2 : ValueRelate lv2 rv2)
-    --   ----
-    --   → ValueRelate (L.cons lv1 lv2) (R.cons rv1 rv2)
-      
     cons⟨_,_⊗_⟩ : ∀ {T1 T2 T3 T4}
       → (lcs : PCastList T1 T2 T3 T4)
       → {rc1 : R.Cast T1 T3}
@@ -334,27 +318,28 @@ rprecont : ∀ {T1 T2}
   → R.PreCont T1 T2
 rprecont {rk = rk} kk = rk
 
-data OrdinaryStateRelate {Z : Type} : L.OrdinaryState Z → R.OrdinaryState Z → Set where
+data OrdinaryStateRelate {Z : Type} : L.OrdinaryState Z → R.OrdinaryState Z
+  → Set where
   expr : ∀ {Γ T1}
     → (e : Γ ⊢ T1)
     → {lE : L.Env Γ}
     → {rE : R.Env Γ}
     → (E : EnvRelate lE rE)
-    → {lκ : L.Cont T1 Z}
-    → {rκ : R.Cont T1 Z}
-    → (κ : ContRelate lκ rκ)
+    → {lK : L.Cont T1 Z}
+    → {rK : R.Cont T1 Z}
+    → (K : ContRelate lK rK)
     ------------
-    → OrdinaryStateRelate (expr e lE lκ) (expr e rE rκ)
+    → OrdinaryStateRelate (expr e lE lK) (expr e rE rK)
     
   cont : ∀ {T}
     → {lv : L.Value T}
     → {rv : R.Value T}
     → (v : ValueRelate lv rv)
-    → {lκ : L.Cont T Z}
-    → {rκ : R.Cont T Z}
-    → (κ : ContRelate lκ rκ)
+    → {lK : L.Cont T Z}
+    → {rK : R.Cont T Z}
+    → (K : ContRelate lK rK)
     ------------
-    → OrdinaryStateRelate (cont lv lκ) (cont rv rκ)
+    → OrdinaryStateRelate (cont lv lK) (cont rv rK)
 
   halt : ∀ {lv rv}
     → (v : ValueRelate lv rv)
@@ -378,11 +363,11 @@ data OrdinaryStateRelate {Z : Type} : L.OrdinaryState Z → R.OrdinaryState Z �
 --     → {lE : L.Env Γ}
 --     → {rE : R.Env Γ}
 --     → (E : EnvRelate lE rE)
---     → {lκ : L.Cont T Z}
---     → {rκ : R.Cont T Z}
---     → (κ : ContRelate lκ rκ)
+--     → {lK : L.Cont T Z}
+--     → {rK : R.Cont T Z}
+--     → (K : ContRelate lK rK)
 --     ------------
---     → ProgressingRelate (L.expr e lE lκ) (R.expr e rE rκ)
+--     → ProgressingRelate (L.expr e lE lK) (R.expr e rE rK)
     
 StateRelate : ∀ {T} → L.State T → R.State T → Set
 StateRelate = ErrorRelate OrdinaryStateRelate

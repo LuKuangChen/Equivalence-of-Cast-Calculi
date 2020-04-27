@@ -26,7 +26,8 @@ module LazyD where
   I? : PreType → Set
   I? = Same
 
-  apply-cast' : ∀ {P Q} → Value I? (` P) → Cast (` P) (` Q) → Error Label (Value I? (` Q))
+  apply-cast' : ∀ {P Q} → Value I? (` P) → Cast (` P) (` Q)
+    → Error Label (Value I? (` Q))
   apply-cast' v ((` P) ⟹[ l ] (` Q)) with (` P) ⌣? (` Q)
   ... | yes P⌣Q = return (add-proxy I? v ((` P) ⟹[ l ] (` Q)) P⌣Q)
   ... | no ¬P⌣Q = raise l
@@ -49,7 +50,8 @@ module LazyUD where
   open import Relation.Nullary using (yes; no)
   open import Relation.Binary.PropositionalEquality using (refl)
 
-  project : Value I? * → Label → {Q : PreType} → Ground Q → Error Label (Value I? (` Q))
+  project : Value I? * → Label → {Q : PreType} → Ground Q
+    → Error Label (Value I? (` Q))
   project (dyn gP v) l gQ with (` unground gP) ≟ (` unground gQ)
   ... | yes refl = return v
   ... | no ¬p = raise l
@@ -59,7 +61,8 @@ module LazyUD where
   ⟦ ` P ⟹[ l ] * ⟧ v with ground? P
   ... | yes Pg = return (dyn Pg v)
   ... | no ¬Pg = return (dyn (ground-Ground P)
-                             (add-proxy I? v ((` P) ⟹[ l ] (` ground P)) (ground-⌣ P)))
+                             (add-proxy I? v ((` P) ⟹[ l ] (` ground P))
+                                        (ground-⌣ P)))
   ⟦ ` P ⟹[ l ] ` Q ⟧ v with (` P) ⌣? (` Q)
   ... | yes p = return (add-proxy I? v ((` P) ⟹[ l ] (` Q)) p)
   ... | no ¬p = raise l

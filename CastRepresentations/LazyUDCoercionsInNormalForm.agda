@@ -1,4 +1,4 @@
-module CastRepresentations.LazyUDCanonicalCoercions (Label : Set) where
+module CastRepresentations.LazyUDCoercionsInNormalForm (Label : Set) where
 
 open import Types renaming (B to tB; _⇒_ to _t⇒_; _⊗_ to _t⊗_)
 open import Cast Label using (_⟹[_]_) renaming (Cast to SrcCast)
@@ -132,10 +132,13 @@ lem-¬⌣-ground {S t⊗ T} {S₁ t⊗ T₁} ¬p = λ _ → ¬p ⌣⊗
 ⌈ *   ⟹[ l ] ` Q ⌉ = ⇓ l Q
 ⌈ ` P ⟹[ l ] *   ⌉ = ⇑ l P
 ⌈ ` P ⟹[ l ] ` Q ⌉ with (` P) ⌣? (` Q)
-⌈ ` P ⟹[ l ] ` Q ⌉             | no P⌣̸Q = ` (⊥ (ground-⌣ P) (ground-Ground P) l (ground-Ground Q) (lem-¬⌣-ground P⌣̸Q))
+⌈ ` P ⟹[ l ] ` Q ⌉             | no ¬P⌣Q
+  = ` (⊥ (ground-⌣ P) (ground-Ground P) l (ground-Ground Q) (lem-¬⌣-ground ¬P⌣Q))
 ⌈ ` tB       ⟹[ l ] ` tB       ⌉ | yes ⌣B = ` (` B)
-⌈ ` S1 t⇒ T1 ⟹[ l ] ` S2 t⇒ T2 ⌉ | yes ⌣⇒ = ` (` ⌈ S2 ⟹[ l ] S1 ⌉ ⇒ ⌈ T1 ⟹[ l ] T2 ⌉)
-⌈ ` L1 t⊗ R1 ⟹[ l ] ` L2 t⊗ R2 ⌉ | yes ⌣⊗ = ` (` ⌈ L1 ⟹[ l ] L2 ⌉ ⊗ ⌈ R1 ⟹[ l ] R2 ⌉)
+⌈ ` S1 t⇒ T1 ⟹[ l ] ` S2 t⇒ T2 ⌉ | yes ⌣⇒
+  = ` (` ⌈ S2 ⟹[ l ] S1 ⌉ ⇒ ⌈ T1 ⟹[ l ] T2 ⌉)
+⌈ ` L1 t⊗ R1 ⟹[ l ] ` L2 t⊗ R2 ⌉ | yes ⌣⊗
+  = ` (` ⌈ L1 ⟹[ l ] L2 ⌉ ⊗ ⌈ R1 ⟹[ l ] R2 ⌉)
 
 
 mutual
@@ -421,7 +424,8 @@ eq-P* : ∀ {P}
       ≡
     ⟦ ⌈ (` P) ⟹[ l ] (` ground P) ⌉ ⟧ v >>= ⟦ ⌈ (` ground P) ⟹[ l ] * ⌉ ⟧
 eq-P* {P} v l ¬gP
-  rewrite lem-⇑ l P | lem-seq ⌈ (` P) ⟹[ l ] (` ground P) ⌉ ⌈ (` ground P) ⟹[ l ] * ⌉ v
+  rewrite lem-⇑ l P
+  | lem-seq ⌈ (` P) ⟹[ l ] (` ground P) ⌉ ⌈ (` ground P) ⟹[ l ] * ⌉ v
   = refl
 
 eq-I* : ∀ {P}
@@ -447,7 +451,8 @@ eq-*P : ∀ {P}
       ≡
     ⟦ ⌈ * ⟹[ l ] (` ground P) ⌉ ⟧ v >>= ⟦ ⌈ (` ground P) ⟹[ l ] (` P) ⌉ ⟧
 eq-*P {P} v l ¬gP
-  rewrite lem-⇓ l P | lem-seq ⌈ * ⟹[ l ] (` ground P) ⌉ ⌈ (` ground P) ⟹[ l ] (` P) ⌉ v
+  rewrite lem-⇓ l P
+  | lem-seq ⌈ * ⟹[ l ] (` ground P) ⌉ ⌈ (` ground P) ⟹[ l ] (` P) ⌉ v
   = refl
 
 eq-*I-succ : ∀ {P}
@@ -497,33 +502,3 @@ S-LazyUD = record
              ; eq-⇒ = λ T21 T22 T11 T12 {S} {T} l {Γ} c₁ c₂ e E → refl
              ; eq-⊗ = λ T21 T22 T11 T12 {S} {T} l c₁ c₂ v1 v2 → refl
              }
-
--- -- L-UD Coercions in Normal Form is isomorphic to L-UD Hypercoercions
--- open import Isomorphism
--- open import CastRepresentations.LazyUDHypercoercions Label
---   renaming (Cast to HCast)
-
--- S≃H : ∀ {S T}
---   → Cast S T ≃ HCast S T
--- S≃H =
---   record
---     { to   = to
---     ; from = {!!}
---     ; from∘to = {!!}
---     ; to∘from = {!!} }
---   where
---   mutual
---     to-g  : ∀ {S T} → (x : CoeG S T) → PreBody S T
---     to-g B = B
---     to-g (s ⇒ t) = to s ⇒ to t
---     to-g (s ⊗ t) = to s ⊗ to t
-    
---     to : ∀ {S T} → (x : CoeS S T) → HCast S T
---     to id* = id*
---     to (G ⁇ l , (g , H ‼)) = ↷ (⁇ G l) (` to-g g) (‼ H)
---     to (G ⁇ l , (` g)) = ↷ (⁇ G l) (` to-g g) ε
---     to {T = *}   (G ⁇ l , ⊥ A⌣G' G' l' H' ¬G'≡H' {.*})
---       = ↷ (⁇ G l) (⊥ l') (‼ {!ground!})
---     to {T = ` P} (G ⁇ l , ⊥ A⌣G' G' l' H' ¬G'≡H' {.(` P)})
---       = {!!}
---     to (` i) = {!!}

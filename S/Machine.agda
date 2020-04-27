@@ -88,13 +88,13 @@ data OrdinaryState (Z : Type) : Set where
   expr : ∀ {Γ T}
     → (e : Γ ⊢ T)
     → (E : Env Γ)
-    → (κ : Cont T Z)
+    → (K : Cont T Z)
     ------------
     → OrdinaryState Z
     
   cont : ∀ {T}
     → (v : Value T)
-    → (κ : Cont T Z)
+    → (K : Cont T Z)
     ------------
     → OrdinaryState Z
 
@@ -114,9 +114,9 @@ data Progressing {Z : Type} : State Z →  Set where
   expr : ∀ {Γ T}
     → (e : Γ ⊢ T)
     → (E : Env Γ)
-    → (κ : Cont T Z)
+    → (K : Cont T Z)
     ------------
-    → Progressing (return (expr e E κ))
+    → Progressing (return (expr e E K))
     
   cont : ∀ {T}
     → (v : Value T)
@@ -125,7 +125,7 @@ data Progressing {Z : Type} : State Z →  Set where
     → Progressing (return (cont v k))
 
 progressing-unique : ∀ {T} → {s : State T} → (sp1 sp2 : Progressing s) → sp1 ≡ sp2
-progressing-unique (expr e E κ) (expr .e .E .κ) = refl
+progressing-unique (expr e E K) (expr .e .E .K) = refl
 progressing-unique (cont v k) (cont .v .k) = refl
 
 open import Data.Empty using (⊥; ⊥-elim)
@@ -145,11 +145,11 @@ do-app : ∀ {T1 T2 Z}
   → Value T1
   → Cont T2 Z
   → State Z
--- do-app (lam e E) v κ
---   = return (expr e (v ∷ E) κ)
-do-app (lam⟨ c1 ⇒ c2 ⟩ e E) v κ
-  = ⟦ c1 ⟧ v >>= λ u →
-    return (expr e (u ∷ E) (ext-cont c2 κ))
+-- do-app (lam e E) v K
+--   = return (expr e (v ∷ E) K)
+do-app (lam⟨ c ⇒ d ⟩ e E) v K
+  = ⟦ c ⟧ v >>= λ u →
+    return (expr e (u ∷ E) (ext-cont d K))
 
 do-car : ∀ {T1 T2 Z}
   → Value (` T1 ⊗ T2)
@@ -167,58 +167,62 @@ cnd : {A : Set} → Value (` B) → (x y : A) → A
 cnd #t x y = x
 cnd #f x y = y
 
+mk-cont : ∀ {S T} → PreCont S T → Cont S T
+mk-cont k = [□⟨ id _ ⟩] k
+
 apply-cont : ∀ {T1 T2}
   → Value T1
   → PreCont T1 T2
   → State T2
-apply-cont v ([ app₁ e2 E ] k) = return (expr e2 E ([□⟨ id _ ⟩] [ app₂ v ] k))
+apply-cont v ([ app₁ e2 E ] k) = return (expr e2 E (mk-cont ([ app₂ v ] k)))
 apply-cont v ([ app₂ v1 ] k) = do-app v1 v k
 apply-cont v ([ if₁ e2 e3 E ] k) = return (expr (cnd v e2 e3) E k)
-apply-cont v ([ cons₁ e2 E ] k) = return (expr e2 E ([□⟨ id _ ⟩] [ cons₂ v ] k))
+apply-cont v ([ cons₁ e2 E ] k) = return (expr e2 E (mk-cont ([ cons₂ v ] k)))
 apply-cont v ([ cons₂ v1 ] k) = return (cont (cons⟨ id _ ⊗ id _ ⟩ v1 v) k)
 apply-cont v ([ car₁ ] k) = do-car v k
 apply-cont v ([ cdr₁ ] k) = do-cdr v k
 apply-cont v □ = return (halt v)
 
 progress : ∀ {Z} → {s : State Z} → Progressing s → State Z
-progress (expr (var x) E κ)       = return (cont (lookup E x) κ)
-progress (expr #t E κ)            = return (cont #t κ)
-progress (expr #f E κ)            = return (cont #f κ)
-progress (expr (if e1 e2 e3) E κ) = return (expr e1 E ([□⟨ id _ ⟩] ([ if₁ e2 e3 E ] κ)))
-progress (expr (lam e) E κ)       = return (cont (lam⟨ id _ ⇒ id _ ⟩ e E)  κ)
-progress (expr (app e1 e2) E κ)   = return (expr e1 E ([□⟨ id _ ⟩] [ app₁ e2 E ] κ))
-progress (expr (cons e1 e2) E κ)  = return (expr e1 E ([□⟨ id _ ⟩] ([ cons₁ e2 E ] κ)))
-progress (expr (car e) E κ)       = return (expr e E ([□⟨ id _ ⟩] ([ car₁ ] κ)))
-progress (expr (cdr e) E κ)       = return (expr e E ([□⟨ id _ ⟩] ([ cdr₁ ] κ)))
-progress (expr (e ⟨ c ⟩) E κ)     = return (expr e E (ext-cont ⌈ c ⌉ κ))
--- progress (expr (blame l) E κ)     = raise l
+progress (expr (var x) E K)       = return (cont (lookup E x) K)
+progress (expr #t E K)            = return (cont #t K)
+progress (expr #f E K)            = return (cont #f K)
+progress (expr (if e1 e2 e3) E K) = return (expr e1 E (mk-cont ([ if₁ e2 e3 E ] K)))
+progress (expr (lam e) E K)       = return (cont (lam⟨ id _ ⇒ id _ ⟩ e E)  K)
+progress (expr (app e1 e2) E K)   = return (expr e1 E (mk-cont ([ app₁ e2 E ] K)))
+progress (expr (cons e1 e2) E K)  = return (expr e1 E (mk-cont ([ cons₁ e2 E ] K)))
+progress (expr (car e) E K)       = return (expr e E (mk-cont ([ car₁ ] K)))
+progress (expr (cdr e) E K)       = return (expr e E (mk-cont ([ cdr₁ ] K)))
+progress (expr (e ⟨ c ⟩) E K)     = return (expr e E (ext-cont ⌈ c ⌉ K))
+-- progress (expr (blame l) E K)     = raise l
 progress (cont v ([□⟨ c ⟩] k)) = ⟦ c ⟧ v >>= λ v' → apply-cont v' k
 
-data _−→_ {T : Type} : State T → State T → Set where
+data _—→_ {T : Type} : State T → State T → Set where
   it : ∀ {s}
     → (sp : Progressing s)
-    → s −→ progress sp
+    → s —→ progress sp
 
 open import Bisimulation.Bisimulation using (System)
 
 deterministic : ∀ {T}
   → {s t1 t2 : State T}
-  → s −→ t1
-  → s −→ t2
+  → s —→ t1
+  → s —→ t2
   → t1 ≡ t2
 deterministic (it sp1) (it sp2) = cong progress (progressing-unique sp1 sp2)
 
 system : ∀ {T} → System (State T)
 system = record
-           { _−→_ = _−→_
+           { _—→_ = _—→_
            ; Final = Final
-           ; final-progressing-absurd = λ { sf (it sp) → final-progressing-absurd sf sp }
+           ; final-progressing-absurd =
+             λ { sf (it sp) → final-progressing-absurd sf sp }
            ; deterministic = deterministic
            }
 
 module Eval {T : Type} where
   open import Data.Product using (∃-syntax)
-  open System (system {T}) using (_−→*_; []; _∷_; _−→+_; _++_) public
+  open System (system {T}) using (_—→*_; []; _∷_; _—→+_; _++_) public
 
   observe : Value T → ValueDisplay T
   observe (dyn Pi v) = dyn
@@ -228,7 +232,7 @@ module Eval {T : Type} where
   observe (cons⟨ c1 ⊗ c2 ⟩ v1 v2) = cons
 
   data Evalo (e : ∅ ⊢ T) : Observable T → Set where
-    val : ∀ {v} → (load e) −→* return (halt v) → Evalo e (return (observe v))
-    err : ∀ {l} → (load e) −→* raise l → Evalo e (raise l)
+    val : ∀ {v} → (load e) —→* return (halt v) → Evalo e (return (observe v))
+    err : ∀ {l} → (load e) —→* raise l → Evalo e (raise l)
 
 open Eval public

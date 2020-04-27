@@ -20,54 +20,56 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; sym;
 -- given a bisimulation relation _≈_
 -- If s₁ ≈ s₂ implies that either
 --   - s₁ final and s₂ final, or
---   - there exist s₃ and s₄ such that s₁ −→+ s₃ and s₂ −→+ s₄ and s₃ ≈ s₄
+--   - there exist s₃ and s₄ such that s₁ —→+ s₃ and s₂ —→+ s₄ and s₃ ≈ s₄
 -- then for all s₁ ≈ s₂
---   - s₁ −→* s₃ and s₃ final implies s₂ −→* s₄ and s₄ final and s₃ ≈ s₄ for some s₄
---   - s₂ −→* s₄ and s₄ final implies s₁ −→* s₃ and s₃ final and s₃ ≈ s₄ for some s₃
+--   - s₁ —→* s₃ and s₃ final implies
+--     s₂ —→* s₄ and s₄ final and s₃ ≈ s₄ for some s₄
+--   - s₂ —→* s₄ and s₄ final implies
+--     s₁ —→* s₃ and s₃ final and s₃ ≈ s₄ for some s₃
 
 record System (State : Set) : Set₁ where
   field
-    _−→_ : State → State → Set
+    _—→_ : State → State → Set
     Final : State → Set
     final-progressing-absurd : ∀ {s t}
       → Final s
-      → (s −→ t)
+      → (s —→ t)
       → ⊥
     deterministic : ∀ {s t1 t2}
-      → s −→ t1
-      → s −→ t2
+      → s —→ t1
+      → s —→ t2
       → t1 ≡ t2
       
-  data _−→*_ : State → State → Set where
+  data _—→*_ : State → State → Set where
     [] : {s : State}
-      → s −→* s
+      → s —→* s
 
     _∷_ : ∀ {s1 s2 s3}
-      → (x  : s1 −→ s2)
-      → (xs : s2 −→* s3)
-      → s1 −→* s3
+      → (x  : s1 —→ s2)
+      → (xs : s2 —→* s3)
+      → s1 —→* s3
 
-  record _−→+_ (s s' : State) : Set where
+  record _—→+_ (s s' : State) : Set where
     constructor _∷_
     field
       {t} : State
-      x  : s −→  t
-      xs : t −→* s'
+      x  : s —→  t
+      xs : t —→* s'
 
-  data Prefix : {s1 s2 s3 : State} → s1 −→* s2 → s1 −→* s3 → Set where
+  data Prefix : {s1 s2 s3 : State} → s1 —→* s2 → s1 —→* s3 → Set where
     zero : ∀ {s1 s3}
-      → {xs : s1 −→* s3}
+      → {xs : s1 —→* s3}
       → Prefix [] xs
 
     suc : ∀ {s0 s1 s2 s3}
-      → {x : s0 −→ s1}
-      → {y : s0 −→ s1}
-      → {xs : s1 −→* s2}
-      → {ys : s1 −→* s3}
+      → {x : s0 —→ s1}
+      → {y : s0 —→ s1}
+      → {xs : s1 —→* s2}
+      → {ys : s1 —→* s3}
       → Prefix xs ys
       → Prefix (x ∷ xs) (y ∷ ys)
 
-  _++_ : ∀ {s1 s2 s3} → s1 −→* s2 → s2 −→* s3 → s1 −→* s3
+  _++_ : ∀ {s1 s2 s3} → s1 —→* s2 → s2 —→* s3 → s1 —→* s3
   [] ++ ys = ys
   (x ∷ xs) ++ ys = x ∷ (xs ++ ys)
 
@@ -84,8 +86,8 @@ module Lemmas
       ⊎
       ∃[ ls' ]
       ∃[ rs' ](
-        System._−→+_ lSystem ls ls' ×
-        System._−→+_ rSystem rs rs' ×        
+        System._—→+_ lSystem ls ls' ×
+        System._—→+_ rSystem rs rs' ×        
         (ls' ~ rs')))
   where
 
@@ -99,10 +101,10 @@ module Lemmas
 
   prefix : ∀ {ls}
     → ∀ {ls'}
-    → (xs : ls L.−→* ls')
+    → (xs : ls L.—→* ls')
     → L.Final ls'
     → ∀ {ls*}
-    → (ys : ls L.−→* ls*)
+    → (ys : ls L.—→* ls*)
     → L.Prefix ys xs
   prefix xs halt [] = zero
   prefix [] halt (y ∷ ys) = ⊥-elim (L.final-progressing-absurd halt y)
@@ -114,12 +116,12 @@ module Lemmas
     lem-final-helper : ∀ {ls1 ls2 rs}
       → (ss : ls2 ~ rs)
       → ∀ {ls'}
-      → (xs : ls1 L.−→* ls2)
-      → (ys : ls1 L.−→* ls')
+      → (xs : ls1 L.—→* ls2)
+      → (ys : ls1 L.—→* ls')
       → L.Prefix xs ys
       → L.Final ls'
       → ∃[ rs' ](
-           rs R.−→* rs' ×
+           rs R.—→* rs' ×
            R.Final rs' ×
            ls' ~ rs'
         )
@@ -129,10 +131,10 @@ module Lemmas
     lem-final : ∀ {ls rs}
       → (ss : ls ~ rs)
       → ∀ {ls'}
-      → ls L.−→* ls'
+      → ls L.—→* ls'
       → L.Final ls'
       → ∃[ rs' ](
-           rs R.−→* rs' ×
+           rs R.—→* rs' ×
            R.Final rs' ×
            ls' ~ rs'
         )
@@ -144,9 +146,11 @@ module Lemmas
     lem-final ss (lx ∷ lxs) ls'-halt with safety ss
     lem-final ss (lx ∷ lxs) ls'-halt | inj₁ (ls-halt , rs-halt)
       = ⊥-elim (L.final-progressing-absurd ls-halt lx)
-    lem-final ss (lx ∷ lxs) ls'-halt | inj₂ (ls' , rs' , (lx' ∷ lxs') , (rx' ∷ rxs') , ss')
+    lem-final ss (lx ∷ lxs) ls'-halt
+      | inj₂ (ls' , rs' , (lx' ∷ lxs') , (rx' ∷ rxs') , ss')
       with L.deterministic lx lx'
-    ... | refl with lem-final-helper ss' lxs' lxs (prefix lxs ls'-halt lxs') ls'-halt
+    ... | refl
+      with lem-final-helper ss' lxs' lxs (prefix lxs ls'-halt lxs') ls'-halt
     ... | rs'' , rxs , rhalt , bis = rs'' , (rx' ∷ (rxs' R.++ rxs)) , rhalt , bis
 
 
@@ -161,8 +165,8 @@ module Theorems
       ⊎
       ∃[ ls' ]
       ∃[ rs' ](
-        System._−→+_ lSystem ls ls' ×
-        System._−→+_ rSystem rs rs' ×
+        System._—→+_ lSystem ls ls' ×
+        System._—→+_ rSystem rs rs' ×
         (ls' ~ rs')))
   where
   
@@ -175,10 +179,10 @@ module Theorems
   thm-final-LR : ∀ {ls rs}
     → (ss : ls ~ rs)
     → ∀ {ls'}
-    → ls L.−→* ls'
+    → ls L.—→* ls'
     → L.Final ls'
     → ∃[ rs' ](
-         rs R.−→* rs' ×
+         rs R.—→* rs' ×
          R.Final rs' ×
          ls' ~ rs'
       )
@@ -190,8 +194,8 @@ module Theorems
       ⊎
       ∃[ rs' ]
       ∃[ ls' ](
-        System._−→+_ rSystem rs rs' ×
-        System._−→+_ lSystem ls ls' ×        
+        System._—→+_ rSystem rs rs' ×
+        System._—→+_ lSystem ls ls' ×        
         (ls' ~ rs'))
   safety' ss with safety ss
   safety' ss | inj₁ (lh , rh) = inj₁ (rh , lh)
@@ -201,10 +205,10 @@ module Theorems
   thm-final-RL : ∀ {ls rs}
     → (ss : ls ~ rs)
     → ∀ {rs'}
-    → rs R.−→* rs'
+    → rs R.—→* rs'
     → R.Final rs'
     → ∃[ ls' ](
-      ls L.−→* ls' ×
+      ls L.—→* ls' ×
       L.Final ls' ×
       ls' ~ rs'
     )

@@ -71,5 +71,7 @@ open import Relation.Nullary using (yes; no)
 
 add-proxy : ∀ {P Q} → Value (` P) → Cast (` P) (` Q) → (` P) ⌣ (` Q) → Value (` Q)
 add-proxy v ((` B) ⟹[ l ] (` B)) ⌣B = v
-add-proxy v ((` (T1 ⇒ T2)) ⟹[ l ] (` (T3 ⇒ T4))) ⌣⇒ = v f⟨(` T1 ⇒ T2) ⟹[ l ] (` T3 ⇒ T4)⟩ 
-add-proxy v ((` (T1 ⊗ T2)) ⟹[ l ] (` (T3 ⊗ T4))) ⌣⊗ = v p⟨(` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4)⟩ 
+add-proxy v ((` (T1 ⇒ T2)) ⟹[ l ] (` (T3 ⇒ T4))) ⌣⇒
+  = v f⟨(` T1 ⇒ T2) ⟹[ l ] (` T3 ⇒ T4)⟩ 
+add-proxy v ((` (T1 ⊗ T2)) ⟹[ l ] (` (T3 ⊗ T4))) ⌣⊗
+  = v p⟨(` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4)⟩ 

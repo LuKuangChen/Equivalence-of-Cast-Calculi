@@ -55,3 +55,21 @@ _>=>_ : ∀ {L A B C}
   → r >>= (f >=> g) ≡ (r >>= f) >>= g
 >=>->>= (raise l)  f g = refl
 >=>->>= (return v) f g = refl
+
+drop-after-raise : ∀ {L A B C}
+  → (r : Error L A)
+  → (l : L)
+  → (f : Handler L B C)
+  → (r >>= λ _ → raise l) >>= f
+    ≡ 
+    (r >>= λ _ → raise l)
+drop-after-raise (raise l') l f = refl
+drop-after-raise (return v) l f = refl
+
+>>=-extensionality : ∀ {L A B}
+  → (r : Error L A)
+  → {f g : Handler L A B}
+  → (f≡g : ∀ x → f x ≡ g x)
+  → (r >>= f) ≡ (r >>= g)
+>>=-extensionality (raise l)  f≡g = refl
+>>=-extensionality (return v) f≡g = f≡g v

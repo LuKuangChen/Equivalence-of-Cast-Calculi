@@ -91,8 +91,8 @@ mutual
     → Cast* b* T*2 T*3
     → Cast* b* T*1 T*3
   [ []     ] []       ⨟* []       = []
-  [ ⊝ ∷ b* ] (c ∷ c*) ⨟* (d ∷ d*) = (d ⨟ c) ∷ ([ b* ] c* ⨟* d*)
-  [ ⊕ ∷ b* ] (c ∷ c*) ⨟* (d ∷ d*) = (c ⨟ d) ∷ ([ b* ] c* ⨟* d*)
+  [ - ∷ b* ] (c ∷ c*) ⨟* (d ∷ d*) = (d ⨟ c) ∷ ([ b* ] c* ⨟* d*)
+  [ + ∷ b* ] (c ∷ c*) ⨟* (d ∷ d*) = (c ⨟ d) ∷ ([ b* ] c* ⨟* d*)
 
 mutual
   ⇑* : Label → ∀ T → Cast T *
@@ -107,8 +107,8 @@ mutual
       → (T* : Vec Type n)
       → Cast* p* T* (replicate *) 
     f [] [] = []
-    f (⊝ ∷ p*) (T ∷ T*) = (⇓* l T) ∷ (f p* T*)
-    f (⊕ ∷ p*) (T ∷ T*) = (⇑* l T) ∷ (f p* T*)
+    f (- ∷ p*) (T ∷ T*) = (⇓* l T) ∷ (f p* T*)
+    f (+ ∷ p*) (T ∷ T*) = (⇑* l T) ∷ (f p* T*)
 
   ⇓* : Label → ∀ T → Cast * T
   ⇓* l *     = *
@@ -122,8 +122,8 @@ mutual
       → (T* : Vec Type n)
       → Cast* p* (replicate *) T*
     f [] [] = []
-    f (⊝ ∷ p*) (T ∷ T*) = (⇑* l T) ∷ (f p* T*)
-    f (⊕ ∷ p*) (T ∷ T*) = (⇓* l T) ∷ (f p* T*)
+    f (- ∷ p*) (T ∷ T*) = (⇑* l T) ∷ (f p* T*)
+    f (+ ∷ p*) (T ∷ T*) = (⇓* l T) ∷ (f p* T*)
 
 ⌈_⌉ : ∀ {T1 T2} → SrcCast T1 T2 → Cast T1 T2
 ⌈ S ⟹[ l ] T ⌉ = ⇑* l S ⨟ ⇓* l T
@@ -138,8 +138,8 @@ mutual
     → (T* : Vec Type n)
     → Cast* p* T* T*
   id* [] [] = []
-  id* (⊝ ∷ p*) (T ∷ T*) = (id T) ∷ (id* p* T*)
-  id* (⊕ ∷ p*) (T ∷ T*) = (id T) ∷ (id* p* T*)
+  id* (- ∷ p*) (T ∷ T*) = (id T) ∷ (id* p* T*)
+  id* (+ ∷ p*) (T ∷ T*) = (id T) ∷ (id* p* T*)
 
 open import X.BlameStrategies Label using (BlameStrategy; LazyUDBS)
 open BlameStrategy LazyUDBS using (Injectable)
@@ -211,8 +211,8 @@ mutual
       → (c* : Cast* p* S* T*)
       → [ p* ] id* p* S* ⨟* c* ≡ c*
     f [] [] = refl
-    f (⊝ ∷ p*) (c ∷ c*) = cong₂ _∷_ (identityʳ c) (f p* c*)
-    f (⊕ ∷ p*) (c ∷ c*) = cong₂ _∷_ (identityˡ c) (f p* c*)
+    f (- ∷ p*) (c ∷ c*) = cong₂ _∷_ (identityʳ c) (f p* c*)
+    f (+ ∷ p*) (c ∷ c*) = cong₂ _∷_ (identityˡ c) (f p* c*)
   
   identityʳ : ∀ {T1 T2} → (c : Cast T1 T2) → c ⨟ id T2 ≡ c
   identityʳ * = refl
@@ -225,8 +225,8 @@ mutual
       → (c* : Cast* p* S* T*)
       → [ p* ] c* ⨟* id* p* T* ≡ c*
     f [] [] = refl
-    f (⊝ ∷ p*) (c ∷ c*) = cong₂ _∷_ (identityˡ c) (f p* c*)
-    f (⊕ ∷ p*) (c ∷ c*) = cong₂ _∷_ (identityʳ c) (f p* c*)
+    f (- ∷ p*) (c ∷ c*) = cong₂ _∷_ (identityˡ c) (f p* c*)
+    f (+ ∷ p*) (c ∷ c*) = cong₂ _∷_ (identityʳ c) (f p* c*)
 
 mutual
   assoc : ∀ {T1 T2 T3 T4}
@@ -283,8 +283,8 @@ mutual
       ≡
       [ b* ] xs ⨟* [ b* ] ys ⨟* zs
   assoc* [] [] [] [] = refl
-  assoc* (⊝ ∷ b*) (x ∷ xs) (y ∷ ys) (z ∷ zs) = cong₂ _∷_ (sym (assoc z y x)) (assoc* b* xs ys zs)
-  assoc* (⊕ ∷ b*) (x ∷ xs) (y ∷ ys) (z ∷ zs) = cong₂ _∷_      (assoc x y z)  (assoc* b* xs ys zs)
+  assoc* (- ∷ b*) (x ∷ xs) (y ∷ ys) (z ∷ zs) = cong₂ _∷_ (sym (assoc z y x)) (assoc* b* xs ys zs)
+  assoc* (+ ∷ b*) (x ∷ xs) (y ∷ ys) (z ∷ zs) = cong₂ _∷_      (assoc x y z)  (assoc* b* xs ys zs)
 
 lem-seq : ∀ {T1 T2 T3}
   → (c1 : Cast T1 T2)

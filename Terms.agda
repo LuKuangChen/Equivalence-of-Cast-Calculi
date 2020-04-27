@@ -1,9 +1,8 @@
-open import Types
-
 module Terms
   (Label : Set)
   where
 
+open import Types
 open import Variables
 open import Cast Label
 

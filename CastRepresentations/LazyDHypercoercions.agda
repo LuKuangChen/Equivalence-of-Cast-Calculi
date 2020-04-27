@@ -393,13 +393,15 @@ mutual
   lem-seq-m (` m1) (‼ P) (⁇ Q l) m2 v | no ¬p = refl
   lem-seq-m (` m1) (‼ P) (⁇ Q l) (⊥ l2) v | yes P⌣Q = refl
   lem-seq-m (` B̂) (‼ .B) (⁇ .B l) (` B̂) v | yes ⌣B = refl
-  lem-seq-m (` (c2 ⇒̂ d2)) (‼ (S1 ⇒ T1)) (⁇ (S2 ⇒ T2) l) (` (c3 ⇒̂ d3)) (lam⟨  c1 ⇒ d1 ⟩ e E) | yes ⌣⇒
+  lem-seq-m (` (c2 ⇒̂ d2)) (‼ (S1 ⇒ T1)) (⁇ (S2 ⇒ T2) l) (` (c3 ⇒̂ d3))
+            (lam⟨  c1 ⇒ d1 ⟩ e E) | yes ⌣⇒
     rewrite sym (seq-assoc c3 none ⌈ S2 ⟹[ l ] S1 ⌉ none (c2 ⨟ c1))
       | lem1 l c3 (c2 ⨟ c1) | lem1 l (d1 ⨟ d2) d3
     = cong₂ (λ c d → return (lam⟨ c ⇒ d ⟩ e E))
             (seq-assoc c3 _ c2 _ c1)
             (sym (seq-assoc d1 _ d2 _ d3)) 
-  lem-seq-m (` (c2 ⊗̂ d2)) (‼ .(_ ⊗ _)) (⁇ .(_ ⊗ _) l) (` (c3 ⊗̂ d3)) (cons⟨ c1 ⊗ d1 ⟩ v u) | yes ⌣⊗
+  lem-seq-m (` (c2 ⊗̂ d2)) (‼ .(_ ⊗ _)) (⁇ .(_ ⊗ _) l) (` (c3 ⊗̂ d3))
+            (cons⟨ c1 ⊗ d1 ⟩ v u) | yes ⌣⊗
     rewrite lem1 l (c1 ⨟ c2) c3 | lem1 l (d1 ⨟ d2) d3
     = cong₂ (λ c d → return (cons⟨ c ⊗ d ⟩ v u))
             (sym (seq-assoc c1 _ c2 _ c3))

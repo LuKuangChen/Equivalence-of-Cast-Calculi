@@ -30,11 +30,7 @@ open import CastRepresentations.LazyUDHypercoercions Label using ()
             H-LazyUD to LazyUDH-LazyUD;
             H-Basic to LazyUDH-Basic)
 
--- For all implementations of CastADT C, If
---   * C is LazyD
---   * C satisfies basic properties
---     - the meaning of id is identity and
---     - the meaning of seq is sequencing
+-- For all implementations of CastADT C, If C is LazyD
 -- then C is correct (evalS(C,e) = o if and only if evalD(e) = o)
 
 LazyD-CastADT-correct-1 : ∀ {T}
@@ -61,11 +57,7 @@ LazyD-CastADT-correct-2 : ∀ {T}
 LazyD-CastADT-correct-2 C lazyd basic prf
   = correctness-l LazyDBS C basic (lem-⟦_⟧-D C lazyd) prf
 
--- For all implementations of CastADT C, If
---   * C is LazyUD
---   * C satisfies basic properties
---     - the meaning of id is identity and
---     - the meaning of seq is sequencing
+-- For all implementations of CastADT C, If C is LazyUD
 -- then C is correct (evalS(C,e) = o if and only if evalUD(e) = o)
 
 LazyUD-CastADT-correct-1 : ∀ {T}

@@ -1,4 +1,4 @@
-module CastRepresentations.LazyUDThreesomes2 (Label : Set) where
+module CastRepresentations.LazyUDThreesomes (Label : Set) where
 
 open import Types hiding (Tag)
 open import Cast Label using (_⟹[_]_) renaming (Cast to SrcCast)
@@ -28,7 +28,7 @@ data OptionalLabel : Type → PreType → Set where
 
 data Tail : PreType → Type → Set where
   ‼ : ∀ {P}
-    → .(gP : Ground P)
+    → (gP : Ground P)
     → Tail P *
 
   ε : ∀ {P}
@@ -73,12 +73,12 @@ mutual
       → LabeledType S T
   
   data LabeledPreType : PreType → PreType → Set where
-    B : LabeledPreType B B
-    _⇒_ : ∀ {S1 S2 T1 T2}
+    B̂ : LabeledPreType B B
+    _⇒̂_ : ∀ {S1 S2 T1 T2}
       → (S* : LabeledType S2 S1)
       → (T* : LabeledType T1 T2)
       → LabeledPreType (S1 ⇒ T1) (S2 ⇒ T2)
-    _⊗_ : ∀ {S1 S2 T1 T2}
+    _⊗̂_ : ∀ {S1 S2 T1 T2}
       → (S* : LabeledType S1 S2)
       → (T* : LabeledType T1 T2)
       → LabeledPreType (S1 ⊗ T1) (S2 ⊗ T2)
@@ -89,9 +89,9 @@ data InterestingTag (G : Tag) (P Q : PreType) : Set where
 observeP : ∀ {P Q}
   → LabeledPreType P Q
   → ∃[ G ](InterestingTag G P Q)
-observeP B         = `B , `B , `B
-observeP (S* ⇒ T*) = `⇒ , `⇒ , `⇒
-observeP (S* ⊗ T*) = `⊗ , `⊗ , `⊗
+observeP B̂         = `B , `B , `B
+observeP (S* ⇒̂ T*) = `⇒ , `⇒ , `⇒
+observeP (S* ⊗̂ T*) = `⊗ , `⊗ , `⊗
 
 inv-G≢H : ∀ {P T Q}
   → {G H : Tag}
@@ -193,9 +193,9 @@ T* ∘ ⊥ l G Gp p     = ⊥ l G Gp p
 ... | ⁇ m gQl = ⊥ m G Grelₗ p 
 (⟨ Q* , q , r ⟩ ∘ ⟨ P* , p , t ⟩) | G , (Grelₗ , Grelᵣ) | H , (Hrelₗ , Hrelᵣ) | yes G≡H
   with inv-G≡H G≡H Grelᵣ Hrelₗ t q
-(⟨ B , q , r ⟩ ∘ ⟨ B , p , t ⟩) | G , (Grelₗ , Grelᵣ) | H , (Hrelₗ , Hrelᵣ) | yes G≡H | refl = ⟨ B , p , r ⟩
-(⟨ S*2 ⇒ T*2 , q , r ⟩ ∘ ⟨ S*1 ⇒ T*1 , p , t ⟩) | G , (Grelₗ , Grelᵣ) | H , (Hrelₗ , Hrelᵣ) | yes G≡H | refl = ⟨ (S*1 ∘ S*2) ⇒ (T*2 ∘ T*1) , p , r ⟩
-(⟨ S*2 ⊗ T*2 , q , r ⟩ ∘ ⟨ S*1 ⊗ T*1 , p , t ⟩) | G , (Grelₗ , Grelᵣ) | H , (Hrelₗ , Hrelᵣ) | yes G≡H | refl = ⟨ (S*2 ∘ S*1) ⊗ (T*2 ∘ T*1) , p , r ⟩
+(⟨ B̂ , q , r ⟩ ∘ ⟨ B̂ , p , t ⟩) | G , (Grelₗ , Grelᵣ) | H , (Hrelₗ , Hrelᵣ) | yes G≡H | refl = ⟨ B̂ , p , r ⟩
+(⟨ S*2 ⇒̂ T*2 , q , r ⟩ ∘ ⟨ S*1 ⇒̂ T*1 , p , t ⟩) | G , (Grelₗ , Grelᵣ) | H , (Hrelₗ , Hrelᵣ) | yes G≡H | refl = ⟨ (S*1 ∘ S*2) ⇒̂ (T*2 ∘ T*1) , p , r ⟩
+(⟨ S*2 ⊗̂ T*2 , q , r ⟩ ∘ ⟨ S*1 ⊗̂ T*1 , p , t ⟩) | G , (Grelₗ , Grelᵣ) | H , (Hrelₗ , Hrelᵣ) | yes G≡H | refl = ⟨ (S*2 ∘ S*1) ⊗̂ (T*2 ∘ T*1) , p , r ⟩
 
 Cast : Type → Type → Set
 Cast = LabeledType
@@ -209,9 +209,9 @@ mutual
   id (` P) = ⟨ id-P P , ε , ε ⟩
 
   id-P : ∀ P → LabeledPreType P P
-  id-P B = B
-  id-P (S ⇒ T) = (id S) ⇒ (id T)
-  id-P (S ⊗ T) = (id S) ⊗ (id T) 
+  id-P B = B̂
+  id-P (S ⇒ T) = (id S) ⇒̂ (id T)
+  id-P (S ⊗ T) = (id S) ⊗̂ (id T) 
   
 mutual
   ⇑* : Label → ∀ T → Cast T *
@@ -219,18 +219,18 @@ mutual
   ⇑* l (` P) = ⇑ l P
   
   ⇑ : Label → ∀ P → Cast (` P) *
-  ⇑ l B       = ⟨ (B)               , ε , (‼ `B) ⟩
-  ⇑ l (S ⇒ T) = ⟨ (⇓* l S ⇒ ⇑* l T) , ε , (‼ `⇒) ⟩
-  ⇑ l (S ⊗ T) = ⟨ (⇑* l S ⊗ ⇑* l T) , ε , (‼ `⊗) ⟩
+  ⇑ l B       = ⟨ (B̂)               , ε , (‼ `B) ⟩
+  ⇑ l (S ⇒ T) = ⟨ (⇓* l S ⇒̂ ⇑* l T) , ε , (‼ `⇒) ⟩
+  ⇑ l (S ⊗ T) = ⟨ (⇑* l S ⊗̂ ⇑* l T) , ε , (‼ `⊗) ⟩
 
   ⇓* : Label → ∀ T → Cast * T
   ⇓* l *     = *
   ⇓* l (` P) = ⇓ l P
   
   ⇓ : Label → ∀ P → Cast * (` P)
-  ⇓ l B       = ⟨ (B)                 , (⁇ l `B) , ε ⟩
-  ⇓ l (S ⇒ T) = ⟨ (⇑* l S ⇒ (⇓* l T)) , (⁇ l `⇒) , ε ⟩
-  ⇓ l (S ⊗ T) = ⟨ (⇓* l S ⊗ (⇓* l T)) , (⁇ l `⊗) , ε ⟩
+  ⇓ l B       = ⟨ (B̂)                 , (⁇ l `B) , ε ⟩
+  ⇓ l (S ⇒ T) = ⟨ (⇑* l S ⇒̂ (⇓* l T)) , (⁇ l `⇒) , ε ⟩
+  ⇓ l (S ⊗ T) = ⟨ (⇓* l S ⊗̂ (⇓* l T)) , (⁇ l `⊗) , ε ⟩
 
 tagof : PreType → Tag
 tagof B       = `B
@@ -248,7 +248,7 @@ tagof-correct (S ⊗ T) = `⊗
 ⌈ ` P ⟹[ l ] *   ⌉ = ⇑ l P
 ⌈ ` P ⟹[ l ] ` Q ⌉ with (` P) ⌣? (` Q)
 ⌈ ` P ⟹[ l ] ` Q ⌉             | no P⌣̸Q = ⊥ l (tagof P) (tagof-correct P) ε
-⌈ ` B       ⟹[ l ] ` B       ⌉ | yes ⌣B = ⟨ B , ε , ε ⟩
-⌈ ` S1 ⇒ T1 ⟹[ l ] ` S2 ⇒ T2 ⌉ | yes ⌣⇒ = ⟨ ⌈ S2 ⟹[ l ] S1 ⌉ ⇒ ⌈ T1 ⟹[ l ] T2 ⌉ , ε , ε ⟩
-⌈ ` L1 ⊗ R1 ⟹[ l ] ` L2 ⊗ R2 ⌉ | yes ⌣⊗ = ⟨ ⌈ L1 ⟹[ l ] L2 ⌉ ⊗ ⌈ R1 ⟹[ l ] R2 ⌉ , ε , ε ⟩
+⌈ ` B       ⟹[ l ] ` B       ⌉ | yes ⌣B = ⟨ B̂ , ε , ε ⟩
+⌈ ` S1 ⇒ T1 ⟹[ l ] ` S2 ⇒ T2 ⌉ | yes ⌣⇒ = ⟨ ⌈ S2 ⟹[ l ] S1 ⌉ ⇒̂ ⌈ T1 ⟹[ l ] T2 ⌉ , ε , ε ⟩
+⌈ ` L1 ⊗ R1 ⟹[ l ] ` L2 ⊗ R2 ⌉ | yes ⌣⊗ = ⟨ ⌈ L1 ⟹[ l ] L2 ⌉ ⊗̂ ⌈ R1 ⟹[ l ] R2 ⌉ , ε , ε ⟩
 

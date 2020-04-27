@@ -17,7 +17,6 @@ import S.Values using (Env; Value; dyn; #t; #f; lam⟨_⇒_⟩; cons⟨_⊗_⟩)
 
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Nullary using (¬_; yes; no)
-open import Data.Unit using (⊤; tt)
 
 record LazyD (ADT : CastADT) : Set where
   open CastADT ADT

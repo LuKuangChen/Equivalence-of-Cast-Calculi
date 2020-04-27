@@ -10,7 +10,8 @@ open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Data.Empty using (⊥-elim)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Product using (_×_; ∃-syntax; _,_)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂)
+open import Relation.Binary.PropositionalEquality
+  using (_≡_; refl; sym; cong; cong₂)
 
 infix 100 _⇒_
 infix 100 _⊗_
@@ -145,8 +146,10 @@ mutual
 ⌈ ` P ⟹[ l ] ` Q ⌉ with (` P) ⌣? (` Q)
 ⌈ ` P ⟹[ l ] ` Q ⌉             | no P⌣̸Q = ↷ ε (⊥ l) ε
 ⌈ ` TB       ⟹[ l ] ` TB       ⌉ | yes ⌣B = ↷ ε (` B) ε
-⌈ ` S1 T⇒ T1 ⟹[ l ] ` S2 T⇒ T2 ⌉ | yes ⌣⇒ = ↷ ε (` ⌈ S2 ⟹[ l ] S1 ⌉ ⇒ ⌈ T1 ⟹[ l ] T2 ⌉) ε
-⌈ ` L1 T⊗ R1 ⟹[ l ] ` L2 T⊗ R2 ⌉ | yes ⌣⊗ = ↷ ε (` ⌈ L1 ⟹[ l ] L2 ⌉ ⊗ ⌈ R1 ⟹[ l ] R2 ⌉) ε
+⌈ ` S1 T⇒ T1 ⟹[ l ] ` S2 T⇒ T2 ⌉ | yes ⌣⇒
+  = ↷ ε (` ⌈ S2 ⟹[ l ] S1 ⌉ ⇒ ⌈ T1 ⟹[ l ] T2 ⌉) ε
+⌈ ` L1 T⊗ R1 ⟹[ l ] ` L2 T⊗ R2 ⌉ | yes ⌣⊗
+  = ↷ ε (` ⌈ L1 ⟹[ l ] L2 ⌉ ⊗ ⌈ R1 ⟹[ l ] R2 ⌉) ε
 
 mutual
   id : ∀ T → Cast T T
@@ -166,11 +169,10 @@ mutual
 open import X.BlameStrategies Label using (BlameStrategy; LazyUDBS)
 open BlameStrategy LazyUDBS using (Injectable)
 
-open import S.Values Label Injectable Cast
-
 open import Error
   using (Error; return; raise; _>>=_; _>=>_
         ;>>=-return; >>=-assoc; >=>-assoc; >=>->>=)
+open import S.Values Label Injectable Cast
 
 CastResult : Type → Set
 CastResult T = Error Label (Value T)
@@ -271,9 +273,11 @@ mutual
   assoc-seq-m (` m1) t1 h2 (` m2) t2 h3 m3 | none p | some ¬P≡Q l = refl
   assoc-seq-m (` m1) t1 h2 (` m2) t2 h3 (⊥ l3) | none p | none q = refl
   assoc-seq-m (` B) t1 h2 (` B) t2 h3 (` B) | none p | none q = refl
-  assoc-seq-m (` (c₁ ⇒ c₂)) t1 h2 (` (c₃ ⇒ c₄)) t2 h3 (` (c₅ ⇒ c₆)) | none p | none q
+  assoc-seq-m (` (c₁ ⇒ c₂)) t1 h2 (` (c₃ ⇒ c₄)) t2 h3 (` (c₅ ⇒ c₆))
+    | none p | none q
     = cong₂ (λ □ ■ → (` □ ⇒ ■)) (sym (assoc c₅ c₃ c₁)) (assoc c₂ c₄ c₆) 
-  assoc-seq-m (` (c₁ ⊗ c₂)) t1 h2 (` (c₃ ⊗ c₄)) t2 h3 (` (c₅ ⊗ c₆)) | none p | none q
+  assoc-seq-m (` (c₁ ⊗ c₂)) t1 h2 (` (c₃ ⊗ c₄)) t2 h3 (` (c₅ ⊗ c₆))
+    | none p | none q
     = cong₂ (λ □ ■ → (` □ ⊗ ■)) (assoc c₁ c₃ c₅) (assoc c₂ c₄ c₆) 
 
 lem-id-m : ∀ {P}
@@ -318,8 +322,10 @@ lem-seq-m (` m1) ε ε (⊥ l2) v = refl
 lem-seq-m (` m1) ε ε (` m2) v = cong return (lem-proxy v m1 m2)
 lem-seq-m (` m1) (‼ gP) (⁇ gQ l) m2 v with gP ≟G gQ
 lem-seq-m (` m1) (‼ gP) (⁇ gQ l) m2 v | no ¬p = refl
-lem-seq-m (` m1) (‼ gP) (⁇ gQ l) (⊥ l2) v | yes refl rewrite ground-unique gP gQ = refl
-lem-seq-m (` m1) (‼ gP) (⁇ gQ l) (` m2) v | yes refl rewrite ground-unique gP gQ = cong return (lem-proxy v m1 m2)
+lem-seq-m (` m1) (‼ gP) (⁇ gQ l) (⊥ l2) v | yes refl
+  rewrite ground-unique gP gQ = refl
+lem-seq-m (` m1) (‼ gP) (⁇ gQ l) (` m2) v | yes refl
+  rewrite ground-unique gP gQ = cong return (lem-proxy v m1 m2)
 
 lem-seq : ∀ {T1 T2 T3}
   → (c1 : Cast T1 T2)
@@ -399,7 +405,8 @@ eq-P* : ∀ {P}
       ≡
     ⟦ ⌈ (` P) ⟹[ l ] (` ground P) ⌉ ⟧ v >>= ⟦ ⌈ (` ground P) ⟹[ l ] * ⌉ ⟧
 eq-P* {P} v l ¬gP
-  rewrite lem-expand-inj l P | lem-seq ⌈ (` P) ⟹[ l ] (` ground P) ⌉ ⌈ (` ground P) ⟹[ l ] * ⌉ v
+  rewrite lem-expand-inj l P
+  | lem-seq ⌈ (` P) ⟹[ l ] (` ground P) ⌉ ⌈ (` ground P) ⟹[ l ] * ⌉ v
   = refl
 
 eq-I* : ∀ {P}
@@ -425,7 +432,8 @@ eq-*P : ∀ {P}
       ≡
     ⟦ ⌈ * ⟹[ l ] (` ground P) ⌉ ⟧ v >>= ⟦ ⌈ (` ground P) ⟹[ l ] (` P) ⌉ ⟧
 eq-*P {P} v l ¬gP
-  rewrite lem-expand-proj l P | lem-seq ⌈ * ⟹[ l ] (` ground P) ⌉ ⌈ (` ground P) ⟹[ l ] (` P) ⌉ v
+  rewrite lem-expand-proj l P
+  | lem-seq ⌈ * ⟹[ l ] (` ground P) ⌉ ⌈ (` ground P) ⟹[ l ] (` P) ⌉ v
   = refl
 
 eq-*I-succ : ∀ {P}

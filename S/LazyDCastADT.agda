@@ -9,7 +9,7 @@ open import Terms Label using (_⊢_)
 open import Error
 open import Cast Label using (_⟹[_]_)
 
-open import X.BlameStrategies Label using (BlameStrategy; LazyDBS)
+open import R.BlameStrategies Label using (BlameStrategy; LazyDBS)
 open BlameStrategy LazyDBS using (Injectable)
 
 open import S.CastADT Label Injectable

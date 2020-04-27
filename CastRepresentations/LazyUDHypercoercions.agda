@@ -166,7 +166,7 @@ mutual
   id-m (L T⊗ R)
     = (id L) ⊗ (id R)
 
-open import X.BlameStrategies Label using (BlameStrategy; LazyUDBS)
+open import R.BlameStrategies Label using (BlameStrategy; LazyUDBS)
 open BlameStrategy LazyUDBS using (Injectable)
 
 open import Error

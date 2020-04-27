@@ -1,4 +1,4 @@
-open import X.BlameStrategies
+open import R.BlameStrategies
 open import S.CastADT
 
 module Bisimulation.ApplyCastBisimulate

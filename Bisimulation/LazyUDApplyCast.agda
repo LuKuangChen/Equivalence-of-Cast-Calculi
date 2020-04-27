@@ -1,4 +1,4 @@
-open import X.BlameStrategies using (BlameStrategy; LazyUDBS)
+open import R.BlameStrategies using (BlameStrategy; LazyUDBS)
 open import S.CastADT
 open import S.LazyUDCastADT using (LazyUD)
 
@@ -20,7 +20,7 @@ open import Data.Product using (Σ; _×_ ; ∃-syntax; _,_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Data.Empty using (⊥; ⊥-elim)
 
-open X.BlameStrategies.LazyUD Label using (project)
+open R.BlameStrategies.LazyUD Label using (project)
 
 lem-project : ∀ {Q lv rv}
   → (l : Label)

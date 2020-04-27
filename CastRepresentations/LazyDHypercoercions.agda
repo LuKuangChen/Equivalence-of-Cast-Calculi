@@ -289,7 +289,7 @@ mutual
   → (c1 ⨟ c2) ⨟ c3 ≡ c1 ⨟ (c2 ⨟ c3)
 ⨟-assoc c1 c2 c3 = seq-assoc c1 none c2 none c3
 
-open import X.BlameStrategies Label using (BlameStrategy; LazyDBS)
+open import R.BlameStrategies Label using (BlameStrategy; LazyDBS)
 open BlameStrategy LazyDBS using (Injectable)
 
 open import S.Values Label Injectable Cast

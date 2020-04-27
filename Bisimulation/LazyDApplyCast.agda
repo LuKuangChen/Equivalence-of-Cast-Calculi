@@ -1,4 +1,4 @@
-open import X.BlameStrategies using (BlameStrategy; LazyDBS)
+open import R.BlameStrategies using (BlameStrategy; LazyDBS)
 open import S.CastADT
 open import S.LazyDCastADT using (LazyD)
 

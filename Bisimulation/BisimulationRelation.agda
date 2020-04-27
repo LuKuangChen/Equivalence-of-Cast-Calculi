@@ -1,5 +1,5 @@
 open import Types
-open import X.BlameStrategies
+open import R.BlameStrategies
 open import S.CastADT
 
 module Bisimulation.BisimulationRelation
@@ -19,9 +19,9 @@ open import Observables Label
 
 module L where
   open BlameStrategy BS using (⟦_⟧) public
-  open import X.Values Label Injectable public
+  open import R.Values Label Injectable public
   open import Cast Label public
-  open import X.Machine Label BS public
+  open import R.Machine Label BS public
 
 open L hiding (_++_; lookup; _—→_; _—→*_; _—→+_)
 

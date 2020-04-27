@@ -287,7 +287,7 @@ mutual
 ⌈_⌉ : ∀ {T1 T2} → SrcCast T1 T2 → Cast T1 T2
 ⌈ S ⟹[ l ] T ⌉ = S ⟹ T [ ⌈ S ⟹[ l ] T ⌉' ]
 
-open import X.BlameStrategies Label using (BlameStrategy; LazyUDBS)
+open import R.BlameStrategies Label using (BlameStrategy; LazyUDBS)
 open BlameStrategy LazyUDBS using (Injectable)
 
 open import Error

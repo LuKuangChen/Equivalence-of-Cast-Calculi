@@ -1,5 +1,5 @@
 open import Types
-open import X.BlameStrategies
+open import R.BlameStrategies
 open import S.CastADT
 open import Bisimulation.ApplyCastBisimulate
 

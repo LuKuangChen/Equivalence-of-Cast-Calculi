@@ -156,8 +156,7 @@ mutual
   id-g (S t⊗ T)
     = (id S) ⊗ (id T)
 
-
-open import X.BlameStrategies Label using (BlameStrategy; LazyUDBS)
+open import R.BlameStrategies Label using (BlameStrategy; LazyUDBS)
 open BlameStrategy LazyUDBS using (Injectable)
 
 open import S.Values Label Injectable Cast

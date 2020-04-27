@@ -14,7 +14,6 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
 open Relation.Binary.PropositionalEquality.≡-Reasoning
   using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
 
-
 {-
 Siek, Jeremy G., and Philip Wadler. "Threesomes, with and without blame."
 ACM Sigplan Notices 45.1 (2010): 365-376.
@@ -332,17 +331,34 @@ quick-left-types : ∀ S G {Ss}
   → Vec Type (arity G)
 quick-left-types S G {Ss} p = Ss
 
+quick-right-types : ∀ T G {Ts}
+  → Tail G Ts T
+  → Vec Type (arity G)
+quick-right-types T G {Ts} p = Ts
+
 left-types : ∀ S G {Ss}
   → OptionalLabel G S Ss
   → Vec Type (arity G)
 left-types * G (⁇ l) = replicate *
 left-types (` G · Ss) G ε = Ss
 
+right-types : ∀ T G {Ts}
+  → Tail G Ts T
+  → Vec Type (arity G)
+right-types * G ‼ = replicate *
+right-types (` G · Ts) G ε = Ts
+
 left-types-faithful : ∀ S G {Ss}
   → (p : OptionalLabel G S Ss)
   → left-types S G p ≡ Ss
 left-types-faithful * G (⁇ l) = refl
 left-types-faithful (` .(G · _)) G ε = refl
+
+right-types-faithful : ∀ T G {Ts}
+  → (t : Tail G Ts T)
+  → right-types T G t ≡ Ts
+right-types-faithful * G ‼ = refl
+right-types-faithful (` G · _) G ε = refl
 
 inject : ∀ G {Ss} T
   → {t : Tail G Ss T}
@@ -360,8 +376,10 @@ inject G (` P) {ε} v = v
 ⟦ S ⟹ T [ ⊥ l G p ] ⟧ v = project G p v >>= λ _ → raise l
 ⟦ S ⟹ T [ ^ P̂ p {t} ] ⟧ v
   = project (quick-gnd P̂) p v >>= λ u
-  → return (inject (quick-gnd P̂) T {t} (proxy _ _ P̂ u))
-  -- the two underscores can be computed like left-types
+  → return (inject (quick-gnd P̂) T {t}
+                   (proxy (quick-left-types S (quick-gnd P̂) p)
+                          (quick-right-types T (quick-gnd P̂) t)
+                          P̂ u))
 
 ⨟-assoc : ∀ {T1 T2 T3 T4}
   → (c₁ : Cast T1 T2)

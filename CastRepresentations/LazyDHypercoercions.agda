@@ -340,16 +340,6 @@ proxy (cons⟨ c1 ⊗ c2 ⟩ v1 v2) (c3 ⊗̂ c4) = cons⟨ c1 ⨟ c3 ⊗ c2 ⨟
 ⟦ id*     ⟧ v = return v
 ⟦ ↷ h m t ⟧ v = ⟦ h ⟧h v >>= ⟦ m ⟧m >>= ⟦ t ⟧t
 
-H : CastADT Injectable
-H
-  = record
-    { Cast = Cast
-    ; id  = id
-    ; ⌈_⌉ = ⌈_⌉
-    ; _⨟_ = _⨟_
-    ; ⟦_⟧ = ⟦_⟧
-    }
-
 mutual
   lem-id-m : ∀ {P}
     → (v : Value (` P))  
@@ -437,9 +427,17 @@ mutual
     rewrite >=>->>= (⟦ m1 ⟧m v' >>= ⟦ t1 ⟧t) (⟦ h2 ⟧h >=> ⟦ m2 ⟧m) ⟦ t2 ⟧t
             | >=>->>= (⟦ m1 ⟧m v' >>= ⟦ t1 ⟧t) ⟦ h2 ⟧h ⟦ m2 ⟧m
     = cong (_>>= ⟦ t2 ⟧t) (lem-seq-m m1 t1 h2 m2 v')
-  
-H-Basic : CastADTBasic Injectable H
-H-Basic = record { lem-id = lem-id ; lem-seq = lem-seq }
+
+H : CastADT Injectable
+H = record
+    { Cast = Cast
+    ; id  = id
+    ; ⌈_⌉ = ⌈_⌉
+    ; _⨟_ = _⨟_
+    ; ⟦_⟧ = ⟦_⟧
+    ; lem-id = λ T v → lem-id v
+    ; lem-seq = lem-seq
+    }
 
 eq-¬⌣ : ∀ {T1 T2}
   → (l : Label)

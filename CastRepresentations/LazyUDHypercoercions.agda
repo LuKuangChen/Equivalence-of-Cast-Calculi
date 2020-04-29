@@ -218,15 +218,6 @@ proxy (cons⟨ c1 ⊗ c2 ⟩ v1 v2) (c3 ⊗ c4) = cons⟨ c1 ⨟ c3 ⊗ c2 ⨟ c
 ⟦ id*     ⟧ v = return v
 ⟦ ↷ h m t ⟧ v = ⟦ h ⟧h v >>= ⟦ m ⟧m >>= ⟦ t ⟧t
 
-H : CastADT Injectable
-H = record
-    { Cast = Cast
-    ; id  = id
-    ; ⌈_⌉ = ⌈_⌉
-    ; _⨟_ = _⨟_
-    ; ⟦_⟧ = ⟦_⟧
-    }
-
 mutual
   identityˡ : ∀ {T1 T2} → (c : Cast T1 T2) → id T1 ⨟ c ≡ c
   identityˡ id* = refl
@@ -343,8 +334,16 @@ lem-seq (↷ h1 m1 t1) (↷ h2 m2 t2) v | return v'
 ... | raise l    = refl
 ... | return v'' = refl
 
-H-Basic : CastADTBasic Injectable H
-H-Basic = record { lem-id = lem-id ; lem-seq = lem-seq }
+H : CastADT Injectable
+H = record
+    { Cast = Cast
+    ; id  = id
+    ; ⌈_⌉ = ⌈_⌉
+    ; _⨟_ = _⨟_
+    ; ⟦_⟧ = ⟦_⟧
+    ; lem-id = λ T v → lem-id v
+    ; lem-seq = lem-seq
+    }
 
 open import S.LazyUDCastADT Label
 

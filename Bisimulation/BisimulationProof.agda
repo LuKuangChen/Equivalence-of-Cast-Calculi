@@ -7,7 +7,6 @@ module Bisimulation.BisimulationProof
   (Label : Set)
   (BS : BlameStrategy Label)
   (CADT : CastADT Label (BlameStrategy.Injectable BS))
-  (CADTB : CastADTBasic Label (BlameStrategy.Injectable BS) CADT)
   (lem-⌈_⌉ : the-apply-cast-lemma Label BS CADT)
   where
 
@@ -24,7 +23,7 @@ open import Data.Product using (_×_; _,_; ∃-syntax)
 
 open import Bisimulation.Bisimulation using (_∷_; [])
 open import Bisimulation.BisimulationRelation Label BS CADT
-  renaming (module L to L'; module R to R')
+  renaming (module L to L')
 
 module L where
   open L' hiding (_++_; ⟦_⟧) public
@@ -50,16 +49,12 @@ module L where
   ... | return v' = lem-seq xs ys v'
   ... | raise l = refl
 
-module R where
-  open R' public
-  open CastADTBasic CADTB public
-
 lem-⟦_⟧ : ∀ {T1 T2 lv rv lc rc}
   → CastListRelate {T1} {T2} lc rc
   → ValueRelate {T1} lv rv
   → CastResultRelate (L.⟦ lc ⟧ lv) (R.⟦ rc ⟧ rv)
 lem-⟦ id ⟧ v
-  rewrite R.lem-id (rvalue v)
+  rewrite R.lem-id _ (rvalue v)
     = return v
 lem-⟦ just c ⟧ v
   rewrite >>=-return (L'.⟦ c ⟧ (lvalue v))

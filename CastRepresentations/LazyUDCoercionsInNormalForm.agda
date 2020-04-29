@@ -201,15 +201,6 @@ project H l (dyn G v) | no ¬G≡H  = raise l
 ⟦ G ⁇ l , i ⟧ v = project G l v >>= ⟦ i ⟧i
 ⟦ ` i       ⟧ v = ⟦ i ⟧i v
 
-S : CastADT Injectable
-S = record
-    { Cast = Cast
-    ; id  = id
-    ; ⌈_⌉ = ⌈_⌉
-    ; _⨟_ = _⨟_
-    ; ⟦_⟧ = ⟦_⟧
-    }
-
 mutual
   g-identityˡ : ∀ {P1 P2} → (g : CoeG P1 P2) → id-g P1 g⨟g g ≡ g
   g-identityˡ B = refl
@@ -361,8 +352,16 @@ lem-seq (G1 ⁇ l1 , i1) t v | raise  l' = refl
 lem-seq (G1 ⁇ l1 , i1) t v | return v' = lem-i⨟s i1 t v'
 lem-seq (` i1) t v = lem-i⨟s i1 t v
 
-S-Basic : CastADTBasic Injectable S
-S-Basic = record { lem-id = lem-id ; lem-seq = lem-seq }
+S : CastADT Injectable
+S = record
+    { Cast = Cast
+    ; id  = id
+    ; ⌈_⌉ = ⌈_⌉
+    ; _⨟_ = _⨟_
+    ; ⟦_⟧ = ⟦_⟧
+    ; lem-id = λ T v → lem-id v
+    ; lem-seq = lem-seq
+    }
 
 open import S.LazyUDCastADT Label
 

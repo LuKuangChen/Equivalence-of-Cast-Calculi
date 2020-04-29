@@ -28,13 +28,7 @@ record CastADT : Set₁ where
       -----
       → Value Cast T1
       → Error Label (Value Cast T2)
-
-record CastADTBasic (CADT : CastADT) : Set₁ where
-  open CastADT CADT
-  open S.Values Label Injectable Cast
-  field
-    lem-id : ∀ {T}
-      → ∀ v
+    lem-id : ∀ T v
       → ⟦ id T ⟧ v ≡ return v
     lem-seq : ∀ {T1 T2 T3}
       → (c1 : Cast T1 T2)

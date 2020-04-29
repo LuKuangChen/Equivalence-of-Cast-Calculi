@@ -457,15 +457,6 @@ inject G (` P) {ε} v = v
 ⨟-identityʳ : ∀ {S T} → (c : Cast S T) → c ⨟ id T ≡ c
 ⨟-identityʳ (S ⟹ T [ T̂ ]) = cong (λ □ → S ⟹ T [ □ ]) (∘-identityˡ T T̂)
 
-C : CastADT Injectable
-C = record
-    { Cast = Cast
-    ; id  = id
-    ; ⌈_⌉ = ⌈_⌉
-    ; _⨟_ = _⨟_
-    ; ⟦_⟧ = ⟦_⟧
-    }
-
 lem-id : ∀ T
   → (v : Value T)  
   -----------------------------
@@ -609,8 +600,16 @@ lem-seq (T1 ⟹ T2 [ ^ (Ŝ₁ ⊗̂ T̂₁) p₁ {t} ]) (T2 ⟹ T3 [ ^ (Ŝ₂ 
   = refl
 
 
-C-Basic : CastADTBasic Injectable C
-C-Basic = record { lem-id = λ {T} v → lem-id T v ; lem-seq = lem-seq }
+C : CastADT Injectable
+C = record
+    { Cast = Cast
+    ; id  = id
+    ; ⌈_⌉ = ⌈_⌉
+    ; _⨟_ = _⨟_
+    ; ⟦_⟧ = ⟦_⟧
+    ; lem-id = lem-id
+    ; lem-seq = lem-seq
+    }
 
 open import S.LazyUDCastADT Label
 

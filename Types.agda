@@ -44,7 +44,7 @@ record PreType where
                          
 data Type where
   *  : Type
-  `_ : PreType → Type
+  `_ : (P : PreType) → Type
 
 data Polarity : Set where
   - : Polarity

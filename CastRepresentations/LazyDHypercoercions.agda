@@ -28,44 +28,51 @@ data Tail : PreType → Type → Set where
     ---
     Tail P (` P)
 
-mutual
-  data Cast : Type → Type → Set where
-    id* :
+
+data Cast : Type → Type → Set
+data Body : PreType → PreType → Set
+data PreBody : PreType → PreType → Set
+
+data Cast where
+  id* :
+    ---
+    Cast * *
+  ↷ : ∀ {A P Q B} →
+    (h : Head A P) →
+    (m : Body P Q) →
+    (t : Tail Q B) →
+    ---
+    Cast A B
+  
+data Body where
+  ⊥ : ∀ {P Q}
+    → (l : Label)
       ---
-      Cast * *
-    ↷ : ∀ {A P Q B} →
-      (h : Head A P) →
-      (m : Body P Q) →
-      (t : Tail Q B) →
-      ---
-      Cast A B
+    → Body P Q
+             
+  `_ : ∀ {P Q} →
+     (m : PreBody P Q) →
+     ---
+     Body P Q
+
+
+data PreBody where
+
+  B̂ : PreBody B B
+  
+  _⇒̂_ : ∀ {S1 S2 T1 T2}
+    → (c₁ : Cast S2 S1)
+    → (c₂ : Cast T1 T2)
+      ---------------------------
+    → PreBody (S1 ⇒ T1) (S2 ⇒ T2)
     
-  data Body : PreType → PreType → Set where
-    ⊥ : ∀ {P Q}
-      → (l : Label)
-        ---
-      → Body P Q
+  _⊗̂_ : ∀ {S1 S2 T1 T2}
+    → (c₁ : Cast S1 S2)
+    → (c₂ : Cast T1 T2)
+      ---------------------------
+    → PreBody (S1 ⊗ T1) (S2 ⊗ T2)
 
-    `_ : ∀ {P Q} →
-      (m : PreBody P Q) →
-      ---
-      Body P Q
-
-  data PreBody : PreType → PreType → Set where
-    B̂ :
-      ---
-      PreBody B B
-    _⇒̂_ : ∀ {S1 S2 T1 T2} →
-      (c₁ : Cast S2 S1) →
-      (c₂ : Cast T1 T2) →
-      ---
-      PreBody (S1 ⇒ T1) (S2 ⇒ T2)
-    _⊗̂_ : ∀ {S1 S2 T1 T2} →
-      (c₁ : Cast S1 S2) →
-      (c₂ : Cast T1 T2) →
-      ---
-      PreBody (S1 ⊗ T1) (S2 ⊗ T2)
-
+                              
 data GapT : Type → Type → Set where
   none : ∀ {T} → GapT T T
   some : (l : Label) → ∀ T1 T2 → GapT T1 T2
@@ -235,53 +242,55 @@ lem-mk-gap ε (some l' .(` _) .*) g2 (⁇ P l) = refl
 lem-mk-gap (‼ P) g1 (some l .* .(` _)) ε = refl
 lem-mk-gap ε (some l' .(` _) .*) (some l .* .(` _)) ε = refl
 
-mutual
-  seq-m-assoc : ∀ {T1 T2 T3 T4 T5 T6}
-    → (c1 : Body T1 T2)
-    → (g1 : GapP T2 T3)
-    → (c2 : Body T3 T4)
-    → (g2 : GapP T4 T5)
-    → (c3 : Body T5 T6)
-    → seq-m (seq-m c1 g1 c2) g2 c3 ≡ seq-m c1 g1 (seq-m c2 g2 c3)
-  seq-m-assoc (⊥ l1) g1 m2 g2 m3 = refl
-  seq-m-assoc (` m1) g1 m2 g2 m3 with check-gap g1
-  seq-m-assoc (` m1) .(some l _ _) m2 g2 m3 | bad ¬P⌣Q l = refl
-  seq-m-assoc (` m1) g1 (⊥ l2) g2 m3 | good P⌣Q = refl
-  seq-m-assoc (` m1) g1 (` m2) g2 m3 | good P⌣Q with check-gap g2
-  seq-m-assoc (` m1) g1 (` m2) .(some l _ _) m3 | good P⌣Q | bad ¬P⌣Q l = refl
-  seq-m-assoc (` m1) g1 (` m2) g2 (⊥ l3) | good P⌣Q | good P⌣Q' = refl
-  seq-m-assoc (` B̂) g1 (` B̂) g2 (` B̂) | good ⌣B | good ⌣B = refl
-  seq-m-assoc (` (c₁ ⇒̂ c₂)) g1 (` (c₃ ⇒̂ c₄)) g2 (` (c₅ ⇒̂ c₆)) | good ⌣⇒ | good ⌣⇒
-    rewrite seq-assoc c₅ (g-dom g2) c₃ (g-dom g1) c₁
-          | seq-assoc c₂ (g-cod g1) c₄ (g-cod g2) c₆
-    = refl
-  seq-m-assoc (` (c₁ ⊗̂ c₂)) g1 (` (c₃ ⊗̂ c₄)) g2 (` (c₅ ⊗̂ c₆)) | good ⌣⊗ | good ⌣⊗
-    rewrite seq-assoc c₁ (g-car g1) c₃ (g-car g2) c₅
-          | seq-assoc c₂ (g-cdr g1) c₄ (g-cdr g2) c₆
-    = refl
 
-  seq-assoc : ∀ {T1 T2 T3 T4 T5 T6}
-    → (c1 : Cast T1 T2)
-    → (g1 : GapT T2 T3)
-    → (c2 : Cast T3 T4)
-    → (g2 : GapT T4 T5)
-      → (c3 : Cast T5 T6)
-    → seq (seq c1 g1 c2) g2 c3 ≡ seq c1 g1 (seq c2 g2 c3)
-  seq-assoc id* g1 id* g2 id* = refl
-  seq-assoc id* g1 id* g2 (↷ h m t) with (mk-proj g2 h)
-  seq-assoc id* g1 id* g2 (↷ h m t) | ⁇ P l = refl
-  seq-assoc id* g1 (↷ h m t) g2 id* = refl
-  seq-assoc id* g1 (↷ h m t) g2 (↷ h₁ m₁ t₁) = refl
-  seq-assoc (↷ h m t) g1 id* g2 id* with (mk-inj t g1)
-  seq-assoc (↷ h m t) g1 id* g2 id* | (‼ P) = refl
-  seq-assoc (↷ h1 m1 t1) g1 id* g2 (↷ h3 m3 t3)
-    rewrite lem-mk-gap t1 g1 g2 h3
-    = refl
-  seq-assoc (↷ h1 m1 t1) g1 (↷ h2 m2 t2) g2 id* = refl
-  seq-assoc (↷ h1 m1 t1) g1 (↷ h2 m2 t2) g2 (↷ h3 m3 t3)
-    rewrite seq-m-assoc m1 (mk-gap t1 g1 h2) m2 (mk-gap t2 g2 h3) m3
-    = refl
+seq-assoc : ∀ {T1 T2 T3 T4 T5 T6}
+  → (c1 : Cast T1 T2)
+  → (g1 : GapT T2 T3)
+  → (c2 : Cast T3 T4)
+  → (g2 : GapT T4 T5)
+    → (c3 : Cast T5 T6)
+  → seq (seq c1 g1 c2) g2 c3 ≡ seq c1 g1 (seq c2 g2 c3)
 
+seq-m-assoc : ∀ {T1 T2 T3 T4 T5 T6}
+  → (c1 : Body T1 T2)
+  → (g1 : GapP T2 T3)
+  → (c2 : Body T3 T4)
+  → (g2 : GapP T4 T5)
+  → (c3 : Body T5 T6)
+  → seq-m (seq-m c1 g1 c2) g2 c3 ≡ seq-m c1 g1 (seq-m c2 g2 c3)
+
+seq-m-assoc (⊥ l1) g1 m2 g2 m3 = refl
+seq-m-assoc (` m1) g1 m2 g2 m3 with check-gap g1
+seq-m-assoc (` m1) .(some l _ _) m2 g2 m3 | bad ¬P⌣Q l = refl
+seq-m-assoc (` m1) g1 (⊥ l2) g2 m3 | good P⌣Q = refl
+seq-m-assoc (` m1) g1 (` m2) g2 m3 | good P⌣Q with check-gap g2
+seq-m-assoc (` m1) g1 (` m2) .(some l _ _) m3 | good P⌣Q | bad ¬P⌣Q l = refl
+seq-m-assoc (` m1) g1 (` m2) g2 (⊥ l3) | good P⌣Q | good P⌣Q' = refl
+seq-m-assoc (` B̂) g1 (` B̂) g2 (` B̂) | good ⌣B | good ⌣B = refl
+seq-m-assoc (` (c₁ ⇒̂ c₂)) g1 (` (c₃ ⇒̂ c₄)) g2 (` (c₅ ⇒̂ c₆)) | good ⌣⇒ | good ⌣⇒
+  rewrite seq-assoc c₅ (g-dom g2) c₃ (g-dom g1) c₁
+    | seq-assoc c₂ (g-cod g1) c₄ (g-cod g2) c₆
+  = refl
+seq-m-assoc (` (c₁ ⊗̂ c₂)) g1 (` (c₃ ⊗̂ c₄)) g2 (` (c₅ ⊗̂ c₆)) | good ⌣⊗ | good ⌣⊗
+  rewrite seq-assoc c₁ (g-car g1) c₃ (g-car g2) c₅
+    | seq-assoc c₂ (g-cdr g1) c₄ (g-cdr g2) c₆
+  = refl
+
+seq-assoc id* g1 id* g2 id* = refl
+seq-assoc id* g1 id* g2 (↷ h m t) with (mk-proj g2 h)
+seq-assoc id* g1 id* g2 (↷ h m t) | ⁇ P l = refl
+seq-assoc id* g1 (↷ h m t) g2 id* = refl
+seq-assoc id* g1 (↷ h m t) g2 (↷ h₁ m₁ t₁) = refl
+seq-assoc (↷ h m t) g1 id* g2 id* with (mk-inj t g1)
+seq-assoc (↷ h m t) g1 id* g2 id* | (‼ P) = refl
+seq-assoc (↷ h1 m1 t1) g1 id* g2 (↷ h3 m3 t3)
+  rewrite lem-mk-gap t1 g1 g2 h3
+  = refl
+seq-assoc (↷ h1 m1 t1) g1 (↷ h2 m2 t2) g2 id* = refl
+seq-assoc (↷ h1 m1 t1) g1 (↷ h2 m2 t2) g2 (↷ h3 m3 t3)
+  rewrite seq-m-assoc m1 (mk-gap t1 g1 h2) m2 (mk-gap t2 g2 h3) m3
+  = refl
+    
 ⨟-assoc : ∀ {T1 T2 T3 T4}
   → (c1 : Cast T1 T2)
   → (c2 : Cast T2 T3)
@@ -368,65 +377,65 @@ lem1 {T2 = T2} {T3 = T3} l c1 c2
     | identityˡ c2
   = refl
 
-mutual
-  lem-seq-m : ∀ {P1 P2 T P3 P4}
-    → (m1 : Body P1 P2)
-    → (t1 : Tail P2 T)
-    → (h2 : Head T  P3)
-    → (m2 : Body P3 P4)
-    → (∀ v →
-         ⟦ seq-m m1 (mk-gap t1 none h2) m2 ⟧m v
-           ≡
-         (⟦ m1 ⟧m >=> ⟦ t1 ⟧t >=> ⟦ h2 ⟧h >=> ⟦ m2 ⟧m) v)
-  lem-seq-m (⊥ l1) t1 h2 m2 v = refl
-  lem-seq-m (` m1) (‼ P) (⁇ Q l) m2 v with (` P) ⌣? (` Q)
-  lem-seq-m (` m1) (‼ P) (⁇ Q l) m2 v | no ¬p = refl
-  lem-seq-m (` m1) (‼ P) (⁇ Q l) (⊥ l2) v | yes P⌣Q = refl
-  lem-seq-m (` B̂) (‼ .B) (⁇ .B l) (` B̂) v | yes ⌣B = refl
-  lem-seq-m (` (c2 ⇒̂ d2)) (‼ (S1 ⇒ T1)) (⁇ (S2 ⇒ T2) l) (` (c3 ⇒̂ d3))
-            (lam⟨  c1 ⇒ d1 ⟩ e E) | yes ⌣⇒
-    rewrite sym (seq-assoc c3 none ⌈ S2 ⟹[ l ] S1 ⌉ none (c2 ⨟ c1))
-      | lem1 l c3 (c2 ⨟ c1) | lem1 l (d1 ⨟ d2) d3
-    = cong₂ (λ c d → return (lam⟨ c ⇒ d ⟩ e E))
-            (seq-assoc c3 _ c2 _ c1)
-            (sym (seq-assoc d1 _ d2 _ d3)) 
-  lem-seq-m (` (c2 ⊗̂ d2)) (‼ .(_ ⊗ _)) (⁇ .(_ ⊗ _) l) (` (c3 ⊗̂ d3))
-            (cons⟨ c1 ⊗ d1 ⟩ v u) | yes ⌣⊗
-    rewrite lem1 l (c1 ⨟ c2) c3 | lem1 l (d1 ⨟ d2) d3
-    = cong₂ (λ c d → return (cons⟨ c ⊗ d ⟩ v u))
-            (sym (seq-assoc c1 _ c2 _ c3))
-            (sym (seq-assoc d1 _ d2 _ d3))
-  lem-seq-m (` m1) ε ε (⊥ l2) v = refl
-  lem-seq-m (` B̂) ε ε (` B̂) v = refl
-  lem-seq-m (` (c2 ⇒̂ d2)) ε ε (` (c3 ⇒̂ d3)) (lam⟨ c1 ⇒ d1 ⟩ e E)
-    = cong₂ (λ c d → return (lam⟨ c ⇒ d ⟩ e E))
-            (seq-assoc c3 none c2 none c1)
-            (sym (seq-assoc d1 none d2 none d3))
-  lem-seq-m (` (c2 ⊗̂ d2)) ε ε (` (c3 ⊗̂ d3)) (cons⟨ c1 ⊗ d1 ⟩ v u)
-    = cong₂ (λ c d → return (cons⟨ c ⊗ d ⟩ v u))
-            (sym (seq-assoc c1 none c2 none c3))
-            (sym (seq-assoc d1 none d2 none d3))
-  
-  lem-seq : ∀ {T1 T2 T3}
-    → (c1 : Cast T1 T2)
-    → (c2 : Cast T2 T3)
-    → ∀ v
-    --------------------
-    → ⟦ c1 ⨟ c2 ⟧ v ≡ ⟦ c1 ⟧ v >>= ⟦ c2 ⟧
-  lem-seq id* c2 v
-    rewrite identityˡ c2
-    = refl
-  lem-seq (↷ h1 m1 t1) id* v
-    rewrite identityʳ (↷ h1 m1 t1)
-    | mk-inj-none t1
-    | >>=-return (⟦ h1 ⟧h v >>= ⟦ m1 ⟧m >>= ⟦ t1 ⟧t)
-    = refl
-  lem-seq (↷ h1 m1 t1) (↷ h2 m2 t2) v with ⟦ h1 ⟧h v
-  lem-seq (↷ h1 m1 t1) (↷ h2 m2 t2) v | raise l   = refl
-  lem-seq (↷ h1 m1 t1) (↷ h2 m2 t2) v | return v'
-    rewrite >=>->>= (⟦ m1 ⟧m v' >>= ⟦ t1 ⟧t) (⟦ h2 ⟧h >=> ⟦ m2 ⟧m) ⟦ t2 ⟧t
-            | >=>->>= (⟦ m1 ⟧m v' >>= ⟦ t1 ⟧t) ⟦ h2 ⟧h ⟦ m2 ⟧m
-    = cong (_>>= ⟦ t2 ⟧t) (lem-seq-m m1 t1 h2 m2 v')
+lem-seq-m : ∀ {P1 P2 T P3 P4}
+  → (m1 : Body P1 P2)
+  → (t1 : Tail P2 T)
+  → (h2 : Head T  P3)
+  → (m2 : Body P3 P4)
+  → (∀ v →
+       ⟦ seq-m m1 (mk-gap t1 none h2) m2 ⟧m v
+         ≡
+       (⟦ m1 ⟧m >=> ⟦ t1 ⟧t >=> ⟦ h2 ⟧h >=> ⟦ m2 ⟧m) v)
+lem-seq : ∀ {T1 T2 T3}
+  → (c1 : Cast T1 T2)
+  → (c2 : Cast T2 T3)
+  → ∀ v
+  --------------------
+  → ⟦ c1 ⨟ c2 ⟧ v ≡ ⟦ c1 ⟧ v >>= ⟦ c2 ⟧
+
+lem-seq-m (⊥ l1) t1 h2 m2 v = refl
+lem-seq-m (` m1) (‼ P) (⁇ Q l) m2 v with (` P) ⌣? (` Q)
+lem-seq-m (` m1) (‼ P) (⁇ Q l) m2 v | no ¬p = refl
+lem-seq-m (` m1) (‼ P) (⁇ Q l) (⊥ l2) v | yes P⌣Q = refl
+lem-seq-m (` B̂) (‼ .B) (⁇ .B l) (` B̂) v | yes ⌣B = refl
+lem-seq-m (` (c2 ⇒̂ d2)) (‼ (S1 ⇒ T1)) (⁇ (S2 ⇒ T2) l) (` (c3 ⇒̂ d3))
+          (lam⟨  c1 ⇒ d1 ⟩ e E) | yes ⌣⇒
+  rewrite sym (seq-assoc c3 none ⌈ S2 ⟹[ l ] S1 ⌉ none (c2 ⨟ c1))
+  | lem1 l c3 (c2 ⨟ c1) | lem1 l (d1 ⨟ d2) d3
+  = cong₂ (λ c d → return (lam⟨ c ⇒ d ⟩ e E))
+          (seq-assoc c3 _ c2 _ c1)
+          (sym (seq-assoc d1 _ d2 _ d3)) 
+lem-seq-m (` (c2 ⊗̂ d2)) (‼ .(_ ⊗ _)) (⁇ .(_ ⊗ _) l) (` (c3 ⊗̂ d3))
+          (cons⟨ c1 ⊗ d1 ⟩ v u) | yes ⌣⊗
+  rewrite lem1 l (c1 ⨟ c2) c3 | lem1 l (d1 ⨟ d2) d3
+  = cong₂ (λ c d → return (cons⟨ c ⊗ d ⟩ v u))
+          (sym (seq-assoc c1 _ c2 _ c3))
+          (sym (seq-assoc d1 _ d2 _ d3))
+lem-seq-m (` m1) ε ε (⊥ l2) v = refl
+lem-seq-m (` B̂) ε ε (` B̂) v = refl
+lem-seq-m (` (c2 ⇒̂ d2)) ε ε (` (c3 ⇒̂ d3)) (lam⟨ c1 ⇒ d1 ⟩ e E)
+  = cong₂ (λ c d → return (lam⟨ c ⇒ d ⟩ e E))
+          (seq-assoc c3 none c2 none c1)
+          (sym (seq-assoc d1 none d2 none d3))
+lem-seq-m (` (c2 ⊗̂ d2)) ε ε (` (c3 ⊗̂ d3)) (cons⟨ c1 ⊗ d1 ⟩ v u)
+  = cong₂ (λ c d → return (cons⟨ c ⊗ d ⟩ v u))
+          (sym (seq-assoc c1 none c2 none c3))
+          (sym (seq-assoc d1 none d2 none d3))
+
+lem-seq id* c2 v
+  rewrite identityˡ c2
+  = refl
+lem-seq (↷ h1 m1 t1) id* v
+  rewrite identityʳ (↷ h1 m1 t1)
+  | mk-inj-none t1
+  | >>=-return (⟦ h1 ⟧h v >>= ⟦ m1 ⟧m >>= ⟦ t1 ⟧t)
+  = refl
+lem-seq (↷ h1 m1 t1) (↷ h2 m2 t2) v with ⟦ h1 ⟧h v
+lem-seq (↷ h1 m1 t1) (↷ h2 m2 t2) v | raise l   = refl
+lem-seq (↷ h1 m1 t1) (↷ h2 m2 t2) v | return v'
+  rewrite >=>->>= (⟦ m1 ⟧m v' >>= ⟦ t1 ⟧t) (⟦ h2 ⟧h >=> ⟦ m2 ⟧m) ⟦ t2 ⟧t
+          | >=>->>= (⟦ m1 ⟧m v' >>= ⟦ t1 ⟧t) ⟦ h2 ⟧h ⟦ m2 ⟧m
+  = cong (_>>= ⟦ t2 ⟧t) (lem-seq-m m1 t1 h2 m2 v')
 
 H : CastADT Injectable
 H = record

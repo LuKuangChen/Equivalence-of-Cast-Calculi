@@ -79,7 +79,7 @@ gnd B̂ = `B
 gnd (Ŝ ⇒̂ T̂) = `⇒
 gnd (Ŝ ⊗̂ T̂) = `⊗
 
-gnd-faithful : ∀ {op Ss Ts} → (P̂ : LabeledPreType op Ss Ts) → gnd P̂ ≡ op
+gnd-faithful : ∀ {op Ss Ts} → (P̂ : LabeledPreType op Ss Ts) → gnd P̂ ≡ quick-gnd P̂
 gnd-faithful B̂ = refl
 gnd-faithful (Ŝ ⇒̂ T̂) = refl
 gnd-faithful (Ŝ ⊗̂ T̂) = refl
@@ -163,37 +163,65 @@ dec-yes (no ¬p) = ⊥-elim (¬p refl)
   with quick-gnd P̂₂ ≟op G₃
 ∘-assoc (⊥ l₃ G₃ p₃) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁}) | yes refl | yes refl
   with no-gap-at-all t₁ p₂
-∘-assoc (⊥ l₃ .`B p₃) (^ B̂ p₂ {t₂}) (^ B̂ p₁ {t₁}) | yes refl | yes refl | refl = refl
-∘-assoc (⊥ l₃ .`⇒ p₃) (^ (Ŝ₁ ⇒̂ T̂₁) p₂ {t₂}) (^ (Ŝ ⇒̂ T̂) p₁ {t₁}) | yes refl | yes refl | refl = refl
-∘-assoc (⊥ l₃ .`⊗ p₃) (^ (Ŝ₁ ⊗̂ T̂₁) p₂ {t₂}) (^ (Ŝ ⊗̂ T̂) p₁ {t₁}) | yes refl | yes refl | refl = refl
-∘-assoc (⊥ l₃ G₃ (⁇ l)) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁}) | yes G₁≡G₂ | no ¬G₂≡G₃
+∘-assoc (⊥ l₃ .`B p₃) (^ B̂ p₂ {t₂}) (^ B̂ p₁ {t₁})
+  | yes refl | yes refl | refl = refl
+∘-assoc (⊥ l₃ .`⇒ p₃) (^ (Ŝ₁ ⇒̂ T̂₁) p₂ {t₂}) (^ (Ŝ ⇒̂ T̂) p₁ {t₁})
+  | yes refl | yes refl | refl = refl
+∘-assoc (⊥ l₃ .`⊗ p₃) (^ (Ŝ₁ ⊗̂ T̂₁) p₂ {t₂}) (^ (Ŝ ⊗̂ T̂) p₁ {t₁})
+  | yes refl | yes refl | refl = refl
+∘-assoc (⊥ l₃ G₃ (⁇ l)) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁})
+  | yes G₁≡G₂ | no ¬G₂≡G₃
   with quick-gnd P̂₁ ≟op quick-gnd P̂₂
-∘-assoc (⊥ l₃ G₃ (⁇ l)) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁}) | yes refl | no ¬G₂≡G₃ | yes refl
+∘-assoc (⊥ l₃ G₃ (⁇ l)) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁})
+  | yes refl | no ¬G₂≡G₃ | yes refl
   with no-gap-at-all t₁ p₂
-∘-assoc (⊥ l₃ `B (⁇ l)) (^ B̂ p₂ {t₂}) (^ B̂ p₁ {t₁}) | yes refl | no ¬G₂≡G₃ | yes refl | refl = ⊥-elim (¬G₂≡G₃ refl)
-∘-assoc (⊥ l₃ `⊗ (⁇ l)) (^ B̂ p₂ {t₂}) (^ B̂ p₁ {t₁}) | yes refl | no ¬G₂≡G₃ | yes refl | refl = refl
-∘-assoc (⊥ l₃ `⇒ (⁇ l)) (^ B̂ p₂ {t₂}) (^ B̂ p₁ {t₁}) | yes refl | no ¬G₂≡G₃ | yes refl | refl = refl
-∘-assoc (⊥ l₃ `B (⁇ l)) (^ (Ŝ₂ ⇒̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⇒̂ T̂₁) p₁ {t₁}) | yes refl | no ¬G₂≡G₃ | yes refl | refl = refl
-∘-assoc (⊥ l₃ `⊗ (⁇ l)) (^ (Ŝ₂ ⇒̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⇒̂ T̂₁) p₁ {t₁}) | yes refl | no ¬G₂≡G₃ | yes refl | refl = refl
-∘-assoc (⊥ l₃ `⇒ (⁇ l)) (^ (Ŝ₂ ⇒̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⇒̂ T̂₁) p₁ {t₁}) | yes refl | no ¬G₂≡G₃ | yes refl | refl = ⊥-elim (¬G₂≡G₃ refl)
-∘-assoc (⊥ l₃ `B (⁇ l)) (^ (Ŝ₂ ⊗̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⊗̂ T̂₁) p₁ {t₁}) | yes refl | no ¬G₂≡G₃ | yes refl | refl = refl
-∘-assoc (⊥ l₃ `⊗ (⁇ l)) (^ (Ŝ₂ ⊗̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⊗̂ T̂₁) p₁ {t₁}) | yes refl | no ¬G₂≡G₃ | yes refl | refl = ⊥-elim (¬G₂≡G₃ refl)
-∘-assoc (⊥ l₃ `⇒ (⁇ l)) (^ (Ŝ₂ ⊗̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⊗̂ T̂₁) p₁ {t₁}) | yes refl | no ¬G₂≡G₃ | yes refl | refl = refl
-∘-assoc (⊥ l₃ G₃ (⁇ l)) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁}) | yes G₁≡G₂ | no ¬G₂≡G₃ | no ¬G₁≡G₂' = ⊥-elim (¬G₁≡G₂' G₁≡G₂)
-∘-assoc (⊥ l₃ G₃ ε) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁}) | yes G₁≡G₂ | no ¬G₂≡G₃ = ⊥-elim (impossible-tail t₂ ¬G₂≡G₃)
-∘-assoc (⊥ l₃ G₃ p₃) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁}) | no ¬G₁≡G₂
+∘-assoc (⊥ l₃ `B (⁇ l)) (^ B̂ p₂ {t₂}) (^ B̂ p₁ {t₁})
+  | yes refl | no ¬G₂≡G₃ | yes refl | refl = ⊥-elim (¬G₂≡G₃ refl)
+∘-assoc (⊥ l₃ `⊗ (⁇ l)) (^ B̂ p₂ {t₂}) (^ B̂ p₁ {t₁})
+  | yes refl | no ¬G₂≡G₃ | yes refl | refl = refl
+∘-assoc (⊥ l₃ `⇒ (⁇ l)) (^ B̂ p₂ {t₂}) (^ B̂ p₁ {t₁})
+  | yes refl | no ¬G₂≡G₃ | yes refl | refl = refl
+∘-assoc (⊥ l₃ `B (⁇ l)) (^ (Ŝ₂ ⇒̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⇒̂ T̂₁) p₁ {t₁})
+  | yes refl | no ¬G₂≡G₃ | yes refl | refl = refl
+∘-assoc (⊥ l₃ `⊗ (⁇ l)) (^ (Ŝ₂ ⇒̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⇒̂ T̂₁) p₁ {t₁})
+  | yes refl | no ¬G₂≡G₃ | yes refl | refl = refl
+∘-assoc (⊥ l₃ `⇒ (⁇ l)) (^ (Ŝ₂ ⇒̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⇒̂ T̂₁) p₁ {t₁})
+  | yes refl | no ¬G₂≡G₃ | yes refl | refl = ⊥-elim (¬G₂≡G₃ refl)
+∘-assoc (⊥ l₃ `B (⁇ l)) (^ (Ŝ₂ ⊗̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⊗̂ T̂₁) p₁ {t₁})
+  | yes refl | no ¬G₂≡G₃ | yes refl | refl = refl
+∘-assoc (⊥ l₃ `⊗ (⁇ l)) (^ (Ŝ₂ ⊗̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⊗̂ T̂₁) p₁ {t₁})
+  | yes refl | no ¬G₂≡G₃ | yes refl | refl = ⊥-elim (¬G₂≡G₃ refl)
+∘-assoc (⊥ l₃ `⇒ (⁇ l)) (^ (Ŝ₂ ⊗̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⊗̂ T̂₁) p₁ {t₁})
+  | yes refl | no ¬G₂≡G₃ | yes refl | refl = refl
+∘-assoc (⊥ l₃ G₃ (⁇ l)) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁})
+  | yes G₁≡G₂ | no ¬G₂≡G₃ | no ¬G₁≡G₂' = ⊥-elim (¬G₁≡G₂' G₁≡G₂)
+∘-assoc (⊥ l₃ G₃ ε) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁})
+  | yes G₁≡G₂ | no ¬G₂≡G₃ = ⊥-elim (impossible-tail t₂ ¬G₂≡G₃)
+∘-assoc (⊥ l₃ G₃ p₃) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁})
+  | no ¬G₁≡G₂
   with quick-gnd P̂₂ ≟op G₃
-∘-assoc (⊥ l₃ G₃ p₃) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁}) | no ¬G₁≡G₂ | yes refl
+∘-assoc (⊥ l₃ G₃ p₃) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁})
+  | no ¬G₁≡G₂
+  | yes refl
   with quick-gnd P̂₁ ≟op quick-gnd P̂₂
-∘-assoc (⊥ l₃ G₃ p₃) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁}) | no ¬G₁≡G₂ | yes refl | yes G₁≡G₂' = ⊥-elim (¬G₁≡G₂ G₁≡G₂')
-∘-assoc (⊥ l₃ G₃ p₃) (^ P̂₂ (⁇ l) {t₂}) (^ P̂₁ p₁ {t₁}) | no ¬G₁≡G₂ | yes refl | no ¬G₁≡G₂' = refl
-∘-assoc (⊥ l₃ G₃ p₃) (^ P̂₂ ε {t₂}) (^ P̂₁ p₁ {t₁}) | no ¬G₁≡G₂ | yes refl | no ¬G₁≡G₂' = ⊥-elim (impossible-tail t₁ ¬G₁≡G₂)
-∘-assoc (⊥ l₃ G₃ (⁇ l)) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁}) | no ¬G₁≡G₂ | no ¬G₂≡G₃
+∘-assoc (⊥ l₃ G₃ p₃) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁})
+  | no ¬G₁≡G₂ | yes refl
+  | yes G₁≡G₂' = ⊥-elim (¬G₁≡G₂ G₁≡G₂')
+∘-assoc (⊥ l₃ G₃ p₃) (^ P̂₂ (⁇ l) {t₂}) (^ P̂₁ p₁ {t₁})
+  | no ¬G₁≡G₂ | yes refl | no ¬G₁≡G₂' = refl
+∘-assoc (⊥ l₃ G₃ p₃) (^ P̂₂ ε {t₂}) (^ P̂₁ p₁ {t₁})
+  | no ¬G₁≡G₂ | yes refl | no ¬G₁≡G₂' = ⊥-elim (impossible-tail t₁ ¬G₁≡G₂)
+∘-assoc (⊥ l₃ G₃ (⁇ l)) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁})
+  | no ¬G₁≡G₂ | no ¬G₂≡G₃
   with quick-gnd P̂₁ ≟op quick-gnd P̂₂
-∘-assoc (⊥ l₃ G₃ (⁇ l)) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁}) | no ¬G₁≡G₂ | no ¬G₂≡G₃ | yes G₁≡G₂' = ⊥-elim (¬G₁≡G₂ G₁≡G₂')
-∘-assoc (⊥ l₃ G₃ (⁇ l)) (^ P̂₂ (⁇ l₁) {t₂}) (^ P̂₁ p₁ {t₁}) | no ¬G₁≡G₂ | no ¬G₂≡G₃ | no ¬G₁≡G₂' = refl
-∘-assoc (⊥ l₃ G₃ (⁇ l)) (^ P̂₂ ε {t₂}) (^ P̂₁ p₁ {t₁}) | no ¬G₁≡G₂ | no ¬G₂≡G₃ | no ¬G₁≡G₂' = ⊥-elim (impossible-tail t₁ ¬G₁≡G₂)
-∘-assoc (⊥ l₃ G₃ ε) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁}) | no ¬G₁≡G₂ | no ¬G₂≡G₃ = ⊥-elim (impossible-tail t₂ ¬G₂≡G₃)
+∘-assoc (⊥ l₃ G₃ (⁇ l)) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁})
+  | no ¬G₁≡G₂ | no ¬G₂≡G₃ | yes G₁≡G₂' = ⊥-elim (¬G₁≡G₂ G₁≡G₂')
+∘-assoc (⊥ l₃ G₃ (⁇ l)) (^ P̂₂ (⁇ l₁) {t₂}) (^ P̂₁ p₁ {t₁})
+  | no ¬G₁≡G₂ | no ¬G₂≡G₃ | no ¬G₁≡G₂' = refl
+∘-assoc (⊥ l₃ G₃ (⁇ l)) (^ P̂₂ ε {t₂}) (^ P̂₁ p₁ {t₁})
+  | no ¬G₁≡G₂ | no ¬G₂≡G₃ | no ¬G₁≡G₂' = ⊥-elim (impossible-tail t₁ ¬G₁≡G₂)
+∘-assoc (⊥ l₃ G₃ ε) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁})
+  | no ¬G₁≡G₂ | no ¬G₂≡G₃ = ⊥-elim (impossible-tail t₂ ¬G₂≡G₃)
 -- ∘-assoc (^ P̂₃ p₃) (^ P̂₂ p₂) (^ P̂₁ p₁) = {!!}
 ∘-assoc (^ P̂₃ p₃) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁})
   with quick-gnd P̂₁ ≟op quick-gnd P̂₂
@@ -206,17 +234,23 @@ dec-yes (no ¬p) = ⊥-elim (¬p refl)
 ... | refl = refl
 ∘-assoc (^ (Ŝ ⇒̂ T̂) (⁇ l)) (^ B̂ p₂ {t₂}) (^ B̂ p₁ {t₁}) | yes refl | refl = refl
 ∘-assoc (^ (Ŝ ⊗̂ T̂) (⁇ l)) (^ B̂ p₂ {t₂}) (^ B̂ p₁ {t₁}) | yes refl | refl = refl
-∘-assoc (^ B̂ (⁇ l)) (^ (Ŝ₂ ⇒̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⇒̂ T̂₁) p₁ {t₁}) | yes refl | refl = refl
-∘-assoc (^ (Ŝ₃ ⇒̂ T̂₃) p₃) (^ (Ŝ₂ ⇒̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⇒̂ T̂₁) p₁ {t₁}) | yes refl | refl
+∘-assoc (^ B̂ (⁇ l)) (^ (Ŝ₂ ⇒̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⇒̂ T̂₁) p₁ {t₁})
+  | yes refl | refl = refl
+∘-assoc (^ (Ŝ₃ ⇒̂ T̂₃) p₃) (^ (Ŝ₂ ⇒̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⇒̂ T̂₁) p₁ {t₁})
+  | yes refl | refl
   with no-gap-at-all t₂ p₃
 ... | refl
   with no-gap-at-all t₁ p₂
 ... | refl
   rewrite ∘-assoc Ŝ₁ Ŝ₂ Ŝ₃ | ∘-assoc T̂₃ T̂₂ T̂₁ = refl
-∘-assoc (^ (Ŝ ⊗̂ T̂) (⁇ l)) (^ (Ŝ₂ ⇒̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⇒̂ T̂₁) p₁ {t₁}) | yes refl | refl = refl
-∘-assoc (^ B̂ (⁇ l)) (^ (Ŝ₂ ⊗̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⊗̂ T̂₁) p₁ {t₁}) | yes refl | refl = refl
-∘-assoc (^ (Ŝ ⇒̂ T̂) (⁇ l)) (^ (Ŝ₂ ⊗̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⊗̂ T̂₁) p₁ {t₁}) | yes refl | refl = refl
-∘-assoc (^ (Ŝ₃ ⊗̂ T̂₃) p₃) (^ (Ŝ₂ ⊗̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⊗̂ T̂₁) p₁ {t₁}) | yes refl | refl
+∘-assoc (^ (Ŝ ⊗̂ T̂) (⁇ l)) (^ (Ŝ₂ ⇒̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⇒̂ T̂₁) p₁ {t₁})
+  | yes refl | refl = refl
+∘-assoc (^ B̂ (⁇ l)) (^ (Ŝ₂ ⊗̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⊗̂ T̂₁) p₁ {t₁})
+  | yes refl | refl = refl
+∘-assoc (^ (Ŝ ⇒̂ T̂) (⁇ l)) (^ (Ŝ₂ ⊗̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⊗̂ T̂₁) p₁ {t₁})
+  | yes refl | refl = refl
+∘-assoc (^ (Ŝ₃ ⊗̂ T̂₃) p₃) (^ (Ŝ₂ ⊗̂ T̂₂) p₂ {t₂}) (^ (Ŝ₁ ⊗̂ T̂₁) p₁ {t₁})
+  | yes refl | refl
   with no-gap-at-all t₂ p₃
 ... | refl
   with no-gap-at-all t₁ p₂
@@ -226,21 +260,34 @@ dec-yes (no ¬p) = ⊥-elim (¬p refl)
   with quick-gnd P̂₂ ≟op quick-gnd P̂₃
 ∘-assoc (^ P̂₃ p₃) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁}) | no ¬G₁≡G₂ | yes refl
   with no-gap-at-all t₂ p₃
-∘-assoc (^ B̂ p₃) (^ B̂ p₂ {t₂}) (^ B̂ p₁ {t₁}) | no ¬G₁≡G₂ | yes refl | refl = ⊥-elim (¬G₁≡G₂ refl)
-∘-assoc (^ B̂ p₃) (^ B̂ (⁇ l) {t₂}) (^ (Ŝ ⇒̂ T̂) p₁ {t₁}) | no ¬G₁≡G₂ | yes refl | refl = refl
-∘-assoc (^ B̂ p₃) (^ B̂ (⁇ l) {t₂}) (^ (Ŝ ⊗̂ T̂) p₁ {t₁}) | no ¬G₁≡G₂ | yes refl | refl = refl
-∘-assoc (^ (Ŝ₃ ⇒̂ T̂₃) p₃) (^ (Ŝ₂ ⇒̂ T̂₂) (⁇ l) {t₂}) (^ B̂ p₁ {t₁}) | no ¬G₁≡G₂ | yes refl | refl = refl
-∘-assoc (^ (Ŝ₃ ⇒̂ T̂₃) p₃) (^ (Ŝ₂ ⇒̂ T̂₂) p₂ {t₂}) (^ (Ŝ ⇒̂ T̂) p₁ {t₁}) | no ¬G₁≡G₂ | yes refl | refl = ⊥-elim (¬G₁≡G₂ refl)
-∘-assoc (^ (Ŝ₃ ⇒̂ T̂₃) p₃) (^ (Ŝ₂ ⇒̂ T̂₂) (⁇ l) {t₂}) (^ (Ŝ ⊗̂ T̂) p₁ {t₁}) | no ¬G₁≡G₂ | yes refl | refl = refl
-∘-assoc (^ (Ŝ₃ ⊗̂ T̂₃) p₃) (^ (Ŝ₂ ⊗̂ T̂₂) (⁇ l) {t₂}) (^ B̂ p₁ {t₁}) | no ¬G₁≡G₂ | yes refl | refl = refl
-∘-assoc (^ (Ŝ₃ ⊗̂ T̂₃) p₃) (^ (Ŝ₂ ⊗̂ T̂₂) (⁇ l) {t₂}) (^ (Ŝ ⇒̂ T̂) p₁ {t₁}) | no ¬G₁≡G₂ | yes refl | refl = refl
-∘-assoc (^ (Ŝ₃ ⊗̂ T̂₃) p₃) (^ (Ŝ₂ ⊗̂ T̂₂) p₂ {t₂}) (^ (Ŝ ⊗̂ T̂) p₁ {t₁}) | no ¬G₁≡G₂ | yes refl | refl = ⊥-elim (¬G₁≡G₂ refl)
-∘-assoc (^ P̂₃ (⁇ l)) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁}) | no ¬G₁≡G₂ | no ¬G₂≡G₃
+∘-assoc (^ B̂ p₃) (^ B̂ p₂ {t₂}) (^ B̂ p₁ {t₁}) | no ¬G₁≡G₂
+  | yes refl | refl = ⊥-elim (¬G₁≡G₂ refl)
+∘-assoc (^ B̂ p₃) (^ B̂ (⁇ l) {t₂}) (^ (Ŝ ⇒̂ T̂) p₁ {t₁})
+  | no ¬G₁≡G₂ | yes refl | refl = refl
+∘-assoc (^ B̂ p₃) (^ B̂ (⁇ l) {t₂}) (^ (Ŝ ⊗̂ T̂) p₁ {t₁})
+  | no ¬G₁≡G₂ | yes refl | refl = refl
+∘-assoc (^ (Ŝ₃ ⇒̂ T̂₃) p₃) (^ (Ŝ₂ ⇒̂ T̂₂) (⁇ l) {t₂}) (^ B̂ p₁ {t₁})
+  | no ¬G₁≡G₂ | yes refl | refl = refl
+∘-assoc (^ (Ŝ₃ ⇒̂ T̂₃) p₃) (^ (Ŝ₂ ⇒̂ T̂₂) p₂ {t₂}) (^ (Ŝ ⇒̂ T̂) p₁ {t₁})
+  | no ¬G₁≡G₂ | yes refl | refl = ⊥-elim (¬G₁≡G₂ refl)
+∘-assoc (^ (Ŝ₃ ⇒̂ T̂₃) p₃) (^ (Ŝ₂ ⇒̂ T̂₂) (⁇ l) {t₂}) (^ (Ŝ ⊗̂ T̂) p₁ {t₁})
+  | no ¬G₁≡G₂ | yes refl | refl = refl
+∘-assoc (^ (Ŝ₃ ⊗̂ T̂₃) p₃) (^ (Ŝ₂ ⊗̂ T̂₂) (⁇ l) {t₂}) (^ B̂ p₁ {t₁})
+  | no ¬G₁≡G₂ | yes refl | refl = refl
+∘-assoc (^ (Ŝ₃ ⊗̂ T̂₃) p₃) (^ (Ŝ₂ ⊗̂ T̂₂) (⁇ l) {t₂}) (^ (Ŝ ⇒̂ T̂) p₁ {t₁})
+  | no ¬G₁≡G₂ | yes refl | refl = refl
+∘-assoc (^ (Ŝ₃ ⊗̂ T̂₃) p₃) (^ (Ŝ₂ ⊗̂ T̂₂) p₂ {t₂}) (^ (Ŝ ⊗̂ T̂) p₁ {t₁})
+  | no ¬G₁≡G₂ | yes refl | refl = ⊥-elim (¬G₁≡G₂ refl)
+∘-assoc (^ P̂₃ (⁇ l)) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁})
+  | no ¬G₁≡G₂ | no ¬G₂≡G₃
   with quick-gnd P̂₁ ≟op quick-gnd P̂₂
 ... | yes G₁≡G₂' = ⊥-elim (¬G₁≡G₂ G₁≡G₂')
-∘-assoc (^ P̂₃ (⁇ l)) (^ P̂₂ (⁇ l₁) {t₂}) (^ P̂₁ p₁ {t₁}) | no ¬G₁≡G₂ | no ¬G₂≡G₃ | no ¬G₁≡G₂' = refl
-∘-assoc (^ P̂₃ (⁇ l)) (^ P̂₂ ε {t₂}) (^ P̂₁ p₁ {t₁}) | no ¬G₁≡G₂ | no ¬G₂≡G₃ | no ¬G₁≡G₂' = ⊥-elim (impossible-tail t₁ ¬G₁≡G₂)
-∘-assoc (^ P̂₃ ε) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁}) | no ¬G₁≡G₂ | no ¬G₂≡G₃ = ⊥-elim (impossible-tail t₂ ¬G₂≡G₃)
+∘-assoc (^ P̂₃ (⁇ l)) (^ P̂₂ (⁇ l₁) {t₂}) (^ P̂₁ p₁ {t₁})
+  | no ¬G₁≡G₂ | no ¬G₂≡G₃ | no ¬G₁≡G₂' = refl
+∘-assoc (^ P̂₃ (⁇ l)) (^ P̂₂ ε {t₂}) (^ P̂₁ p₁ {t₁})
+  | no ¬G₁≡G₂ | no ¬G₂≡G₃ | no ¬G₁≡G₂' = ⊥-elim (impossible-tail t₁ ¬G₁≡G₂)
+∘-assoc (^ P̂₃ ε) (^ P̂₂ p₂ {t₂}) (^ P̂₁ p₁ {t₁})
+  | no ¬G₁≡G₂ | no ¬G₂≡G₃ = ⊥-elim (impossible-tail t₂ ¬G₂≡G₃)
 
 data Cast : Type → Type → Set where
   _⟹_[_] : ∀ S T
@@ -350,13 +397,13 @@ right-types (` G · Ts) G ε = Ts
 
 left-types-faithful : ∀ S G {Ss}
   → (p : OptionalLabel G S Ss)
-  → left-types S G p ≡ Ss
+  → left-types S G p ≡ quick-left-types S G p
 left-types-faithful * G (⁇ l) = refl
 left-types-faithful (` .(G · _)) G ε = refl
 
 right-types-faithful : ∀ T G {Ts}
   → (t : Tail G Ts T)
-  → right-types T G t ≡ Ts
+  → right-types T G t ≡ quick-right-types T G t
 right-types-faithful * G ‼ = refl
 right-types-faithful (` G · _) G ε = refl
 

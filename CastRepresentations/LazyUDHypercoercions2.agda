@@ -141,7 +141,7 @@ mutual
   id* (- ∷ p*) (T ∷ T*) = (id T) ∷ (id* p* T*)
   id* (+ ∷ p*) (T ∷ T*) = (id T) ∷ (id* p* T*)
 
-open import X.BlameStrategies Label using (BlameStrategy; LazyUDBS)
+open import R.BlameStrategies Label using (BlameStrategy; LazyUDBS)
 open BlameStrategy LazyUDBS using (Injectable)
 
 open import S.Values Label Injectable Cast

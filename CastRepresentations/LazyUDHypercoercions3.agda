@@ -130,7 +130,7 @@ mk⇒ c d | yes id-c | yes id-d
 ... | refl
   = ε
 mk⇒ c d | yes id-c | no ¬id-d = (c ⇒̂ d) λ id → ¬id-d (proj₂ id)
-mk⇒ c d | no ¬id-c = (c ⇒̂ d) λ id → ¬id-c (proj₁ id)
+mk⇒ c d | no ¬id-c            = (c ⇒̂ d) λ id → ¬id-c (proj₁ id)
 
 
 mk⇒-noop : ∀ {S₁ T₁ S₂ T₂}
@@ -213,7 +213,7 @@ _⨟m_ : ∀ {G Ts₁ Ts₂ Ts₃} → PreBody G Ts₁ Ts₂ → PreBody G Ts₂
 (` m₁) ⨟[ ‼ G , ⁇ H l ]⨟ m₂ | inj₁ (it ¬G≡H) = ⊥ l
 
 
-ε ⨟m m₂ = m₂
+ε             ⨟m m₂ = m₂
 (c₁ ⇒̂ d₁) ¬p₁ ⨟m ε = (c₁ ⇒̂ d₁) ¬p₁
 (c₁ ⊗̂ d₁) ¬p₁ ⨟m ε = (c₁ ⊗̂ d₁) ¬p₁
 (c₁ ⇒̂ d₁) ¬p₁ ⨟m (c₂ ⇒̂ d₂) ¬p₂ = mk⇒ (c₂ ⨟ c₁) (d₁ ⨟ d₂)

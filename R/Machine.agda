@@ -7,6 +7,7 @@ module R.Machine
 open BlameStrategy BS
 
 open import Types
+open import LabelUtilities Label
 open import Variables using (∅)
 open import Terms Label
 open import Error
@@ -82,7 +83,7 @@ data OrdinaryState (T : Type) : Set where
   halt : (v : Value T) → OrdinaryState T
 
 State : Type → Set
-State T = Error Label (OrdinaryState T)
+State T = Error Label×Polarity (OrdinaryState T)
 
 data Final {T : Type} : State T →  Set where
   halt : ∀ v
@@ -128,8 +129,8 @@ do-app : ∀ {T1 T2 Z}
   → State Z
 do-app (lam e E) u k
   = return (expr e (u ∷ E) k)
-do-app (v f⟨(` T1 ⇒ T2) ⟹[ l ] (` T3 ⇒ T4)⟩) u k
-  = return (cont u ([ □⟨ T3 ⟹[ l ] T1 ⟩ ]
+do-app (v ⇒⟨(` T1 ⇒ T2) ⟹[ l ] (` T3 ⇒ T4)⟩) u k
+  = return (cont u ([ □⟨ T3 ⟹[ negate-label l ] T1 ⟩ ]
                     [ app₂ v ]
                     [ □⟨ T2 ⟹[ l ] T4 ⟩ ]
                     k))
@@ -139,7 +140,7 @@ do-car : ∀ {T1 T2 Z}
   → Cont T1 Z
   → State Z
 do-car (cons v1 v2) k = return (cont v1 k)
-do-car (v p⟨ (` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4) ⟩) k
+do-car (v ⊗⟨ (` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4) ⟩) k
   = return (cont v ([ car₁ ] [ □⟨ T1 ⟹[ l ] T3 ⟩ ] k))
   
 do-cdr : ∀ {T1 T2 Z}
@@ -147,7 +148,7 @@ do-cdr : ∀ {T1 T2 Z}
   → Cont T2 Z
   → State Z
 do-cdr (cons v1 v2) k = return (cont v2 k)
-do-cdr (v p⟨ (` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4) ⟩) k
+do-cdr (v ⊗⟨ (` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4) ⟩) k
   = return (cont v ([ cdr₁ ] [ □⟨ T2 ⟹[ l ] T4 ⟩ ] k))
 
 do-cast : ∀ {T1 T2 Z}
@@ -155,7 +156,7 @@ do-cast : ∀ {T1 T2 Z}
   → Value T1
   → Cont T2 Z
   → State Z
-do-cast c v k = ⟦ c ⟧ v >>= λ u → return (cont u k)
+do-cast c v k = apply-cast c v >>= λ u → return (cont u k)
 
 cnd : {A : Set} → Value (` B) → (x y : A) → A
 cnd #t x y = x
@@ -195,7 +196,7 @@ data _—→_ {T : Type} : State T → State T → Set where
     → (sp : Progressing s)
     → s —→ progress sp
 
-open import Bisimulation.Bisimulation using (System)
+open import Bisimulation.FromAFewStepsToTheEnd using (System)
 
 deterministic : ∀ {T}
   → {s t1 t2 : State T}
@@ -214,16 +215,16 @@ system = record
 
 module Eval {T : Type} where
   open import Data.Product using (∃-syntax)
-  open System (system {T}) using (_—→*_; []; _∷_; _—→+_; _++_) public
+  open System (system {T}) using (_—→*_; _—→+_) public
 
   observe : Value T → ValueDisplay T
   observe (dyn I v) = dyn
   observe #t = #t
   observe #f = #f
   observe (lam e E) = lam
-  observe (u f⟨ c ⟩) = lam
+  observe (u ⇒⟨ c ⟩) = lam
   observe (cons v₁ v₂) = cons
-  observe (u p⟨ c ⟩) = cons
+  observe (u ⊗⟨ c ⟩) = cons
 
   data Evalo (e : ∅ ⊢ T) : Observable T → Set where
     val : ∀ {v}
@@ -233,4 +234,4 @@ module Eval {T : Type} where
       → ((load e) —→* raise l)
       → Evalo e (raise l)
 
-open Eval public
+open Eval using (Evalo; val; err; observe; _—→*_; _—→+_) public

@@ -10,6 +10,7 @@ module S.Machine
 open CastADT cast-adt using (Cast; id; ⌈_⌉; _⨟_; ⟦_⟧)
 
 open import Error
+open import LabelUtilities Label
 
 open import Variables using (∅)
 open import Cast Label using (_⟹[_]_)
@@ -101,7 +102,7 @@ data OrdinaryState (Z : Type) : Set where
   halt : (v : Value Z) → OrdinaryState Z
 
 State : Type → Set
-State T = Error Label (OrdinaryState T)
+State T = Error Label×Polarity (OrdinaryState T)
 
 data Final {Z : Type} : State Z →  Set where
   halt : ∀ v
@@ -145,8 +146,6 @@ do-app : ∀ {T1 T2 Z}
   → Value T1
   → Cont T2 Z
   → State Z
--- do-app (lam e E) v K
---   = return (expr e (v ∷ E) K)
 do-app (lam⟨ c ⇒ d ⟩ e E) v K
   = ⟦ c ⟧ v >>= λ u →
     return (expr e (u ∷ E) (ext-cont d K))
@@ -202,7 +201,7 @@ data _—→_ {T : Type} : State T → State T → Set where
     → (sp : Progressing s)
     → s —→ progress sp
 
-open import Bisimulation.Bisimulation using (System)
+open import Bisimulation.FromAFewStepsToTheEnd using (System)
 
 deterministic : ∀ {T}
   → {s t1 t2 : State T}
@@ -222,7 +221,7 @@ system = record
 
 module Eval {T : Type} where
   open import Data.Product using (∃-syntax)
-  open System (system {T}) using (_—→*_; []; _∷_; _—→+_; _++_) public
+  open System (system {T}) using (_—→*_; _—→+_) public
 
   observe : Value T → ValueDisplay T
   observe (dyn Pi v) = dyn
@@ -235,4 +234,4 @@ module Eval {T : Type} where
     val : ∀ {v} → (load e) —→* return (halt v) → Evalo e (return (observe v))
     err : ∀ {l} → (load e) —→* raise l → Evalo e (raise l)
 
-open Eval public
+open Eval using (Evalo; val; err; observe; _—→*_; _—→+_) public

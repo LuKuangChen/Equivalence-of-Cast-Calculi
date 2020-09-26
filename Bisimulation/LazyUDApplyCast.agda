@@ -9,6 +9,7 @@ module Bisimulation.LazyUDApplyCast
   where
 
 open import Types
+open import LabelUtilities Label
 open import Bisimulation.BisimulationRelation Label (LazyUDBS Label) CADT
 open import Error
 open import Cast Label using (Cast; _⟹[_]_)
@@ -23,7 +24,7 @@ open import Data.Empty using (⊥; ⊥-elim)
 open R.BlameStrategies.LazyUD Label using (project)
 
 lem-project : ∀ {Q lv rv}
-  → (l : Label)
+  → (l : Label×Polarity)
   → (gQ : Ground Q)
   → ValueRelate lv rv
   → CastResultRelate (project lv l gQ)
@@ -44,13 +45,13 @@ lem-proxy : ∀ {P Q}
     → (p : (` P) ⌣ (` Q))
     → ∃[ ru ](
          (R.⟦ R.⌈ c ⌉ ⟧ rv ≡ return ru) ×
-         ValueRelate (L.add-proxy lv c p) ru
+         ValueRelate (L.proxy lv c p) ru
       )
 lem-proxy v (` B ⟹[ l ] ` B) ⌣B rewrite eq-B l (rvalue v) = _ , refl , v
 lem-proxy (lam⟨ lcs , c1 ⇒ c2 ⟩ e E) (` S1 ⇒ T1 ⟹[ l ] ` S2 ⇒ T2) ⌣⇒
   rewrite eq-⇒ S2 T2 S1 T1 l (rcast c1) (rcast c2) e (renv E)
   = _ , refl
-  , lam⟨ lcs ⟪ _ , just (S2 ⟹[ l ] S1) ⨟ c1 ⇒ c2 ⨟ just (T1 ⟹[ l ] T2) ⟩ e E
+  , lam⟨ lcs ⟪ _ , just (S2 ⟹[ negate-label l ] S1) ⨟ c1 ⇒ c2 ⨟ just (T1 ⟹[ l ] T2) ⟩ e E
 lem-proxy (cons⟨ lcs , c1 ⊗ c2 ⟩ v1 v2) (` L1 ⊗ R1 ⟹[ l ] ` L2 ⊗ R2) ⌣⊗
   rewrite eq-⊗ L2 R2 L1 R1 l (rcast c1) (rcast c2) (rvalue v1) (rvalue v2)
   = _ , refl
@@ -59,7 +60,7 @@ lem-proxy (cons⟨ lcs , c1 ⊗ c2 ⟩ v1 v2) (` L1 ⊗ R1 ⟹[ l ] ` L2 ⊗ R2)
 lem-*P : ∀ {P lv rv}
   → (c : Cast * (` P))
   → ValueRelate lv rv
-  → CastResultRelate (L.⟦ c ⟧ lv)
+  → CastResultRelate (L.apply-cast c lv)
                      (R.⟦ R.⌈ c ⌉ ⟧ rv)
 lem-*P (* ⟹[ l ] ` Q) v
   with ground? Q
@@ -77,7 +78,7 @@ lem-*P (* ⟹[ l ] ` Q) v
 lem-P* : ∀ {P lv rv}
   → (c : Cast (` P) *)
   → ValueRelate lv rv
-  → CastResultRelate (L.⟦ c ⟧ lv)
+  → CastResultRelate (L.apply-cast c lv)
                      (R.⟦ R.⌈ c ⌉ ⟧ rv)
 lem-P* (` P ⟹[ l ] *) v with ground? P
 ... | yes gP rewrite eq-I* (rvalue v) l gP = return (dyn gP v)
@@ -90,7 +91,7 @@ lem-P* (` P ⟹[ l ] *) v with ground? P
 lem-⟦_⟧ : ∀ {S T lv rv}
     → (c : Cast S T)
     → ValueRelate lv rv
-    → CastResultRelate (L.⟦ c ⟧ lv)
+    → CastResultRelate (L.apply-cast c lv)
                        (R.⟦ R.⌈ c ⌉ ⟧ rv)
 lem-⟦ *   ⟹[ l ] *   ⟧ v rewrite eq-** l (rvalue v) = return v
 lem-⟦ *   ⟹[ l ] ` Q ⟧ v = lem-*P (* ⟹[ l ] ` Q) v

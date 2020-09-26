@@ -35,7 +35,7 @@ mutual
       -------------
       → Value (` T1 ⇒ T2)
 
-    _f⟨_⟩ : ∀ {T1 T2 T3 T4}
+    _⇒⟨_⟩ : ∀ {T1 T2 T3 T4}
       → (v : Value (` T1 ⇒ T2))
       → (c : Cast (` T1 ⇒ T2) (` T3 ⇒ T4))
       -----
@@ -47,7 +47,7 @@ mutual
       ------
       → Value (` T1 ⊗ T2)
 
-    _p⟨_⟩ : ∀ {T1 T2 T3 T4}
+    _⊗⟨_⟩ : ∀ {T1 T2 T3 T4}
       → (v : Value (` T1 ⊗ T2))
       → (c : Cast (` T1 ⊗ T2) (` T3 ⊗ T4))
       -----
@@ -69,9 +69,7 @@ lookup (c ∷ E) (suc n) = lookup E n
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Relation.Nullary using (yes; no)
 
-add-proxy : ∀ {P Q} → Value (` P) → Cast (` P) (` Q) → (` P) ⌣ (` Q) → Value (` Q)
-add-proxy v ((` B) ⟹[ l ] (` B)) ⌣B = v
-add-proxy v ((` (T1 ⇒ T2)) ⟹[ l ] (` (T3 ⇒ T4))) ⌣⇒
-  = v f⟨(` T1 ⇒ T2) ⟹[ l ] (` T3 ⇒ T4)⟩ 
-add-proxy v ((` (T1 ⊗ T2)) ⟹[ l ] (` (T3 ⊗ T4))) ⌣⊗
-  = v p⟨(` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4)⟩ 
+proxy : ∀ {P Q} → Value (` P) → Cast (` P) (` Q) → (` P) ⌣ (` Q) → Value (` Q)
+proxy v ((` B) ⟹[ l ] (` B)) ⌣B = v
+proxy v (` T1 ⇒ T2 ⟹[ l ] ` T3 ⇒ T4) ⌣⇒ = v ⇒⟨(` T1 ⇒ T2) ⟹[ l ] (` T3 ⇒ T4)⟩ 
+proxy v (` T1 ⊗ T2 ⟹[ l ] ` T3 ⊗ T4) ⌣⊗ = v ⊗⟨(` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4)⟩ 

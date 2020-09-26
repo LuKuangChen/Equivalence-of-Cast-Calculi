@@ -12,42 +12,21 @@ module Bisimulation.BisimulationProof
 
 open BlameStrategy BS using (Injectable)
 open import Variables using (∅)
+open import LabelUtilities Label
 open import Terms Label
 open import Cast Label
 open import Observables Label
 open import Error using (Error; return; raise; _>=>_; _>>=_; >>=-return)
+open import Chain using ([]; _∷_; _++_)
+open import Bisimulation.FromAFewStepsToTheEnd using (_∷_)
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; sym)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Product using (_×_; _,_; ∃-syntax)
 
-open import Bisimulation.Bisimulation using (_∷_; [])
 open import Bisimulation.BisimulationRelation Label BS CADT
-  renaming (module L to L')
 
-module L where
-  open L' hiding (_++_; ⟦_⟧) public
-  
-  -- inteprete cast lists
-  ⟦_⟧ : ∀ {T1 T2}
-    → CastList T1 T2
-    → (Value T1 → Error Label (Value T2))
-  ⟦ [] ⟧ = return
-  ⟦ x ∷ xs ⟧ = L'.⟦ x ⟧ >=> ⟦ xs ⟧
-
-  lem-id : ∀ {T}
-    → (v : Value T)
-    → ⟦ [] ⟧ v ≡ return v
-  lem-id v = refl
-
-  lem-seq : ∀ {T1 T2 T3}
-    → (xs : CastList T1 T2)
-    → (ys : CastList T2 T3)
-    → (∀ v → ⟦ xs ++ ys ⟧ v ≡ (⟦ xs ⟧ >=> ⟦ ys ⟧) v)
-  lem-seq [] ys v = refl
-  lem-seq (x ∷ xs) ys v with L'.⟦ x ⟧ v
-  ... | return v' = lem-seq xs ys v'
-  ... | raise l = refl
+open L using ([]; _∷_)
 
 lem-⟦_⟧ : ∀ {T1 T2 lv rv lc rc}
   → CastListRelate {T1} {T2} lc rc
@@ -57,7 +36,7 @@ lem-⟦ id ⟧ v
   rewrite R.lem-id _ (rvalue v)
     = return v
 lem-⟦ just c ⟧ v
-  rewrite >>=-return (L'.⟦ c ⟧ (lvalue v))
+  rewrite >>=-return (L.apply-cast c (lvalue v))
     = lem-⌈ c ⌉ v
 lem-⟦ c1 ⨟ c2 ⟧ v
   rewrite L.lem-seq (lcast c1) (lcast c2) (lvalue v)
@@ -86,10 +65,10 @@ observe (cons⟨ [] , c ⊗ d ⟩ v1 v2) = refl
 observe (cons⟨ lcs ⟪ lc , c ⊗ d ⟩ v1 v2) = refl
 
 view-cont-++ : ∀ {T1 T2 T3 Z}
-  → (cs : CastList T1 T2)
-  → (ds : CastList T2 T3)
+  → (cs : L.CastList T1 T2)
+  → (ds : L.CastList T2 T3)
   → (k  : L.Cont T3 Z)
-  → view-cont cs (view-cont ds k) ≡ view-cont (cs ++ ds) k
+  → view-cont cs (view-cont ds k) ≡ view-cont (cs L.++ ds) k
 view-cont-++ []       ds k = refl
 view-cont-++ (c ∷ cs) ds k rewrite view-cont-++ cs ds k = refl
 
@@ -102,7 +81,7 @@ lemma-mk-cont : ∀ {T1 T2}
 lemma-mk-cont k = [□⟨ id ⟩] k
 
 lemma-ext-cont : ∀ {T1 T2 T3}
-  → {lc : CastList T1 T2}
+  → {lc : L.CastList T1 T2}
   → {rc : R.Cast T1 T2}
   → CastListRelate lc rc
   → {lk : L.Cont T2 T3}
@@ -148,7 +127,7 @@ step : ∀ {T}
       (lS L.—→* lS'' ×
        rS R.—→* rS'' ×
        StateRelate lS'' rS'')
-step lxs rxs (_ , _ , lys , rys , S) = _ , _ , (lxs L'.++ lys) , (rxs R.++ rys) , S
+step lxs rxs (_ , _ , lys , rys , S) = _ , _ , (lxs ++ lys) , (rxs ++ rys) , S
 
 cnd : ∀ {A lv rv} → ValueRelate {` B} lv rv → (x y : A)
   → L.cnd lv x y ≡ R.cnd rv x y
@@ -157,23 +136,15 @@ cnd #f x y = refl
 
 lem-L-apply-cont : ∀ {T1 T2 T3}
   → (v : L.Value T1)
-  → (cs : CastList T1 T2)
+  → (cs : L.CastList T1 T2)
   → (k : L.Cont T2 T3)
   → (L.apply-cont v (view-cont cs k))
     L.—→*
     (L.⟦ cs ⟧ v >>= λ v' → (L.apply-cont v' k))
 lem-L-apply-cont v [] k = []
-lem-L-apply-cont v (c ∷ cs) k with L'.⟦ c ⟧ v
+lem-L-apply-cont v (c ∷ cs) k with L.apply-cast c v
 ... | return v' = it (cont v' (view-cont cs k)) ∷ lem-L-apply-cont v' cs k 
 ... | raise l = []
-
-++-assoc : ∀ {T1 T2 T3 T4}
-  → (xs : CastList T1 T2)
-  → (ys : CastList T2 T3)
-  → (zs : CastList T3 T4)
-  → (xs ++ (ys ++ zs)) ≡ ((xs ++ ys) ++ zs)
-++-assoc []       ys zs = refl
-++-assoc (x ∷ xs) ys zs rewrite ++-assoc xs ys zs = refl
 
 lemma-L-do-app : ∀ {S1 T1 S2 T2 T}
   → (f  : L.Value (` S1 ⇒ T1))
@@ -183,21 +154,21 @@ lemma-L-do-app : ∀ {S1 T1 S2 T2 T}
   → (L.do-app (view-lambda f cs) a k)
       L.—→*
     (L.⟦ dom cs ⟧ a >>= λ v → (L.do-app f v (view-cont (cod cs) k)))
-lemma-L-do-app f []       a k = L.[]
+lemma-L-do-app f []       a k = []
 lemma-L-do-app f (cs ⟪ (` S1 ⇒ T1 ⟹[ l ] ` S2 ⇒ T2)) a k
   = it (cont _ _) ∷ next
   where
-  next : (L'.⟦ S2 ⟹[ l ] S1 ⟧ a
+  next : (L.apply-cast (S2 ⟹[ negate-label l ] S1) a
           >>= λ v →
           (return (L.cont v (L.[ L.app₂ (view-lambda f cs) ]
                              L.[ L.□⟨ T1 ⟹[ l ] T2 ⟩ ] k))))
            L.—→*
-         (L'.⟦ S2 ⟹[ l ] S1 ⟧ a
+         (L.apply-cast (S2 ⟹[ negate-label l ] S1) a
           >>= L.⟦ dom cs ⟧
           >>= λ v →
-          L.do-app f v (view-cont (cod cs ++ ((T1 ⟹[ l ] T2) ∷ [])) k))
-  next with L'.⟦ S2 ⟹[ l ] S1 ⟧ a
-  next | raise l  = L.[]
+          L.do-app f v (view-cont (cod cs L.++ ((T1 ⟹[ l ] T2) ∷ [])) k))
+  next with L.apply-cast (S2 ⟹[ negate-label l ] S1) a
+  next | raise l  = []
   next | return v
     rewrite sym (view-cont-++ (cod cs) ((T1 ⟹[ l ] T2) ∷ []) k)
     = it (cont _ _) ∷ lemma-L-do-app f cs v (L.[ L.□⟨ T1 ⟹[ l ] T2 ⟩ ] k)
@@ -230,18 +201,18 @@ lem-L-do-car v1 v2 (cs ⟪ ((` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4))) k
   with lem-L-do-car v1 v2 cs (view-cont ((T1 ⟹[ l ] T3) ∷ []) k)
 ... | IH
   rewrite L.lem-seq (lft cs) ((T1 ⟹[ l ] T3) ∷ []) v1
-  = it (cont _ _) ∷ (IH L'.++ next)
+  = it (cont _ _) ∷ (IH ++ next)
   where
     next : (L.⟦ lft cs ⟧ v1 >>=
        (λ v' → return (cont v' (L.[ L.□⟨ T1 L.⟹[ l ] T3 ⟩ ] k))))
       L.—→*
-      ((L.⟦ lft cs ⟧ v1 >>= (λ x → L'.⟦ T1 L.⟹[ l ] T3 ⟧ x >>= return))
+      ((L.⟦ lft cs ⟧ v1 >>= (λ x → L.apply-cast (T1 L.⟹[ l ] T3) x >>= return))
        >>= (λ v' → return (cont v' k)))
     next
       with L.⟦ lft cs ⟧ v1
     ... | raise l' = []
     ... | return v1'
-      rewrite >>=-return (L'.⟦ T1 ⟹[ l ] T3 ⟧ v1')
+      rewrite >>=-return (L.apply-cast (T1 ⟹[ l ] T3) v1')
       = it (cont _ _) ∷ []
 
 do-car : ∀ {T1 T2 Z lv rv lk rk}
@@ -269,18 +240,18 @@ lem-L-do-cdr v1 v2 (cs ⟪ ((` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4))) k
   with lem-L-do-cdr v1 v2 cs (view-cont ((T2 ⟹[ l ] T4) ∷ []) k)
 ... | IH
   rewrite L.lem-seq (rht cs) ((T2 ⟹[ l ] T4) ∷ []) v2
-  = it (cont _ _) ∷ (IH L'.++ next)
+  = it (cont _ _) ∷ (IH ++ next)
   where
     next : (L.⟦ rht cs ⟧ v2 >>=
        (λ v' → return (cont v' (L.[ L.□⟨ T2 ⟹[ l ] T4 ⟩ ] k))))
       L.—→*
-      ((L.⟦ rht cs ⟧ v2 >>= (λ x → L'.⟦ T2 ⟹[ l ] T4 ⟧ x >>= return))
+      ((L.⟦ rht cs ⟧ v2 >>= (λ x → L.apply-cast (T2 ⟹[ l ] T4) x >>= return))
        >>= (λ v' → return (cont v' k)))
     next
       with L.⟦ rht cs ⟧ v2
     ... | raise l' = []
     ... | return v'
-      rewrite >>=-return (L'.⟦ T2 ⟹[ l ] T4 ⟧ v')
+      rewrite >>=-return (L.apply-cast (T2 ⟹[ l ] T4) v')
       = it (cont _ _) ∷ []
 
 do-cdr : ∀ {T1 T2 Z lv rv lk rk}
@@ -418,9 +389,9 @@ safety S | inj₂ (lSp , rSp) | lS'' , rS'' , lS'⟼lS'' , rS'⟼rS'' , S''
   = inj₂ (lS'' , rS'' , (it lSp ∷ lS'⟼lS'') , (it rSp ∷ rS'⟼rS'') , S'')
 
 module Foo {T : Type} where
-  import Bisimulation.Bisimulation
+  open import Bisimulation.FromAFewStepsToTheEnd using (module BothWays)
   module CorrectnessTheorems =
-    Bisimulation.Bisimulation.Theorems (L.system {T = T}) R.system StateRelate safety
+    BothWays (L.system {T = T}) R.system StateRelate safety
   open CorrectnessTheorems using (thm-final-LR; thm-final-RL) public
 
 correctness-l : ∀ {T}

@@ -1,6 +1,7 @@
 module CastRepresentations.LazyDHypercoercions (Label : Set) where
 
 open import Types
+open import LabelUtilities Label
 open import Variables
 open import Cast Label using (_⟹[_]_) renaming (Cast to SrcCast)
 open import Terms Label
@@ -13,7 +14,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong;
 
 data Head : Type → PreType → Set where
   ⁇ : ∀ P →
-    (l : Label) →
+    (l : Label×Polarity) →
     ---
     Head * P
   ε : ∀ {P} →
@@ -46,7 +47,7 @@ data Cast where
   
 data Body where
   ⊥ : ∀ {P Q}
-    → (l : Label)
+    → (l : Label×Polarity)
       ---
     → Body P Q
              
@@ -75,7 +76,7 @@ data PreBody where
                               
 data GapT : Type → Type → Set where
   none : ∀ {T} → GapT T T
-  some : (l : Label) → ∀ T1 T2 → GapT T1 T2
+  some : (l : Label×Polarity) → ∀ T1 T2 → GapT T1 T2
 
 GapP : PreType → PreType → Set
 GapP P Q = GapT (` P) (` Q)
@@ -83,7 +84,7 @@ GapP P Q = GapT (` P) (` Q)
 data Check : ∀ {P Q} → GapP P Q → Set where
   bad : ∀ {P Q}
     → (¬P⌣Q : ¬ ((` P) ⌣ (` Q)))
-    → (l    : Label)
+    → (l    : Label×Polarity)
     → Check (some l (` P) (` Q))
 
   good : ∀ {P Q}
@@ -103,7 +104,7 @@ g-dom : ∀ {T1 T2 T3 T4}
   → GapP (T1 ⇒ T2) (T3 ⇒ T4)
   → GapT T3 T1
 g-dom none = none
-g-dom (some l (` T1 ⇒ T2) (` T3 ⇒ T4)) = some l T3 T1
+g-dom (some l (` T1 ⇒ T2) (` T3 ⇒ T4)) = some (negate-label l) T3 T1
 
 g-cod : ∀ {T1 T2 T3 T4}
   → GapP (T1 ⇒ T2) (T3 ⇒ T4)
@@ -308,7 +309,7 @@ open import Error
 open import Data.Unit using (tt)
 
 CastResult : Type → Set
-CastResult T = Error Label (Value T)
+CastResult T = Error Label×Polarity (Value T)
 
 ⟦_⟧t : ∀ {P T}
   → Tail P T
@@ -366,7 +367,7 @@ mutual
   lem-id {` P} v rewrite lem-id-m v = refl
 
 lem1 : ∀ {T1 T2 T3 T4}
-  → (l  : Label)
+  → (l  : Label×Polarity)
   → (c1 : Cast T1 T2)
   → (c2 : Cast T3 T4)
   → (c1 ⨟ ⌈ T2 ⟹[ l ] T3 ⌉) ⨟ c2 ≡ seq c1 (some l T2 T3) c2
@@ -400,8 +401,8 @@ lem-seq-m (` m1) (‼ P) (⁇ Q l) (⊥ l2) v | yes P⌣Q = refl
 lem-seq-m (` B̂) (‼ .B) (⁇ .B l) (` B̂) v | yes ⌣B = refl
 lem-seq-m (` (c2 ⇒̂ d2)) (‼ (S1 ⇒ T1)) (⁇ (S2 ⇒ T2) l) (` (c3 ⇒̂ d3))
           (lam⟨  c1 ⇒ d1 ⟩ e E) | yes ⌣⇒
-  rewrite sym (seq-assoc c3 none ⌈ S2 ⟹[ l ] S1 ⌉ none (c2 ⨟ c1))
-  | lem1 l c3 (c2 ⨟ c1) | lem1 l (d1 ⨟ d2) d3
+  rewrite sym (seq-assoc c3 none ⌈ S2 ⟹[ negate-label l ] S1 ⌉ none (c2 ⨟ c1))
+  | lem1 (negate-label l) c3 (c2 ⨟ c1) | lem1 l (d1 ⨟ d2) d3
   = cong₂ (λ c d → return (lam⟨ c ⇒ d ⟩ e E))
           (seq-assoc c3 _ c2 _ c1)
           (sym (seq-assoc d1 _ d2 _ d3)) 
@@ -449,7 +450,7 @@ H = record
     }
 
 eq-¬⌣ : ∀ {T1 T2}
-  → (l : Label)
+  → (l : Label×Polarity)
   → ¬ (T1 ⌣ T2)
   → (v : Value T1)
   ---
@@ -471,7 +472,7 @@ eq-** : ∀ l
 eq-** l v = refl
 
 eq-P* : ∀ {P}
-  → (l : Label)
+  → (l : Label×Polarity)
   → (v : Value (` P))  
   → ⟦ ⌈ (` P) ⟹[ l ] * ⌉ ⟧ v
       ≡

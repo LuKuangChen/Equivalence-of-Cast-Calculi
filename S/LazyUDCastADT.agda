@@ -3,7 +3,7 @@ module S.LazyUDCastADT
   where
 
 open import Types
-
+open import LabelUtilities Label
 open import Variables
 open import Terms Label using (_⊢_)
 open import Error
@@ -24,7 +24,7 @@ record LazyUD (ADT : CastADT) : Set where
   field      
     eq-¬⌣ : ∀ {T1 T2}
       → (v : Value T1)
-      → (l : Label)
+      → (l : Label×Polarity)
       → ¬ (T1 ⌣ T2)
       ---
       → ⟦ ⌈ T1 ⟹[ l ] T2 ⌉ ⟧ v
@@ -39,7 +39,7 @@ record LazyUD (ADT : CastADT) : Set where
 
     eq-P* : ∀ {P}
       → (v : Value (` P))
-      → (l : Label)
+      → (l : Label×Polarity)
       → ¬ Ground P
       → ⟦ ⌈ (` P) ⟹[ l ] * ⌉ ⟧ v
           ≡
@@ -47,7 +47,7 @@ record LazyUD (ADT : CastADT) : Set where
 
     eq-I* : ∀ {P}
       → (v : Value (` P))
-      → (l : Label)
+      → (l : Label×Polarity)
       → (gP : Ground P)
       → ⟦ ⌈ ` P ⟹[ l ] * ⌉ ⟧ v
           ≡
@@ -55,7 +55,7 @@ record LazyUD (ADT : CastADT) : Set where
 
     eq-*P : ∀ {P}
       → (v : Value *)
-      → (l : Label)
+      → (l : Label×Polarity)
       → ¬ Ground P
       → ⟦ ⌈ * ⟹[ l ] (` P) ⌉ ⟧ v
           ≡
@@ -63,7 +63,7 @@ record LazyUD (ADT : CastADT) : Set where
       
     eq-*I-succ : ∀ {P}
       → (v : Value (` P))
-      → (l : Label)
+      → (l : Label×Polarity)
       → (gP : Ground P)
       → ⟦ ⌈ * ⟹[ l ] (` P) ⌉ ⟧ (dyn gP v)
           ≡
@@ -71,7 +71,7 @@ record LazyUD (ADT : CastADT) : Set where
     
     eq-*I-fail : ∀ {P Q}
       → (v : Value (` P))  
-      → (l : Label)
+      → (l : Label×Polarity)
       → (gP : Ground P)
       → (gQ : Ground Q)
       → ¬ (` P) ≡ (` Q)
@@ -86,7 +86,7 @@ record LazyUD (ADT : CastADT) : Set where
 
     eq-⇒ : ∀ T21 T22 T11 T12
       → ∀ {S T}
-      → (l : Label)
+      → (l : Label×Polarity)
       → {Γ : Context}
       → (c₁ : Cast T11 S)
       → (c₂ : Cast T T12)
@@ -94,11 +94,11 @@ record LazyUD (ADT : CastADT) : Set where
       → (E : Env Γ)
       → ⟦ ⌈ (` T11 ⇒ T12) ⟹[ l ] (` T21 ⇒ T22) ⌉ ⟧ (lam⟨ c₁ ⇒ c₂ ⟩ e E)
           ≡
-        return (lam⟨ ⌈ T21 ⟹[ l ] T11 ⌉ ⨟ c₁ ⇒ c₂ ⨟ ⌈ T12 ⟹[ l ] T22 ⌉ ⟩ e E)
+        return (lam⟨ ⌈ T21 ⟹[ negate-label l ] T11 ⌉ ⨟ c₁ ⇒ c₂ ⨟ ⌈ T12 ⟹[ l ] T22 ⌉ ⟩ e E)
 
     eq-⊗ : ∀ T21 T22 T11 T12
       → ∀ {S T}
-      → (l : Label)
+      → (l : Label×Polarity)
       → (c₁ : Cast S T11)
       → (c₂ : Cast T T12)
       → (v1 : Value S)

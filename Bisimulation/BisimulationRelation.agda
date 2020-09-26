@@ -8,6 +8,7 @@ module Bisimulation.BisimulationRelation
   (CADT : CastADT Label (BlameStrategy.Injectable BS))
   where
 
+open import LabelUtilities Label
 open BlameStrategy BS using (Injectable) public
 
 open import Variables
@@ -18,33 +19,65 @@ open import Cast Label using () renaming (Cast to SCast)
 open import Observables Label
 
 module L where
-  open BlameStrategy BS using (⟦_⟧) public
+  open BlameStrategy BS using (apply-cast) public
   open import R.Values Label Injectable public
   open import Cast Label public
   open import R.Machine Label BS public
+  
+  open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+  
+  data CastList : Type → Type → Set where
+    [] : ∀ {T}
+      → CastList T T
+  
+    _∷_ : ∀ {T1 T2 T3}
+      → Cast T1 T2
+      → CastList T2 T3
+      → CastList T1 T3
+  
+  _++_ : ∀ {T1 T2 T3} → CastList T1 T2 → CastList T2 T3 → CastList T1 T3
+  [] ++ ds    = ds
+  (c ∷ cs) ++ ds = c ∷ (cs ++ ds)
 
-open L hiding (_++_; lookup; _—→_; _—→*_; _—→+_)
+  ++-assoc : ∀ {T1 T2 T3 T4}
+    → (xs : CastList T1 T2)
+    → (ys : CastList T2 T3)
+    → (zs : CastList T3 T4)
+    → (xs ++ (ys ++ zs)) ≡ ((xs ++ ys) ++ zs)
+  ++-assoc []       ys zs = refl
+  ++-assoc (x ∷ xs) ys zs rewrite ++-assoc xs ys zs = refl
+
+
+  ⟦_⟧ : ∀ {T1 T2}
+    → CastList T1 T2
+    → (Value T1 → Error Label×Polarity (Value T2))
+  ⟦_⟧ [] = return
+  ⟦_⟧ (x ∷ xs) = apply-cast x >=> ⟦_⟧ xs
+  
+  lem-id : ∀ {T}
+    → (v : Value T)
+    → ⟦_⟧ [] v ≡ return v
+  lem-id v = refl
+
+  lem-seq : ∀ {T1 T2 T3}
+    → (xs : CastList T1 T2)
+    → (ys : CastList T2 T3)
+    → (∀ v → ⟦_⟧ (xs ++ ys) v ≡ (⟦_⟧ xs >=> ⟦_⟧ ys) v)
+  lem-seq [] ys v = refl
+  lem-seq (x ∷ xs) ys v with apply-cast x v
+  ... | return v' = lem-seq xs ys v'
+  ... | raise l = refl
+
+open L hiding (lookup; _—→_)
 
 module R where
   open import S.Values Label Injectable (CastADT.Cast CADT) public
   open CastADT CADT public
   open import S.Machine Label Injectable CADT public
+  open import Chain using (_++_) public
 
-open R hiding (_++_; lookup; id; _⨟_; _—→_; _—→*_; _—→+_; [□⟨_⟩]_)
+open R hiding (lookup; id; _⨟_; _—→_; [□⟨_⟩]_)
   renaming (Cast to DCast)
-
-data CastList : Type → Type → Set where
-  [] : ∀ {T}
-    → CastList T T
-
-  _∷_ : ∀ {T1 T2 T3}
-    → L.Cast T1 T2
-    → CastList T2 T3
-    → CastList T1 T3
-
-_++_ : ∀ {T1 T2 T3} → CastList T1 T2 → CastList T2 T3 → CastList T1 T3
-[] ++ ds    = ds
-(c ∷ cs) ++ ds = c ∷ (cs ++ ds) 
 
 data CastListRelate : {S T : Type} → CastList S T → R.Cast S T → Set where
   id : ∀ {T}
@@ -62,7 +95,7 @@ data CastListRelate : {S T : Type} → CastList S T → R.Cast S T → Set where
     → {rds : R.Cast T2 T3}
     → (ds : CastListRelate lds rds)
     -----
-    → CastListRelate (lcs ++ lds) (rcs R.⨟ rds)
+    → CastListRelate (lcs L.++ lds) (rcs R.⨟ rds)
 
 lcast : ∀ {T1 T2 lc rc} → CastListRelate {T1} {T2} lc rc → CastList T1 T2
 lcast {lc = lc} c = lc
@@ -83,17 +116,17 @@ view-lambda : ∀ {T11 T12 T21 T22}
   → FCastList T11 T12 T21 T22
   → L.Value (` T21 ⇒ T22)
 view-lambda v [] = v
-view-lambda v (cs ⟪ c) = view-lambda v cs f⟨ c ⟩
+view-lambda v (cs ⟪ c) = view-lambda v cs ⇒⟨ c ⟩
 
 dom : ∀ {T11 T12 T21 T22} → FCastList T11 T12 T21 T22 → CastList T21 T11
 dom [] = []
 dom (cs ⟪ ((` T21 ⇒ T22) ⟹[ l ] (` T31 ⇒ T32)))
-  = ( T31 ⟹[ l ] T21 ) ∷ dom cs
+  = ( T31 ⟹[ negate-label l ] T21 ) ∷ dom cs
 
 cod : ∀ {T11 T12 T21 T22} → FCastList T11 T12 T21 T22 → CastList T12 T22
 cod [] = []
 cod (cs ⟪ ((` T21 ⇒ T22) ⟹[ l ] (` T31 ⇒ T32)))
-  = (cod cs) ++ ((T22 ⟹[ l ] T32) ∷ [])
+  = (cod cs) L.++ ((T22 ⟹[ l ] T32) ∷ [])
 
 data PCastList : Type → Type → Type → Type → Set where
   [] : ∀ {T11 T12}
@@ -108,20 +141,21 @@ view-cons : ∀ {T11 T12 T21 T22}
   → PCastList T11 T12 T21 T22
   → L.Value (` T21 ⊗ T22)
 view-cons v [] = v
-view-cons v (cs ⟪ c) = view-cons v cs p⟨ c ⟩
+view-cons v (cs ⟪ c) = view-cons v cs ⊗⟨ c ⟩
 
 lft : ∀ {T11 T12 T21 T22} → PCastList T11 T12 T21 T22 → CastList T11 T21
 lft [] = []
 lft (cs ⟪ ((` T21 ⊗ T22) ⟹[ l ] (` T31 ⊗ T32)))
-  = lft cs ++ ((T21 ⟹[ l ] T31) ∷ [])
+  = lft cs L.++ ((T21 ⟹[ l ] T31) ∷ [])
 
 rht : ∀ {T11 T12 T21 T22} → PCastList T11 T12 T21 T22 → CastList T12 T22
 rht [] = []
 rht (cs ⟪ ((` T21 ⊗ T22) ⟹[ l ] (` T31 ⊗ T32)))
-  = rht cs ++ ((T22 ⟹[ l ] T32) ∷ [])
+  = rht cs L.++ ((T22 ⟹[ l ] T32) ∷ [])
 
-data ErrorRelate {A B : Set} (A~B : A → B → Set) : Error Label A → Error Label B
-  → Set where
+data ErrorRelate {A B : Set} (A~B : A → B → Set) :
+  Error Label×Polarity A → Error Label×Polarity B → Set
+  where
   return : {a : A}{b : B} → (a~b : A~B a b) → ErrorRelate A~B (return a) (return b)
   raise : ∀ l → ErrorRelate A~B (raise l) (raise l)
 
@@ -212,7 +246,8 @@ lookup : ∀ {Γ T}
 lookup (c ∷ E) zero = c
 lookup (c ∷ E) (suc x) = lookup E x
 
-CastResultRelate : ∀ {T} → Error Label (L.Value T) → Error Label (R.Value T) → Set
+CastResultRelate : ∀ {T} → Error Label×Polarity (L.Value T) → Error Label×Polarity (R.Value T)
+  → Set
 CastResultRelate = ErrorRelate ValueRelate
 
 data FrameRelate : ∀ {S T} → L.Frame S T → R.Frame S T → Set where

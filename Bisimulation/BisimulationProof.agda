@@ -18,12 +18,12 @@ open import Cast Label
 open import Observables Label
 open import Error using (Error; return; raise; _>=>_; _>>=_; >>=-return)
 open import Chain using ([]; _∷_; _++_)
+open import Bisimulation.FromAFewStepsToTheEnd using (_∷_)
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; sym)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Product using (_×_; _,_; ∃-syntax)
 
-open import Bisimulation.FromAFewStepsToTheEnd using (_∷_; [])
 open import Bisimulation.BisimulationRelation Label BS CADT
 
 open L using ([]; _∷_)

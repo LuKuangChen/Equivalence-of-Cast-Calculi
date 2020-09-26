@@ -656,7 +656,7 @@ C = record
     ; lem-seq = lem-seq
     }
 
-open import S.LazyUDCastADT Label
+open import Bisimulation.LazyUDCastADT Label
 
 eq-¬⌣ : ∀ {T1 T2}
   → (v : Value T1)

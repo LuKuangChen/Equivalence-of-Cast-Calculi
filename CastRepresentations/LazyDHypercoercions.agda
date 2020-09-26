@@ -487,7 +487,7 @@ eq-*P Q P l v with ⟦ seq-m (` id-m P) (some l (` P) (` Q)) (` id-m Q) ⟧m v
 eq-*P Q P l v | raise  l' = refl
 eq-*P Q P l v | return v' rewrite lem-id-m v' = refl
 
-open import S.LazyDCastADT Label
+open import Bisimulation.LazyDCastADT Label
 
 H-LazyD : LazyD H
 H-LazyD =

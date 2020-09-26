@@ -1,4 +1,4 @@
-module S.LazyDCastADT
+module Bisimulation.LazyDCastADT
   (Label : Set)  
   where
 
@@ -78,3 +78,51 @@ record LazyD (ADT : CastADT) : Set where
       → ⟦ ⌈ (` T11 ⊗ T12) ⟹[ l ] (` T21 ⊗ T22) ⌉ ⟧ (cons⟨ c₁ ⊗ c₂ ⟩ v1 v2)
           ≡
         return (cons⟨ c₁ ⨟ ⌈ T11 ⟹[ l ] T21 ⌉ ⊗ c₂ ⨟ ⌈ T12 ⟹[ l ] T22 ⌉ ⟩ v1 v2)
+
+{-
+The following module proves that the ⟦_⟧ operator of every Lazy D Cast ADT
+preserves the bisimulation (lem-⟦_⟧).
+-}
+module Theorems
+  (CADT : CastADT)
+  (CADTLazyD : LazyD CADT)
+  where
+  
+  open import Cast Label using (Cast)
+  open import R.BlameStrategies using (BlameStrategy)
+  open import Bisimulation.BisimulationRelation Label LazyDBS CADT
+  open LazyD CADTLazyD
+
+  lem-⟦_⟧' : ∀ {P Q lv rv}
+           → (c : Cast (` P) (` Q))
+           → ValueRelate lv rv
+           → CastResultRelate (L.apply-cast c lv)
+                              (R.⟦ R.⌈ c ⌉ ⟧ rv)
+  lem-⟦_⟧' (` P ⟹[ l ] ` Q) v with (` P) ⌣? (` Q)
+  lem-⟦_⟧' (` B ⟹[ l ] ` B) v | yes ⌣B rewrite eq-B l (rvalue v) = return v
+  lem-⟦_⟧' (` T11 ⇒ T12 ⟹[ l ] ` T21 ⇒ T22) (lam⟨ lcs , c1 ⇒ c2 ⟩ e E) | yes ⌣⇒
+    rewrite eq-⇒ T21 T22 T11 T12 l (rcast c1) (rcast c2) e (renv E)
+    = return (lam⟨ lcs ⟪ _
+                       , just (T21 ⟹[ negate-label l ] T11) ⨟ c1 ⇒ c2 ⨟ just (T12 ⟹[ l ] T22) ⟩
+                   e E)
+  lem-⟦_⟧' (` T11 ⊗ T12 ⟹[ l ] ` T21 ⊗ T22) (cons⟨ lcs , c1 ⊗ c2 ⟩ v1 v2) | yes ⌣⊗
+    rewrite eq-⊗ T21 T22 T11 T12 l (rcast c1) (rcast c2) (rvalue v1) (rvalue v2)
+    = return (cons⟨ lcs ⟪ _
+                        , c1 ⨟ just (T11 ⟹[ l ] T21) ⊗ c2 ⨟ just (T12 ⟹[ l ] T22) ⟩
+                    v1 v2)
+  lem-⟦_⟧' (.(` _) ⟹[ l ] .(` _)) v | no ¬p
+    rewrite eq-¬⌣ l ¬p (rvalue v)
+    = raise l
+  
+  lem-⟦_⟧ : ∀ {S T lv rv}
+          → (c : Cast S T)
+          → ValueRelate lv rv
+          → CastResultRelate (L.apply-cast c lv)
+                             (R.⟦ R.⌈ c ⌉ ⟧ rv)
+  lem-⟦_⟧ (*   ⟹[ l ] *)   v rewrite eq-** l (rvalue v) = return v
+  lem-⟦_⟧ (` P ⟹[ l ] *)   v rewrite eq-P* l (rvalue v) = return (dyn (same P) v)
+  lem-⟦_⟧ (` P ⟹[ l ] ` Q) v = lem-⟦_⟧' (` P ⟹[ l ] ` Q) v
+  lem-⟦_⟧ (*   ⟹[ l ] ` Q) (dyn (same P) v)
+    rewrite eq-*P Q P l (rvalue v)
+    = lem-⟦_⟧' (` P ⟹[ l ] ` Q) v
+                  

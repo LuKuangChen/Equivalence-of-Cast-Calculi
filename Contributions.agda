@@ -11,15 +11,17 @@ open import R.Machine Label using ()
 open import S.Machine Label using ()
   renaming (Evalo to EvaloS)
 open import S.CastADT Label using (CastADT)
-open import S.LazyDCastADT Label using (LazyD)
-open import S.LazyUDCastADT Label using (LazyUD)
+open import Bisimulation.LazyDCastADT Label
+  using    (LazyD)
+  renaming (module Theorems to LD-Theorems)
+open LD-Theorems using () renaming (lem-⟦_⟧ to lem-⟦_⟧-D)
+open import Bisimulation.LazyUDCastADT Label
+  using    (LazyUD)
+  renaming (module Theorems to LUD-Theorems)
+open LUD-Theorems using () renaming (lem-⟦_⟧ to lem-⟦_⟧-UD)
 
 open import Bisimulation.BisimulationProof Label
   using (correctness-l; correctness-r)
-open import Bisimulation.LazyDApplyCast Label using ()
-  renaming (lem-⟦_⟧ to lem-⟦_⟧-D)
-open import Bisimulation.LazyUDApplyCast Label using ()
-  renaming (lem-⟦_⟧ to lem-⟦_⟧-UD)
 
 open import R.BlameStrategies Label using (BlameStrategy; LazyDBS; LazyUDBS)
 open import CastRepresentations.LazyDHypercoercions Label using ()

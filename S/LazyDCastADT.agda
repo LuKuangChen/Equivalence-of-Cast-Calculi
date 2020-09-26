@@ -3,7 +3,7 @@ module S.LazyDCastADT
   where
 
 open import Types
-
+open import LabelUtilities Label
 open import Variables
 open import Terms Label using (_⊢_)
 open import Error
@@ -23,7 +23,7 @@ record LazyD (ADT : CastADT) : Set where
   open S.Values Label Injectable Cast
   field
     eq-¬⌣ : ∀ {T1 T2}
-      → (l : Label)
+      → (l : Label×Polarity)
       → ¬ (T1 ⌣ T2)
       → (v : Value T1)
       ---
@@ -38,7 +38,7 @@ record LazyD (ADT : CastADT) : Set where
         return v
 
     eq-P* : ∀ {P}
-      → (l : Label)
+      → (l : Label×Polarity)
       → (v : Value (` P))  
       → ⟦ ⌈ (` P) ⟹[ l ] * ⌉ ⟧ v
           ≡
@@ -56,7 +56,7 @@ record LazyD (ADT : CastADT) : Set where
 
     eq-⇒ : ∀ T21 T22 T11 T12
       → ∀ {S T}
-      → (l : Label)
+      → (l : Label×Polarity)
       → {Γ : Context}
       → (c₁ : Cast T11 S)
       → (c₂ : Cast T T12)
@@ -64,11 +64,13 @@ record LazyD (ADT : CastADT) : Set where
       → (E : Env Γ)
       → ⟦ ⌈ (` T11 ⇒ T12) ⟹[ l ] (` T21 ⇒ T22) ⌉ ⟧ (lam⟨ c₁ ⇒ c₂ ⟩ e E)
           ≡
-        return (lam⟨ ⌈ T21 ⟹[ l ] T11 ⌉ ⨟ c₁ ⇒ c₂ ⨟ ⌈ T12 ⟹[ l ] T22 ⌉ ⟩ e E)
+        return (lam⟨ ⌈ T21 ⟹[ negate-label l ] T11 ⌉ ⨟ c₁ ⇒
+                     c₂ ⨟ ⌈ T12 ⟹[ l ] T22 ⌉ ⟩
+                 e E)
 
     eq-⊗ : ∀ T21 T22 T11 T12
       → ∀ {S T}
-      → (l : Label)
+      → (l : Label×Polarity)
       → (c₁ : Cast S T11)
       → (c₂ : Cast T T12)
       → (v1 : Value S)

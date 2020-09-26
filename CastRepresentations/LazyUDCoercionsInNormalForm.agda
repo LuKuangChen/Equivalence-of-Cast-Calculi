@@ -1,6 +1,7 @@
 module CastRepresentations.LazyUDCoercionsInNormalForm (Label : Set) where
 
-open import Types renaming (B to tB; _⇒_ to _t⇒_; _⊗_ to _t⊗_)
+open import Types renaming (B to B̂; _⇒_ to _⇒̂_; _⊗_ to _⊗̂_)
+open import LabelUtilities Label
 open import Cast Label using (_⟹[_]_) renaming (Cast to SrcCast)
 open import Terms Label
 open import S.CastADT Label
@@ -17,24 +18,24 @@ mutual
 
   data CoeG : PreType → PreType → Set where
   
-    B : CoeG tB tB
+    B : CoeG B̂ B̂
     
     _⇒_ : ∀ {S1 T1 S2 T2}
       → (s : CoeS S2 S1)
       → (t : CoeS T1 T2)
-      → CoeG (S1 t⇒ T1) (S2 t⇒ T2)
+      → CoeG (S1 ⇒̂ T1) (S2 ⇒̂ T2)
       
     _⊗_ : ∀ {S1 T1 S2 T2}
       → (s : CoeS S1 S2)
       → (t : CoeS T1 T2)
-      → CoeG (S1 t⊗ T1) (S2 t⊗ T2)
+      → CoeG (S1 ⊗̂ T1) (S2 ⊗̂ T2)
 
   data CoeI : PreType → Type → Set where
   
     ⊥ : ∀ {A P Q}
       → (A⌣G : (` A) ⌣ (` P))
       → (G : Ground P)
-      → (l : Label)
+      → (l : Label×Polarity)
       → (H : Ground Q)
       → (¬G≡H : ¬ (P ≡ Q))
       → ∀ {T}
@@ -55,7 +56,7 @@ mutual
     
     _⁇_,_ : ∀ {P T}
       → (G : Ground P)
-      → (l : Label)
+      → (l : Label×Polarity)
       → (i : CoeI P T)
       → CoeS * T
       
@@ -96,36 +97,36 @@ mutual
   (`       i) ⨟ t = `       (i i⨟s t)
                                       
 mutual
-  ⇑* : Label → ∀ T → Cast T *
+  ⇑* : Label×Polarity → ∀ T → Cast T *
   ⇑* l *     = id*
   ⇑* l (` P) = ⇑ l P
   
-  ⇑ : Label → ∀ P → Cast (` P) *
-  ⇑ l tB       = ` (B , `B ‼)
-  ⇑ l (S t⇒ T) = ` (⇓* l S ⇒ ⇑* l T , `⇒ ‼)
-  ⇑ l (S t⊗ T) = ` (⇑* l S ⊗ ⇑* l T , `⊗ ‼)
+  ⇑ : Label×Polarity → ∀ P → Cast (` P) *
+  ⇑ l B̂       = ` (B , `B ‼)
+  ⇑ l (S ⇒̂ T) = ` (⇓* (negate-label l) S ⇒ ⇑* l T , `⇒ ‼)
+  ⇑ l (S ⊗̂ T) = ` (⇑* l S ⊗ ⇑* l T , `⊗ ‼)
 
-  ⇓* : Label → ∀ T → Cast * T
+  ⇓* : Label×Polarity → ∀ T → Cast * T
   ⇓* l *     = id*
   ⇓* l (` P) = ⇓ l P
   
-  ⇓ : Label → ∀ P → Cast * (` P)
-  ⇓ l tB       = (`B ⁇ l , ` B)                
-  ⇓ l (S t⇒ T) = (`⇒ ⁇ l , ` ⇑* l S ⇒ (⇓* l T))
-  ⇓ l (S t⊗ T) = (`⊗ ⁇ l , ` ⇓* l S ⊗ (⇓* l T))
+  ⇓ : Label×Polarity → ∀ P → Cast * (` P)
+  ⇓ l B̂       = (`B ⁇ l , ` B)                
+  ⇓ l (S ⇒̂ T) = (`⇒ ⁇ l , ` ⇑* (negate-label l) S ⇒ (⇓* l T))
+  ⇓ l (S ⊗̂ T) = (`⊗ ⁇ l , ` ⇓* l S ⊗ (⇓* l T))
 
 lem-¬⌣-ground : {P Q : PreType}
   → ¬ (` P) ⌣ (` Q)
   → ¬ (ground P ≡ ground Q)
-lem-¬⌣-ground {tB} {tB} ¬p = λ _ → ¬p ⌣B
-lem-¬⌣-ground {tB} {S t⇒ T} ¬p = λ ()
-lem-¬⌣-ground {tB} {S t⊗ T} ¬p = λ ()
-lem-¬⌣-ground {S t⇒ T} {tB} ¬p = λ ()
-lem-¬⌣-ground {S t⇒ T} {S₁ t⇒ T₁} ¬p = λ _ → ¬p ⌣⇒
-lem-¬⌣-ground {S t⇒ T} {S₁ t⊗ T₁} ¬p = λ ()
-lem-¬⌣-ground {S t⊗ T} {tB} ¬p = λ ()
-lem-¬⌣-ground {S t⊗ T} {S₁ t⇒ T₁} ¬p = λ ()
-lem-¬⌣-ground {S t⊗ T} {S₁ t⊗ T₁} ¬p = λ _ → ¬p ⌣⊗
+lem-¬⌣-ground {B̂} {B̂} ¬p = λ _ → ¬p ⌣B
+lem-¬⌣-ground {B̂} {S ⇒̂ T} ¬p = λ ()
+lem-¬⌣-ground {B̂} {S ⊗̂ T} ¬p = λ ()
+lem-¬⌣-ground {S ⇒̂ T} {B̂} ¬p = λ ()
+lem-¬⌣-ground {S ⇒̂ T} {S₁ ⇒̂ T₁} ¬p = λ _ → ¬p ⌣⇒
+lem-¬⌣-ground {S ⇒̂ T} {S₁ ⊗̂ T₁} ¬p = λ ()
+lem-¬⌣-ground {S ⊗̂ T} {B̂} ¬p = λ ()
+lem-¬⌣-ground {S ⊗̂ T} {S₁ ⇒̂ T₁} ¬p = λ ()
+lem-¬⌣-ground {S ⊗̂ T} {S₁ ⊗̂ T₁} ¬p = λ _ → ¬p ⌣⊗
 
 ⌈_⌉ : ∀ {T1 T2} → SrcCast T1 T2 → Cast T1 T2
 ⌈ *   ⟹[ l ] *   ⌉ = id*
@@ -134,10 +135,10 @@ lem-¬⌣-ground {S t⊗ T} {S₁ t⊗ T₁} ¬p = λ _ → ¬p ⌣⊗
 ⌈ ` P ⟹[ l ] ` Q ⌉ with (` P) ⌣? (` Q)
 ⌈ ` P ⟹[ l ] ` Q ⌉             | no ¬P⌣Q
   = ` (⊥ (ground-⌣ P) (ground-Ground P) l (ground-Ground Q) (lem-¬⌣-ground ¬P⌣Q))
-⌈ ` tB       ⟹[ l ] ` tB       ⌉ | yes ⌣B = ` (` B)
-⌈ ` S1 t⇒ T1 ⟹[ l ] ` S2 t⇒ T2 ⌉ | yes ⌣⇒
-  = ` (` ⌈ S2 ⟹[ l ] S1 ⌉ ⇒ ⌈ T1 ⟹[ l ] T2 ⌉)
-⌈ ` L1 t⊗ R1 ⟹[ l ] ` L2 t⊗ R2 ⌉ | yes ⌣⊗
+⌈ ` B̂       ⟹[ l ] ` B̂       ⌉ | yes ⌣B = ` (` B)
+⌈ ` S1 ⇒̂ T1 ⟹[ l ] ` S2 ⇒̂ T2 ⌉ | yes ⌣⇒
+  = ` (` ⌈ S2 ⟹[ negate-label l ] S1 ⌉ ⇒ ⌈ T1 ⟹[ l ] T2 ⌉)
+⌈ ` L1 ⊗̂ R1 ⟹[ l ] ` L2 ⊗̂ R2 ⌉ | yes ⌣⊗
   = ` (` ⌈ L1 ⟹[ l ] L2 ⌉ ⊗ ⌈ R1 ⟹[ l ] R2 ⌉)
 
 
@@ -149,11 +150,11 @@ mutual
     = ` (` id-g P)
 
   id-g : ∀ P → CoeG P P
-  id-g tB
+  id-g B̂
     = B
-  id-g (S t⇒ T)
+  id-g (S ⇒̂ T)
     = id S ⇒ id T
-  id-g (S t⊗ T)
+  id-g (S ⊗̂ T)
     = (id S) ⊗ (id T)
 
 open import R.BlameStrategies Label using (BlameStrategy; LazyUDBS)
@@ -166,7 +167,7 @@ open import Error
         ;>>=-return; >>=-assoc; >=>-assoc; >=>->>=)
 
 CastResult : Type → Set
-CastResult T = Error Label (Value T)
+CastResult T = Error Label×Polarity (Value T)
 
 ⟦_⟧g : ∀ {P Q}
   → CoeG P Q
@@ -186,7 +187,7 @@ CastResult T = Error Label (Value T)
 
 project : ∀ {P}
   → Ground P
-  → Label
+  → Label×Polarity
   → Value *
   → CastResult (` P)
 project H l (dyn G v) with G ≟G H
@@ -295,11 +296,11 @@ lem-id : ∀ {T}
   -----------------------------
   → ⟦ id T ⟧ v ≡ return v
 lem-id {*} v = refl
-lem-id {` tB} v = refl
-lem-id {` S t⇒ T} (lam⟨ s ⇒ t ⟩ e E)
+lem-id {` B̂} v = refl
+lem-id {` S ⇒̂ T} (lam⟨ s ⇒ t ⟩ e E)
   rewrite identityˡ s | identityʳ t
   = refl
-lem-id {` S t⊗ T} (cons⟨ s ⊗ t ⟩ v u)
+lem-id {` S ⊗̂ T} (cons⟨ s ⊗ t ⟩ v u)
   rewrite identityʳ s | identityʳ t
   = refl
 
@@ -367,7 +368,7 @@ open import S.LazyUDCastADT Label
 
 eq-¬⌣ : ∀ {T1 T2}
   → (v : Value T1)
-  → (l : Label)
+  → (l : Label×Polarity)
   → ¬ (T1 ⌣ T2)
   ---
   → ⟦ ⌈ T1 ⟹[ l ] T2 ⌉ ⟧ v
@@ -380,43 +381,43 @@ eq-¬⌣ {` P} {` Q} v l ¬p with (` P) ⌣? (` Q)
 eq-¬⌣ {` P} {` Q} v l ¬p | yes p' = ⊥-elim (¬p p')
 eq-¬⌣ {` P} {` Q} v l ¬p | no ¬p' = refl
 
-lem-⇑* : (l : Label)(T : Type)
+lem-⇑* : (l : Label×Polarity)(T : Type)
   → (⇑* l T) ≡ ⌈ T ⟹[ l ] * ⌉
 lem-⇑* l * = refl
 lem-⇑* l (` P) = refl
 
-lem-⇓* : (l : Label)(T : Type)
+lem-⇓* : (l : Label×Polarity)(T : Type)
   → (⇓* l T) ≡ ⌈ * ⟹[ l ] T ⌉
 lem-⇓* l * = refl
 lem-⇓* l (` P) = refl
 
-lem-⇑ : (l : Label)(P : PreType)
+lem-⇑ : (l : Label×Polarity)(P : PreType)
   → (⇑ l P) ≡ (⌈ (` P) ⟹[ l ] ` ground P ⌉ ⨟ ⌈ ` ground P ⟹[ l ] * ⌉)
-lem-⇑ l tB = refl
-lem-⇑ l (S t⇒ T)
-  rewrite lem-⇓* l S | lem-⇑* l T
+lem-⇑ l B̂ = refl
+lem-⇑ l (S ⇒̂ T)
+  rewrite lem-⇓* (negate-label l) S | lem-⇑* l T
     | identityʳ ⌈ T ⟹[ l ] * ⌉
   = refl
-lem-⇑ l (S t⊗ T)
+lem-⇑ l (S ⊗̂ T)
   rewrite lem-⇑* l S | lem-⇑* l T
     | identityʳ ⌈ T ⟹[ l ] * ⌉
     | identityʳ ⌈ S ⟹[ l ] * ⌉
   = refl
 
-lem-⇓ : (l : Label)(P : PreType)
+lem-⇓ : (l : Label×Polarity)(P : PreType)
   → (⇓ l P) ≡ (⌈ * ⟹[ l ] ` ground P ⌉ ⨟ ⌈ ` ground P ⟹[ l ] ` P ⌉)
-lem-⇓ l tB = refl
-lem-⇓ l (S t⇒ T)
-  rewrite lem-⇑* l S | lem-⇓* l T
-    | identityʳ ⌈ S ⟹[ l ] * ⌉
+lem-⇓ l B̂ = refl
+lem-⇓ l (S ⇒̂ T)
+  rewrite lem-⇑* (negate-label l) S | lem-⇓* l T
+    | identityʳ ⌈ S ⟹[ negate-label l ] * ⌉
   = refl
-lem-⇓ l (S t⊗ T)
+lem-⇓ l (S ⊗̂ T)
   rewrite lem-⇓* l S | lem-⇓* l T
   = refl
 
 eq-P* : ∀ {P}
   → (v : Value (` P))
-  → (l : Label)
+  → (l : Label×Polarity)
   → ¬ Ground P
   → ⟦ ⌈ (` P) ⟹[ l ] * ⌉ ⟧ v
       ≡
@@ -428,22 +429,22 @@ eq-P* {P} v l ¬gP
 
 eq-I* : ∀ {P}
   → (v : Value (` P))
-  → (l : Label)
+  → (l : Label×Polarity)
   → (gP : Ground P)
   → ⟦ ⌈ ` P ⟹[ l ] * ⌉ ⟧ v
       ≡
     return (dyn gP v)
-eq-I* {.tB} v l `B = refl
-eq-I* {.(* t⇒ *)} (lam⟨ c1 ⇒ c2 ⟩ e E) l `⇒
+eq-I* {.B̂} v l `B = refl
+eq-I* {.(* ⇒̂ *)} (lam⟨ c1 ⇒ c2 ⟩ e E) l `⇒
   rewrite identityʳ c2
   = refl
-eq-I* {.(* t⊗ *)} (cons⟨ c1 ⊗ c2 ⟩ v v₁) l `⊗
+eq-I* {.(* ⊗̂ *)} (cons⟨ c1 ⊗ c2 ⟩ v v₁) l `⊗
   rewrite identityʳ c1 | identityʳ c2
   = refl
 
 eq-*P : ∀ {P}
   → (v : Value *)
-  → (l : Label)
+  → (l : Label×Polarity)
   → ¬ Ground P
   → ⟦ ⌈ * ⟹[ l ] (` P) ⌉ ⟧ v
       ≡
@@ -455,7 +456,7 @@ eq-*P {P} v l ¬gP
 
 eq-*I-succ : ∀ {P}
   → (v : Value (` P))
-  → (l : Label)
+  → (l : Label×Polarity)
   → (gP : Ground P)
   → ⟦ ⌈ * ⟹[ l ] (` P) ⌉ ⟧ (dyn gP v)
       ≡
@@ -470,22 +471,22 @@ eq-*I-succ (cons⟨ c1 ⊗ c2 ⟩ v v₁) l `⊗
     
 eq-*I-fail : {P Q : PreType}
   → (v : Value (` P))  
-  → (l : Label)
+  → (l : Label×Polarity)
   → (gP : Ground P)
   → (gQ : Ground Q)
   → ¬ (_≡_ {A = Type} (` P) (` Q))
   → ⟦ ⌈ * ⟹[ l ] (` Q) ⌉ ⟧ (dyn gP v)
       ≡
     raise l
-eq-*I-fail {tB} v l `B `B ¬p = ⊥-elim (¬p refl)
-eq-*I-fail {tB} v l `B `⇒ ¬p = refl
-eq-*I-fail {tB} v l `B `⊗ ¬p = refl
-eq-*I-fail {.* t⇒ .*} v l `⇒ `B ¬p = refl
-eq-*I-fail {.* t⇒ .*} v l `⇒ `⇒ ¬p = ⊥-elim (¬p refl)
-eq-*I-fail {.* t⇒ .*} v l `⇒ `⊗ ¬p = refl
-eq-*I-fail {.* t⊗ .*} v l `⊗ `B ¬p = refl
-eq-*I-fail {.* t⊗ .*} v l `⊗ `⇒ ¬p = refl
-eq-*I-fail {.* t⊗ .*} v l `⊗ `⊗ ¬p = ⊥-elim (¬p refl)
+eq-*I-fail {B̂} v l `B `B ¬p = ⊥-elim (¬p refl)
+eq-*I-fail {B̂} v l `B `⇒ ¬p = refl
+eq-*I-fail {B̂} v l `B `⊗ ¬p = refl
+eq-*I-fail {.* ⇒̂ .*} v l `⇒ `B ¬p = refl
+eq-*I-fail {.* ⇒̂ .*} v l `⇒ `⇒ ¬p = ⊥-elim (¬p refl)
+eq-*I-fail {.* ⇒̂ .*} v l `⇒ `⊗ ¬p = refl
+eq-*I-fail {.* ⊗̂ .*} v l `⊗ `B ¬p = refl
+eq-*I-fail {.* ⊗̂ .*} v l `⊗ `⇒ ¬p = refl
+eq-*I-fail {.* ⊗̂ .*} v l `⊗ `⊗ ¬p = ⊥-elim (¬p refl)
 
 S-LazyUD : LazyUD S
 S-LazyUD = record

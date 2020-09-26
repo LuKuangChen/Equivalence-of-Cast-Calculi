@@ -1,6 +1,7 @@
 module CastRepresentations.LazyUDThreesomes (Label : Set) where
 
 open import Types
+open import LabelUtilities Label
 open import Cast Label using (_⟹[_]_) renaming (Cast to SrcCast)
 open import Terms Label
 open import S.CastADT Label
@@ -20,12 +21,12 @@ ACM Sigplan Notices 45.1 (2010): 365-376.
 -}
 
 {-
-Ground Types are isomorphic to Type Operators in the obvious way. To make
-proof easier, we shall use the two sets interchangablely in this module.
+Ground Types are isomorphic to Type Constructors in the obvious way. To make
+proof easier, we use type constructors in place of ground types.
 -}
 
 data OptionalLabel (op : TypeOp) : Type → (Vec Type (arity op)) → Set where
-  ⁇ : (l : Label) → OptionalLabel op * (replicate *) 
+  ⁇ : (l : Label×Polarity) → OptionalLabel op * (replicate *) 
   ε : ∀ {Ts} → OptionalLabel op (` op · Ts) Ts
 
 data Tail (op : TypeOp) : (Vec Type (arity op)) → Type → Set where
@@ -40,7 +41,7 @@ data LabeledType where
   * : LabeledType * *
 
   ⊥ : ∀ {T S}
-    → (l : Label)
+    → (l : Label×Polarity)
     → (G : TypeOp)
     → ∀ {Ss}
     → (p : OptionalLabel G S Ss)
@@ -115,10 +116,7 @@ T̂ ∘ ⊥ m G p   = ⊥ m G p
 ^ (Ŝ₂ ⊗̂ T̂₂) q {s} ∘ ^ (Ŝ₁ ⊗̂ T̂₁) p {t} | yes refl | refl
   = ^ ((Ŝ₂ ∘ Ŝ₁) ⊗̂ (T̂₂ ∘ T̂₁)) p {s}
 
-fail-left : ∀ {T1 T2}
-  → (l : Label)
-  → (G : TypeOp)
-  → ∀ {Ss}
+fail-left : ∀ {T1 T2} l G {Ss}
   → (p : OptionalLabel G T2 Ss)
   → (T̂ : LabeledType T1 T2)
   → ∃[ l' ]
@@ -307,16 +305,16 @@ id : ∀ T → Cast T T
 id T = T ⟹ T [ id^ T ]
 
 mutual
-  ⇑ : Label → ∀ T → LabeledType T *
+  ⇑ : Label×Polarity → ∀ T → LabeledType T *
   ⇑ l *     = *
   ⇑ l (` B)     = ^ (B̂)             ε {‼}
-  ⇑ l (` S ⇒ T) = ^ (⇓ l S ⇒̂ ⇑ l T) ε {‼}
+  ⇑ l (` S ⇒ T) = ^ (⇓ (negate-label l) S ⇒̂ ⇑ l T) ε {‼}
   ⇑ l (` S ⊗ T) = ^ (⇑ l S ⊗̂ ⇑ l T) ε {‼}
   
-  ⇓ : Label → ∀ T → LabeledType * T
+  ⇓ : Label×Polarity → ∀ T → LabeledType * T
   ⇓ l *     = *
   ⇓ l (` B)     = ^ (B̂)               (⁇ l) {ε}
-  ⇓ l (` S ⇒ T) = ^ (⇑ l S ⇒̂ (⇓ l T)) (⁇ l) {ε} 
+  ⇓ l (` S ⇒ T) = ^ (⇑ (negate-label l) S ⇒̂ (⇓ l T)) (⁇ l) {ε} 
   ⇓ l (` S ⊗ T) = ^ (⇓ l S ⊗̂ (⇓ l T)) (⁇ l) {ε}
 
 ⌈_⌉' : ∀ {T1 T2} → SrcCast T1 T2 → LabeledType T1 T2
@@ -327,7 +325,7 @@ mutual
 ⌈ ` P ⟹[ l ] ` Q ⌉'             | no P⌣̸Q = ⊥ l _ ε
 ⌈ ` B       ⟹[ l ] ` B       ⌉' | yes ⌣B = ^ (B̂) ε {ε}
 ⌈ ` S1 ⇒ T1 ⟹[ l ] ` S2 ⇒ T2 ⌉' | yes ⌣⇒
-  = ^ (⌈ S2 ⟹[ l ] S1 ⌉' ⇒̂ ⌈ T1 ⟹[ l ] T2 ⌉') ε {ε}
+  = ^ (⌈ S2 ⟹[ negate-label l ] S1 ⌉' ⇒̂ ⌈ T1 ⟹[ l ] T2 ⌉') ε {ε}
 ⌈ ` L1 ⊗ R1 ⟹[ l ] ` L2 ⊗ R2 ⌉' | yes ⌣⊗
   = ^ (⌈ L1 ⟹[ l ] L2 ⌉' ⊗̂ ⌈ R1 ⟹[ l ] R2 ⌉') ε {ε}
 
@@ -345,7 +343,7 @@ open import Error
 open import S.Values Label Injectable Cast
 
 CastResult : Type → Set
-CastResult T = Error Label (Value T)
+CastResult T = Error Label×Polarity (Value T)
 
 typeop→ground : (op : TypeOp) → Ground (op · replicate *)
 typeop→ground `B = `B
@@ -553,7 +551,7 @@ project-inject-succeed {`⇒} (⁇ l) ‼ u = refl
 
 project-inject-fail : ∀ {G H Ss}
   → (¬G≡H : ¬ G ≡ H)
-  → (l : Label)
+  → (l : Label×Polarity)
   → (t : Tail G Ss *)
   → (v : Value (` G · Ss))
   → (project H (⁇ l) (inject G * {t} v) ≡ raise l)
@@ -662,7 +660,7 @@ open import S.LazyUDCastADT Label
 
 eq-¬⌣ : ∀ {T1 T2}
   → (v : Value T1)
-  → (l : Label)
+  → (l : Label×Polarity)
   → ¬ (T1 ⌣ T2)
   ---
   → (⟦ ⌈ T1 ⟹[ l ] T2 ⌉ ⟧ v)
@@ -675,21 +673,21 @@ eq-¬⌣ {` P} {` Q} v l ¬p with (` P) ⌣? (` Q)
 eq-¬⌣ {` P} {` Q} v l ¬p | yes p' = ⊥-elim (¬p p')
 eq-¬⌣ {` P} {` Q} v l ¬p | no ¬p' = refl
 
-lem-rewrite-inj : (l : Label)(T : Type)
+lem-rewrite-inj : ∀ l T
   → (⇑ l T) ≡ ⌈ T ⟹[ l ] * ⌉'
 lem-rewrite-inj l * = refl
 lem-rewrite-inj l (` P) = refl
 
-lem-rewrite-proj : (l : Label)(T : Type)
+lem-rewrite-proj : ∀ l T
   → (⇓ l T) ≡ ⌈ * ⟹[ l ] T ⌉'
 lem-rewrite-proj l * = refl
 lem-rewrite-proj l (` P) = refl
 
-lem-expand-inj : (l : Label)(P : PreType)
+lem-expand-inj : ∀ l P
   → (⇑ l (` P)) ≡ (⌈ ` ground P ⟹[ l ] * ⌉' ∘ ⌈ (` P) ⟹[ l ] ` ground P ⌉')
 lem-expand-inj l B = refl
 lem-expand-inj l (S ⇒ T)
-  rewrite lem-rewrite-proj l S | lem-rewrite-inj l T
+  rewrite lem-rewrite-proj (negate-label l) S | lem-rewrite-inj l T
     | ∘-identityˡ * ⌈ T ⟹[ l ] * ⌉'
   = refl
 lem-expand-inj l (S ⊗ T)
@@ -700,12 +698,12 @@ lem-expand-inj l (S ⊗ T)
     | dyn-left ⌈ T ⟹[ l ] * ⌉'
   = refl
 
-lem-expand-proj : (l : Label)(P : PreType)
+lem-expand-proj : ∀ l P
   → (⇓ l (` P)) ≡ (⌈ ` ground P ⟹[ l ] ` P ⌉' ∘ ⌈ * ⟹[ l ] ` ground P ⌉')
 lem-expand-proj l B = refl
 lem-expand-proj l (S ⇒ T)
-  rewrite lem-rewrite-inj l S | lem-rewrite-proj l T
-    | ∘-identityˡ * ⌈ S ⟹[ l ] * ⌉'
+  rewrite lem-rewrite-inj (negate-label l) S | lem-rewrite-proj l T
+    | ∘-identityˡ * ⌈ S ⟹[ negate-label l ] * ⌉'
   = refl
 lem-expand-proj l (S ⊗ T)
   rewrite lem-rewrite-proj l S | lem-rewrite-proj l T
@@ -713,7 +711,7 @@ lem-expand-proj l (S ⊗ T)
 
 eq-P* : ∀ {P}
   → (v : Value (` P))
-  → (l : Label)
+  → (l : Label×Polarity)
   → ¬ Ground P
   → ⟦ ⌈ (` P) ⟹[ l ] * ⌉ ⟧ v
       ≡
@@ -725,7 +723,7 @@ eq-P* {P} v l ¬gP
 
 eq-I* : ∀ {P}
   → (v : Value (` P))
-  → (l : Label)
+  → (l : Label×Polarity)
   → (gP : Ground P)
   → ⟦ ⌈ ` P ⟹[ l ] * ⌉ ⟧ v
       ≡
@@ -740,7 +738,7 @@ eq-I* {.(* ⊗ *)} (cons⟨ c1 ⊗ c2 ⟩ v v₁) l `⊗
 
 eq-*P : ∀ {P}
   → (v : Value *)
-  → (l : Label)
+  → ∀ l
   → ¬ Ground P
   → ⟦ ⌈ * ⟹[ l ] (` P) ⌉ ⟧ v
       ≡
@@ -752,7 +750,7 @@ eq-*P {P} v l ¬gP
 
 eq-*I-succ : ∀ {P}
   → (v : Value (` P))
-  → (l : Label)
+  → ∀ l
   → (gP : Ground P)
   → ⟦ ⌈ * ⟹[ l ] (` P) ⌉ ⟧ (dyn gP v)
       ≡
@@ -767,7 +765,7 @@ eq-*I-succ (cons⟨ c1 ⊗ c2 ⟩ v v₁) l `⊗
 
 eq-*I-fail : {P Q : PreType}
   → (v : Value (` P))  
-  → (l : Label)
+  → ∀ l 
   → (gP : Ground P)
   → (gQ : Ground Q)
   → ¬ (_≡_ {A = Type} (` P) (` Q))

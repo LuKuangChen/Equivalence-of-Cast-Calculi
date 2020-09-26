@@ -5,6 +5,7 @@ module S.CastADT
   (Injectable : PreType → Set)
   where
 
+open import LabelUtilities Label
 open import Error using (_>=>_; Error; return)
 open import Cast Label renaming (Cast to SrcCast)
 import S.Values using (Value)
@@ -27,7 +28,7 @@ record CastADT : Set₁ where
       → Cast T1 T2
       -----
       → Value Cast T1
-      → Error Label (Value Cast T2)
+      → Error Label×Polarity (Value Cast T2)
     lem-id : ∀ T v
       → ⟦ id T ⟧ v ≡ return v
     lem-seq : ∀ {T1 T2 T3}

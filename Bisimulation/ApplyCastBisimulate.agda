@@ -17,5 +17,5 @@ the-apply-cast-lemma : Set
 the-apply-cast-lemma = ∀ {S T lv rv}
     → (c : Cast S T)
     → ValueRelate {S} lv rv
-    → CastResultRelate (L.⟦ c ⟧ lv) (R.⟦ R.⌈ c ⌉ ⟧ rv)
+    → CastResultRelate (L.apply-cast c  lv) (R.⟦ R.⌈ c ⌉ ⟧ rv)
 

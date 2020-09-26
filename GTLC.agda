@@ -63,29 +63,3 @@ data _⊢_ : Context → Type → Set where
     → (m : S⊗T ▹ (S ⊗ T))
     → Γ ⊢ T
 
-open import Terms Label
-  renaming (_⊢_ to _⊢C_)
-open import Cast Label
-
-typeof : ∀ {Γ T} → Γ ⊢ T → Type
-typeof {Γ} {T} e = T
-
--- the translation relation (in the form of function)
-
-compile : ∀ {Γ T} → Γ ⊢ T → Γ ⊢C T
-compile (var x) = var x
-compile (lam e) = lam (compile e)
-compile (app e₁ e₂ l m T2~S)
-  = app (compile e₁ ⟨ typeof e₁ ⟹[ l ] ` match-target m ⟩)
-        (compile e₂ ⟨ typeof e₂ ⟹[ l ] _ ⟩)
-compile #t = #t
-compile #f = #t
-compile (if e₁ e₂ e₃ l TB~B T1~T2)
-  = if (compile e₁ ⟨ typeof e₁ ⟹[ l ] ` B ⟩)
-       (compile e₂ ⟨ typeof e₂ ⟹[ l ] meet T1~T2 ⟩)
-       (compile e₃ ⟨ typeof e₃ ⟹[ l ] meet T1~T2 ⟩)
-compile (cons e₁ e₂) = cons (compile e₁) (compile e₂)
-compile (car e l m)  = car (compile e ⟨ typeof e ⟹[ l ] (` match-target m) ⟩)
-compile (cdr e l m)  = cdr (compile e ⟨ typeof e ⟹[ l ] (` match-target m) ⟩)
-  
-

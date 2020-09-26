@@ -1,4 +1,4 @@
-module Bisimulation.Bisimulation
+module Bisimulation.FromAFewStepsToTheEnd
   where
 
 open import Data.Empty using (⊥; ⊥-elim)
@@ -7,6 +7,8 @@ open import Data.Sum using (_⊎_ ; inj₁; inj₂)
 open import Data.Product using (Σ; _×_ ; Σ-syntax; ∃-syntax; _,_; proj₁; proj₂)
 open import Data.Nat using (ℕ; zero; suc)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; sym; subst)
+
+open import Chain
 
 -- This is a parameterized bisimulation proof between any two systems.
 
@@ -39,15 +41,9 @@ record System (State : Set) : Set₁ where
       → s —→ t1
       → s —→ t2
       → t1 ≡ t2
-      
-  data _—→*_ : State → State → Set where
-    [] : {s : State}
-      → s —→* s
 
-    _∷_ : ∀ {s1 s2 s3}
-      → (x  : s1 —→ s2)
-      → (xs : s2 —→* s3)
-      → s1 —→* s3
+  _—→*_ : State → State → Set
+  _—→*_ S T = Chain _—→_ S T
 
   record _—→+_ (s s' : State) : Set where
     constructor _∷_
@@ -56,7 +52,7 @@ record System (State : Set) : Set₁ where
       x  : s —→  t
       xs : t —→* s'
 
-  data Prefix : {s1 s2 s3 : State} → s1 —→* s2 → s1 —→* s3 → Set where
+  data Prefix : {s1 s2 s3 : State} → (s1 —→* s2) → (s1 —→* s3) → Set where
     zero : ∀ {s1 s3}
       → {xs : s1 —→* s3}
       → Prefix [] xs
@@ -69,13 +65,9 @@ record System (State : Set) : Set₁ where
       → Prefix xs ys
       → Prefix (x ∷ xs) (y ∷ ys)
 
-  _++_ : ∀ {s1 s2 s3} → s1 —→* s2 → s2 —→* s3 → s1 —→* s3
-  [] ++ ys = ys
-  (x ∷ xs) ++ ys = x ∷ (xs ++ ys)
+open System using (_∷_) public
 
-open System using ([]; _∷_) public
-
-module Lemmas
+module OneWay
   {lState rState : Set}
   (lSystem : System lState)
   (rSystem : System rState)
@@ -91,7 +83,7 @@ module Lemmas
         (ls' ~ rs')))
   where
 
-  open System using ([]; _∷_; zero; suc)
+  open System using (zero; suc)
 
   module L where
     open System lSystem public
@@ -111,50 +103,41 @@ module Lemmas
   prefix (x ∷ xs) halt (y ∷ ys) with L.deterministic x y
   ... | refl = suc (prefix xs halt ys)
 
-  mutual
-    -- the job of this helper is cutting prefix
-    lem-final-helper : ∀ {ls1 ls2 rs}
-      → (ss : ls2 ~ rs)
-      → ∀ {ls'}
-      → (xs : ls1 L.—→* ls2)
-      → (ys : ls1 L.—→* ls')
-      → L.Prefix xs ys
-      → L.Final ls'
-      → ∃[ rs' ](
-           rs R.—→* rs' ×
-           R.Final rs' ×
-           ls' ~ rs'
-        )
-    lem-final-helper ss [] ys zero ht = lem-final ss ys ht
-    lem-final-helper ss (x ∷ xs) (y ∷ ys) (suc n) ht = lem-final-helper ss xs ys n ht
+  lem-final-helper : ∀ {ls1 ls2 rs}     -- the job of this helper is cutting prefix
+    → (ss : ls2 ~ rs)
+    → ∀ {ls'}
+    → (xs : ls1 L.—→* ls2)
+    → (ys : ls1 L.—→* ls')
+    → L.Prefix xs ys
+    → L.Final ls'
+    → ∃[ rs' ](rs R.—→* rs' × R.Final rs' × ls' ~ rs')
+  lem-final : ∀ {ls rs}
+    → (ss : ls ~ rs)
+    → ∀ {ls'}
+    → ls L.—→* ls'
+    → L.Final ls'
+    → ∃[ rs' ](rs R.—→* rs' × R.Final rs' × ls' ~ rs')
 
-    lem-final : ∀ {ls rs}
-      → (ss : ls ~ rs)
-      → ∀ {ls'}
-      → ls L.—→* ls'
-      → L.Final ls'
-      → ∃[ rs' ](
-           rs R.—→* rs' ×
-           R.Final rs' ×
-           ls' ~ rs'
-        )
-    lem-final ss [] ls-halt with safety ss
-    lem-final ss [] ls-halt | inj₁ (ls-halt' , rs-halt)
-      = _ , [] , rs-halt , ss
-    lem-final ss [] ls-halt | inj₂ (ls' , rs' , (lx ∷ lxs) , (rx ∷ rxs) , ss')
-      = ⊥-elim (L.final-progressing-absurd ls-halt lx)
-    lem-final ss (lx ∷ lxs) ls'-halt with safety ss
-    lem-final ss (lx ∷ lxs) ls'-halt | inj₁ (ls-halt , rs-halt)
-      = ⊥-elim (L.final-progressing-absurd ls-halt lx)
-    lem-final ss (lx ∷ lxs) ls'-halt
-      | inj₂ (ls' , rs' , (lx' ∷ lxs') , (rx' ∷ rxs') , ss')
-      with L.deterministic lx lx'
-    ... | refl
-      with lem-final-helper ss' lxs' lxs (prefix lxs ls'-halt lxs') ls'-halt
-    ... | rs'' , rxs , rhalt , bis = rs'' , (rx' ∷ (rxs' R.++ rxs)) , rhalt , bis
+  lem-final-helper ss [] ys zero ht = lem-final ss ys ht
+  lem-final-helper ss (x ∷ xs) (y ∷ ys) (suc n) ht = lem-final-helper ss xs ys n ht
+                                                                                 
+  lem-final ss [] ls-halt with safety ss
+  lem-final ss [] ls-halt | inj₁ (ls-halt' , rs-halt)
+    = _ , [] , rs-halt , ss
+  lem-final ss [] ls-halt | inj₂ (ls' , rs' , (lx ∷ lxs) , (rx ∷ rxs) , ss')
+    = ⊥-elim (L.final-progressing-absurd ls-halt lx)
+  lem-final ss (lx ∷ lxs) ls'-halt with safety ss
+  lem-final ss (lx ∷ lxs) ls'-halt | inj₁ (ls-halt , rs-halt)
+    = ⊥-elim (L.final-progressing-absurd ls-halt lx)
+  lem-final ss (lx ∷ lxs) ls'-halt
+    | inj₂ (ls' , rs' , (lx' ∷ lxs') , (rx' ∷ rxs') , ss')
+    with L.deterministic lx lx'
+  ... | refl
+    with lem-final-helper ss' lxs' lxs (prefix lxs ls'-halt lxs') ls'-halt
+  ... | rs'' , rxs , rhalt , bis = rs'' , (rx' ∷ (rxs' ++ rxs)) , rhalt , bis
 
 
-module Theorems
+module BothWays
   {lState rState : Set}
   (lSystem : System lState)
   (rSystem : System rState)
@@ -175,18 +158,14 @@ module Theorems
     
   module R where
     open System rSystem public
-    
+
   thm-final-LR : ∀ {ls rs}
     → (ss : ls ~ rs)
     → ∀ {ls'}
     → ls L.—→* ls'
     → L.Final ls'
-    → ∃[ rs' ](
-         rs R.—→* rs' ×
-         R.Final rs' ×
-         ls' ~ rs'
-      )
-  thm-final-LR = Lemmas.lem-final lSystem rSystem _~_ safety
+    → ∃[ rs' ]((rs R.—→* rs') × (R.Final rs') × (ls' ~ rs'))
+  thm-final-LR = OneWay.lem-final lSystem rSystem _~_ safety
 
   safety' : {rs : rState}{ls : lState}
     → ls ~ rs
@@ -207,12 +186,8 @@ module Theorems
     → ∀ {rs'}
     → rs R.—→* rs'
     → R.Final rs'
-    → ∃[ ls' ](
-      ls L.—→* ls' ×
-      L.Final ls' ×
-      ls' ~ rs'
-    )
+    → ∃[ ls' ]((ls L.—→* ls') × (L.Final ls') × (ls' ~ rs'))
   thm-final-RL
-    = Lemmas.lem-final rSystem lSystem (λ r l → l ~ r) safety'
+    = OneWay.lem-final rSystem lSystem (λ r l → l ~ r) safety'
 
-open Theorems public
+open BothWays public

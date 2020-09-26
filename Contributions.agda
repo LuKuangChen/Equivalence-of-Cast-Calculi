@@ -14,7 +14,8 @@ open import S.CastADT Label using (CastADT)
 open import S.LazyDCastADT Label using (LazyD)
 open import S.LazyUDCastADT Label using (LazyUD)
 
-open import Bisimulation.BisimulationProof Label using (correctness-l; correctness-r)
+open import Bisimulation.BisimulationProof Label
+  using (correctness-l; correctness-r)
 open import Bisimulation.LazyDApplyCast Label using ()
   renaming (lem-⟦_⟧ to lem-⟦_⟧-D)
 open import Bisimulation.LazyUDApplyCast Label using ()

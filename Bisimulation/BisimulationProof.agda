@@ -322,9 +322,9 @@ progress : ∀ {T}
   → StateRelate lS rS
   → ∃[ lS' ]
     ∃[ rS' ]
-      (L.progress lSp L.—→* lS' ×
-       R.progress rSp R.—→* rS' ×
-       StateRelate lS' rS')
+      (((L.progress lSp) L.—→* lS') ×
+       ((R.progress rSp) R.—→* rS') ×
+       (StateRelate lS' rS'))
 progress (expr (var x) lE lK)
          (expr (var x) rE rK)
          (return (expr (var x) E K))

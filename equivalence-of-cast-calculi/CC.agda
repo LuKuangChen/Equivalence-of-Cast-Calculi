@@ -47,11 +47,11 @@ data _⊢_ : Context → Type → Set where
     -----
     → Γ ⊢ (` T1 ⊗ T2)
 
-  car : ∀ {Γ S T}
+  fst : ∀ {Γ S T}
     → (e : Γ ⊢ (` S ⊗ T))
     → Γ ⊢ S
     
-  cdr : ∀ {Γ S T}
+  snd : ∀ {Γ S T}
     → (e : Γ ⊢ (` S ⊗ T))
     → Γ ⊢ T
   

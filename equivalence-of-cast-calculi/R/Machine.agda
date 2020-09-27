@@ -45,8 +45,8 @@ data Frame : Type → Type → Set where
     -----
     → Frame T2 (` T1 ⊗ T2)
 
-  car₁ : ∀ {T1 T2} → Frame (` T1 ⊗ T2) T1
-  cdr₁ : ∀ {T1 T2} → Frame (` T1 ⊗ T2) T2
+  fst₁ : ∀ {T1 T2} → Frame (` T1 ⊗ T2) T1
+  snd₁ : ∀ {T1 T2} → Frame (` T1 ⊗ T2) T2
 
   □⟨_⟩ : ∀ {S T}
     → (c : Cast S T)
@@ -133,21 +133,21 @@ do-app (v ⇒⟨(` T1 ⇒ T2) ⟹[ l ] (` T3 ⇒ T4)⟩) u k
                     [ □⟨ T2 ⟹[ l ] T4 ⟩ ]
                     k))
 
-do-car : ∀ {T1 T2 Z}
+do-fst : ∀ {T1 T2 Z}
   → Value (` T1 ⊗ T2)
   → Cont T1 Z
   → State Z
-do-car (cons v1 v2) k = return (cont v1 k)
-do-car (v ⊗⟨ (` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4) ⟩) k
-  = return (cont v ([ car₁ ] [ □⟨ T1 ⟹[ l ] T3 ⟩ ] k))
+do-fst (cons v1 v2) k = return (cont v1 k)
+do-fst (v ⊗⟨ (` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4) ⟩) k
+  = return (cont v ([ fst₁ ] [ □⟨ T1 ⟹[ l ] T3 ⟩ ] k))
   
-do-cdr : ∀ {T1 T2 Z}
+do-snd : ∀ {T1 T2 Z}
   → Value (` T1 ⊗ T2)
   → Cont T2 Z
   → State Z
-do-cdr (cons v1 v2) k = return (cont v2 k)
-do-cdr (v ⊗⟨ (` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4) ⟩) k
-  = return (cont v ([ cdr₁ ] [ □⟨ T2 ⟹[ l ] T4 ⟩ ] k))
+do-snd (cons v1 v2) k = return (cont v2 k)
+do-snd (v ⊗⟨ (` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4) ⟩) k
+  = return (cont v ([ snd₁ ] [ □⟨ T2 ⟹[ l ] T4 ⟩ ] k))
 
 do-cast : ∀ {T1 T2 Z}
   → Cast T1 T2
@@ -170,8 +170,8 @@ apply-cont v ([ app₂ v1 ] k) = do-app v1 v k
 apply-cont v ([ if₁ e2 e3 E ] k) = return (expr (cnd v e2 e3) E k)
 apply-cont v ([ cons₁ e2 E ] k) = return (expr e2 E ([ cons₂ v ] k))
 apply-cont v ([ cons₂ v1 ] k) = return (cont (cons v1 v) k)
-apply-cont v ([ car₁ ] k) = do-car v k
-apply-cont v ([ cdr₁ ] k) = do-cdr v k
+apply-cont v ([ fst₁ ] k) = do-fst v k
+apply-cont v ([ snd₁ ] k) = do-snd v k
 apply-cont v ([ □⟨ c ⟩ ] k) = do-cast c v k
 apply-cont v □ = return (halt v)
 
@@ -184,8 +184,8 @@ progress (expr #t E K)            = return (cont #t K)
 progress (expr #f E K)            = return (cont #f K)
 progress (expr (if e1 e2 e3) E K) = return (expr e1 E ([ if₁ e2 e3 E ] K))
 progress (expr (cons e1 e2) E K)  = return (expr e1 E (([ cons₁ e2 E ] K)))
-progress (expr (car e) E K)       = return (expr e E ([ car₁ ] K))
-progress (expr (cdr e) E K)       = return (expr e E ([ cdr₁ ] K))
+progress (expr (fst e) E K)       = return (expr e E ([ fst₁ ] K))
+progress (expr (snd e) E K)       = return (expr e E ([ snd₁ ] K))
 progress (expr (e ⟨ c ⟩) E K)     = return (expr e E ([ □⟨ c ⟩ ] K))
 progress (cont v k)               = apply-cont v k
 

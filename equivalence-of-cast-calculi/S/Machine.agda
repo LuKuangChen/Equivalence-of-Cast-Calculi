@@ -49,8 +49,8 @@ data Frame : Type → Type → Set where
     -----
     → Frame T2 (` T1 ⊗ T2)
 
-  car₁ : ∀ {T1 T2} → Frame (` T1 ⊗ T2) T1
-  cdr₁ : ∀ {T1 T2} → Frame (` T1 ⊗ T2) T2
+  fst₁ : ∀ {T1 T2} → Frame (` T1 ⊗ T2) T1
+  snd₁ : ∀ {T1 T2} → Frame (` T1 ⊗ T2) T2
 
 mutual
   data PreCont : Type → Type → Set where
@@ -148,17 +148,17 @@ do-app (lam⟨ c ⇒ d ⟩ e E) v K
   = ⟦ c ⟧ v >>= λ u →
     return (expr e (u ∷ E) (ext-cont d K))
 
-do-car : ∀ {T1 T2 Z}
+do-fst : ∀ {T1 T2 Z}
   → Value (` T1 ⊗ T2)
   → Cont T1 Z
   → State Z
-do-car (cons⟨ c1 ⊗ c2 ⟩ v1 v2) k = ⟦ c1 ⟧ v1 >>= λ v' → return (cont v' k)
+do-fst (cons⟨ c1 ⊗ c2 ⟩ v1 v2) k = ⟦ c1 ⟧ v1 >>= λ v' → return (cont v' k)
 
-do-cdr : ∀ {T1 T2 Z}
+do-snd : ∀ {T1 T2 Z}
   → Value (` T1 ⊗ T2)
   → Cont T2 Z
   → State Z
-do-cdr (cons⟨ c1 ⊗ c2 ⟩ v1 v2) k = ⟦ c2 ⟧ v2 >>= λ v' → return (cont v' k)
+do-snd (cons⟨ c1 ⊗ c2 ⟩ v1 v2) k = ⟦ c2 ⟧ v2 >>= λ v' → return (cont v' k)
 
 cnd : {A : Set} → Value (` B) → (x y : A) → A
 cnd #t x y = x
@@ -176,8 +176,8 @@ apply-cont v ([ app₂ v1 ] k) = do-app v1 v k
 apply-cont v ([ if₁ e2 e3 E ] k) = return (expr (cnd v e2 e3) E k)
 apply-cont v ([ cons₁ e2 E ] k) = return (expr e2 E (mk-cont ([ cons₂ v ] k)))
 apply-cont v ([ cons₂ v1 ] k) = return (cont (cons⟨ id _ ⊗ id _ ⟩ v1 v) k)
-apply-cont v ([ car₁ ] k) = do-car v k
-apply-cont v ([ cdr₁ ] k) = do-cdr v k
+apply-cont v ([ fst₁ ] k) = do-fst v k
+apply-cont v ([ snd₁ ] k) = do-snd v k
 apply-cont v □ = return (halt v)
 
 progress : ∀ {Z} → {s : State Z} → Progressing s → State Z
@@ -188,8 +188,8 @@ progress (expr (if e1 e2 e3) E K) = return (expr e1 E (mk-cont ([ if₁ e2 e3 E 
 progress (expr (lam e) E K)       = return (cont (lam⟨ id _ ⇒ id _ ⟩ e E)  K)
 progress (expr (app e1 e2) E K)   = return (expr e1 E (mk-cont ([ app₁ e2 E ] K)))
 progress (expr (cons e1 e2) E K)  = return (expr e1 E (mk-cont ([ cons₁ e2 E ] K)))
-progress (expr (car e) E K)       = return (expr e E (mk-cont ([ car₁ ] K)))
-progress (expr (cdr e) E K)       = return (expr e E (mk-cont ([ cdr₁ ] K)))
+progress (expr (fst e) E K)       = return (expr e E (mk-cont ([ fst₁ ] K)))
+progress (expr (snd e) E K)       = return (expr e E (mk-cont ([ snd₁ ] K)))
 progress (expr (e ⟨ c ⟩) E K)     = return (expr e E (ext-cont ⌈ c ⌉ K))
 -- progress (expr (blame l) E K)     = raise l
 progress (cont v ([□⟨ c ⟩] k)) = ⟦ c ⟧ v >>= λ v' → apply-cont v' k

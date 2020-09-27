@@ -187,17 +187,17 @@ do-app (lam⟨ lcs , c1 ⇒ c2 ⟩ e E) a k
          (done (lem->>= (lem-⟦ c1 ⟧ a)
                         λ v → return (expr e (v ∷ E) (lemma-ext-cont c2 k))))
 
-lem-L-do-car : ∀ {T1 T2 T3 T4 Z}
+lem-L-do-fst : ∀ {T1 T2 T3 T4 Z}
   → (v1 : L.Value T1)
   → (v2 : L.Value T2)
   → (cs : PCastList T1 T2 T3 T4)
   → (k : L.Cont T3 Z)
-  → (L.do-car (view-cons (L.cons v1 v2) cs) k)
+  → (L.do-fst (view-cons (L.cons v1 v2) cs) k)
       L.—→*
     (L.⟦ lft cs ⟧ v1 >>= λ v' → (return (cont v' k)))
-lem-L-do-car v1 v2 []       k = []
-lem-L-do-car v1 v2 (cs ⟪ ((` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4))) k
-  with lem-L-do-car v1 v2 cs (view-cont ((T1 ⟹[ l ] T3) ∷ []) k)
+lem-L-do-fst v1 v2 []       k = []
+lem-L-do-fst v1 v2 (cs ⟪ ((` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4))) k
+  with lem-L-do-fst v1 v2 cs (view-cont ((T1 ⟹[ l ] T3) ∷ []) k)
 ... | IH
   rewrite L.lem-seq (lft cs) ((T1 ⟹[ l ] T3) ∷ []) v1
   = it (cont _ _) ∷ (IH ++ next)
@@ -214,29 +214,29 @@ lem-L-do-car v1 v2 (cs ⟪ ((` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4))) k
       rewrite >>=-return (L.apply-cast (T1 ⟹[ l ] T3) v1')
       = it (cont _ _) ∷ []
 
-do-car : ∀ {T1 T2 Z lv rv lk rk}
+do-fst : ∀ {T1 T2 Z lv rv lk rk}
   → ValueRelate {` T1 ⊗ T2} lv rv
   → ContRelate lk rk
   → ∃[ lS' ]
     ∃[ rS' ]
-      (L.do-car lv lk L.—→* lS' ×
-       R.do-car rv rk R.—→* rS' ×
+      (L.do-fst lv lk L.—→* lS' ×
+       R.do-fst rv rk R.—→* rS' ×
        StateRelate {Z} lS' rS')
-do-car (cons⟨ lcs , c1 ⊗ c2 ⟩ v1 v2) k
-  = step (lem-L-do-car (lvalue v1) (lvalue v2) lcs (lcont k)) []
+do-fst (cons⟨ lcs , c1 ⊗ c2 ⟩ v1 v2) k
+  = step (lem-L-do-fst (lvalue v1) (lvalue v2) lcs (lcont k)) []
          (done (lem->>= (lem-⟦ c1 ⟧ v1) λ v1' → return (cont v1' k)))
 
-lem-L-do-cdr : ∀ {T1 T2 T3 T4 Z}
+lem-L-do-snd : ∀ {T1 T2 T3 T4 Z}
   → (v1 : L.Value T1)
   → (v2 : L.Value T2)
   → (cs : PCastList T1 T2 T3 T4)
   → (k : L.Cont T4 Z)
-  → (L.do-cdr (view-cons (L.cons v1 v2) cs) k)
+  → (L.do-snd (view-cons (L.cons v1 v2) cs) k)
       L.—→*
     (L.⟦ rht cs ⟧ v2 >>= λ v' → (return (cont v' k)))
-lem-L-do-cdr v1 v2 []       k = []
-lem-L-do-cdr v1 v2 (cs ⟪ ((` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4))) k
-  with lem-L-do-cdr v1 v2 cs (view-cont ((T2 ⟹[ l ] T4) ∷ []) k)
+lem-L-do-snd v1 v2 []       k = []
+lem-L-do-snd v1 v2 (cs ⟪ ((` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4))) k
+  with lem-L-do-snd v1 v2 cs (view-cont ((T2 ⟹[ l ] T4) ∷ []) k)
 ... | IH
   rewrite L.lem-seq (rht cs) ((T2 ⟹[ l ] T4) ∷ []) v2
   = it (cont _ _) ∷ (IH ++ next)
@@ -253,16 +253,16 @@ lem-L-do-cdr v1 v2 (cs ⟪ ((` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4))) k
       rewrite >>=-return (L.apply-cast (T2 ⟹[ l ] T4) v')
       = it (cont _ _) ∷ []
 
-do-cdr : ∀ {T1 T2 Z lv rv lk rk}
+do-snd : ∀ {T1 T2 Z lv rv lk rk}
   → ValueRelate {` T1 ⊗ T2} lv rv
   → ContRelate lk rk
   → ∃[ lS' ]
     ∃[ rS' ]
-      (L.do-cdr lv lk L.—→* lS' ×
-       R.do-cdr rv rk R.—→* rS' ×
+      (L.do-snd lv lk L.—→* lS' ×
+       R.do-snd rv rk R.—→* rS' ×
        StateRelate {Z} lS' rS')
-do-cdr (cons⟨ lcs , c1 ⊗ c2 ⟩ v1 v2) k
-  = step (lem-L-do-cdr (lvalue v1) (lvalue v2) lcs (lcont k)) []
+do-snd (cons⟨ lcs , c1 ⊗ c2 ⟩ v1 v2) k
+  = step (lem-L-do-snd (lvalue v1) (lvalue v2) lcs (lcont k)) []
          (done (lem->>= (lem-⟦ c2 ⟧ v2) λ v' → return (cont v' k)))
 
 apply-cont : ∀ {T1 T2 lv rv lk rk}
@@ -283,8 +283,8 @@ apply-cont v ([ cons₁ e2 E ] k)
   = done (return (expr e2 E ([□⟨ id ⟩] [ cons₂ v ] k)))
 apply-cont v ([ cons₂ v1 ] k)
   = done (return (cont (cons⟨ [] , id ⊗ id ⟩ v1 v) k))
-apply-cont v ([ car₁ ] k) = do-car v k
-apply-cont v ([ cdr₁ ] k) = do-cdr v k
+apply-cont v ([ fst₁ ] k) = do-fst v k
+apply-cont v ([ snd₁ ] k) = do-snd v k
 
 progress : ∀ {T}
   → {lS : L.State T}(lSp : L.Progressing lS)
@@ -327,14 +327,14 @@ progress (expr (e ⟨ c ⟩) lE lK)
          (expr (e ⟨ c ⟩) rE rK)
          (return (expr (e ⟨ c ⟩) E K))
          = done (return (expr e E (lemma-ext-cont (just c) K)))
-progress (expr (car e) lE lK)
-         (expr (car e) rE rK)
-         (return (expr (car e) E K))
-         = done (return (expr e E (lemma-mk-cont ([ car₁ ] K))))
-progress (expr (cdr e) lE lK)
-         (expr (cdr e) rE rK)
-         (return (expr (cdr e) E K))
-         = done (return (expr e E (lemma-mk-cont ([ cdr₁ ] K))))
+progress (expr (fst e) lE lK)
+         (expr (fst e) rE rK)
+         (return (expr (fst e) E K))
+         = done (return (expr e E (lemma-mk-cont ([ fst₁ ] K))))
+progress (expr (snd e) lE lK)
+         (expr (snd e) rE rK)
+         (return (expr (snd e) E K))
+         = done (return (expr e E (lemma-mk-cont ([ snd₁ ] K))))
 -- progress (expr (blame l) lE lK)
 --          (expr (blame l) rE rK)
 --          (return (expr (blame l) E K))

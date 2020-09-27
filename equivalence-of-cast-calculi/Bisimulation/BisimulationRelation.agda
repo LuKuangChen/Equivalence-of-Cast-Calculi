@@ -290,8 +290,8 @@ data FrameRelate : ∀ {S T} → L.Frame S T → R.Frame S T → Set where
     -----
     → FrameRelate {T2} (cons₂ lv1) (cons₂ rv1)
 
-  car₁ : ∀ {T1 T2} → FrameRelate {` T1 ⊗ T2} {T1} car₁ car₁
-  cdr₁ : ∀ {T1 T2} → FrameRelate {` T1 ⊗ T2} {T2} cdr₁ cdr₁
+  fst₁ : ∀ {T1 T2} → FrameRelate {` T1 ⊗ T2} {T1} fst₁ fst₁
+  snd₁ : ∀ {T1 T2} → FrameRelate {` T1 ⊗ T2} {T2} snd₁ snd₁
 
 view-cont : ∀ {T1 T2 T3}
   → CastList T1 T2

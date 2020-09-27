@@ -489,7 +489,7 @@ eq-*P Q P l v | return v' rewrite lem-id-m v' = refl
 
 open import Bisimulation.LazyDCastADT Label
 
-H-LazyD : LazyD H
+H-LazyD : IsLazyD H
 H-LazyD =
   record
     { eq-¬⌣ = eq-¬⌣

@@ -18,7 +18,7 @@ import S.Values using (Env; Value; dyn; #t; #f; lam⟨_⇒_⟩; cons⟨_⊗_⟩)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Nullary using (¬_; yes; no)
 
-record LazyUD (ADT : CastADT) : Set where
+record IsLazyUD (ADT : CastADT) : Set where
   open CastADT ADT
   open S.Values Label Injectable Cast
   field      
@@ -113,13 +113,13 @@ The following module proves that the ⟦_⟧ operator of every Lazy UD Cast ADT
 -}
 module Theorems
   (CADT : CastADT)
-  (CADTLazyUD : LazyUD CADT)
+  (CADTLazyUD : IsLazyUD CADT)
   where
   
   open import Cast Label using (Cast)
   open import R.BlameStrategies using (BlameStrategy)
   open import Bisimulation.BisimulationRelation Label LazyUDBS CADT
-  open LazyUD CADTLazyUD
+  open IsLazyUD CADTLazyUD
 
   open import Relation.Nullary using (yes; no)
   open import Data.Unit using (⊤; tt)

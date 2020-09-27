@@ -782,7 +782,7 @@ eq-*I-fail {.* ⊗ .*} v l `⊗ `B ¬p = refl
 eq-*I-fail {.* ⊗ .*} v l `⊗ `⇒ ¬p = refl
 eq-*I-fail {.* ⊗ .*} v l `⊗ `⊗ ¬p = ⊥-elim (¬p refl)
 
-C-LazyUD : LazyUD C
+C-LazyUD : IsLazyUD C
 C-LazyUD = record
              { eq-¬⌣ = eq-¬⌣
              ; eq-** = λ l v → refl

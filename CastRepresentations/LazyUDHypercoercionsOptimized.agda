@@ -1,4 +1,6 @@
-module CastRepresentations.LazyUDHypercoercions2 (Label : Set) where
+module CastRepresentations.LazyUDHypercoercionsOptimized
+  (Label : Set)
+  where
 {-
 2020-05-11 Kuang-Chen
 
@@ -669,7 +671,7 @@ H = record
 
 
 
-open import S.LazyUDCastADT Label
+open import Bisimulation.LazyUDCastADT Label
 
 
 eq-¬⌣ : ∀ {T₁ T₂}
@@ -806,8 +808,7 @@ eq-*I-fail {.* ⊗ .*} v l `⊗ `B ¬p = refl
 eq-*I-fail {.* ⊗ .*} v l `⊗ `⇒ ¬p = refl
 eq-*I-fail {.* ⊗ .*} v l `⊗ `⊗ ¬p = ⊥-elim (¬p refl)
 
-
-H-LazyUD : LazyUD H
+H-LazyUD : IsLazyUD H
 H-LazyUD = record
              { eq-¬⌣ = eq-¬⌣
              ; eq-** = λ l v → refl

@@ -12,11 +12,11 @@ open import S.Machine Label using ()
   renaming (Evalo to EvaloS)
 open import S.CastADT Label using (CastADT)
 open import Bisimulation.LazyDCastADT Label
-  using    (LazyD)
+  using    (IsLazyD)
   renaming (module Theorems to LD-Theorems)
 open LD-Theorems using () renaming (lem-⟦_⟧ to lem-⟦_⟧-D)
 open import Bisimulation.LazyUDCastADT Label
-  using    (LazyUD)
+  using    (IsLazyUD)
   renaming (module Theorems to LUD-Theorems)
 open LUD-Theorems using () renaming (lem-⟦_⟧ to lem-⟦_⟧-UD)
 
@@ -28,6 +28,8 @@ open import CastRepresentations.LazyDHypercoercions Label using ()
   renaming (H to LazyDH; H-LazyD to LazyDH-LazyD)
 open import CastRepresentations.LazyUDHypercoercions Label using ()
   renaming (H to LazyUDH; H-LazyUD to LazyUDH-LazyUD)
+open import CastRepresentations.LazyUDHypercoercionsOptimized Label using ()
+  renaming (H to LazyUDHO; H-LazyUD to LazyUDHO-LazyUD)
 open import CastRepresentations.LazyUDCoercionsInNormalForm Label using ()
   renaming (S to LazyUDS; S-LazyUD to LazyUDS-LazyUD)
 open import CastRepresentations.LazyUDThreesomes Label using ()
@@ -38,7 +40,7 @@ open import CastRepresentations.LazyUDThreesomes Label using ()
 
 theorem-LazyD-CastADT-correct-part-1 : ∀ {T}
   → (C : CastADT Same)
-  → (isLazyD : LazyD C)
+  → (isLazyD : IsLazyD C)
   → {e : ∅ ⊢ T}
   → {o : Observable T}
   → EvaloS Same C e o
@@ -49,7 +51,7 @@ theorem-LazyD-CastADT-correct-part-1 C isLazyD prf
 
 theorem-LazyD-CastADT-correct-part-2 : ∀ {T}
   → (C : CastADT Same)
-  → (lazyd : LazyD C)
+  → (lazyd : IsLazyD C)
   → {e : ∅ ⊢ T}
   → {o : Observable T}
   → EvaloC LazyDBS e o
@@ -63,7 +65,7 @@ theorem-LazyD-CastADT-correct-part-2 C lazyd prf
 
 theorem-LazyUD-CastADT-correct-part-1 : ∀ {T}
   → (C : CastADT Ground)
-  → (lazyd : LazyUD C)
+  → (lazyd : IsLazyUD C)
   → {e : ∅ ⊢ T}
   → {o : Observable T}
   → EvaloS Ground C e o
@@ -74,7 +76,7 @@ theorem-LazyUD-CastADT-correct-part-1 C lazyd prf
 
 theorem-LazyUD-CastADT-correct-part-2 : ∀ {T}
   → (C : CastADT Ground)
-  → (lazyd : LazyUD C)
+  → (lazyd : IsLazyUD C)
   → {e : ∅ ⊢ T}
   → {o : Observable T}
   → EvaloC LazyUDBS e o
@@ -123,7 +125,27 @@ LazyUDHypercoercionIsCorrect-2 : ∀ {T}
 LazyUDHypercoercionIsCorrect-2
   = theorem-LazyUD-CastADT-correct-part-2 LazyUDH LazyUDH-LazyUD
 
--- Lazy UD CoercionsInNormalForm
+-- Lazy UD Hypercoercions, Optimized
+
+LazyUDHypercoercionOptimizedIsCorrect-1 : ∀ {T}
+  → {e : ∅ ⊢ T}
+  → {o : Observable T}
+  → EvaloS Ground LazyUDHO e o
+  ---
+  → EvaloC LazyUDBS e o
+LazyUDHypercoercionOptimizedIsCorrect-1
+  = theorem-LazyUD-CastADT-correct-part-1 LazyUDHO LazyUDHO-LazyUD
+               
+LazyUDHypercoercionOptimizedIsCorrect-2 : ∀ {T}
+  → {e : ∅ ⊢ T}
+  → {o : Observable T}
+  → EvaloC LazyUDBS e o
+  ---
+  → EvaloS Ground LazyUDHO e o
+LazyUDHypercoercionOptimizedIsCorrect-2
+  = theorem-LazyUD-CastADT-correct-part-2 LazyUDHO LazyUDHO-LazyUD
+
+-- Lazy UD Coercions In Normal Form
 
 LazyUDCoercionsInNormalFormIsCorrect-1 : ∀ {T}
   → {e : ∅ ⊢ T}

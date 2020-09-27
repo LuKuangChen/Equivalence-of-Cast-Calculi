@@ -18,7 +18,7 @@ import S.Values using (Env; Value; dyn; #t; #f; lam⟨_⇒_⟩; cons⟨_⊗_⟩)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Nullary using (¬_; yes; no)
 
-record LazyD (ADT : CastADT) : Set where
+record IsLazyD (ADT : CastADT) : Set where
   open CastADT ADT
   open S.Values Label Injectable Cast
   field
@@ -85,13 +85,13 @@ preserves the bisimulation (lem-⟦_⟧).
 -}
 module Theorems
   (CADT : CastADT)
-  (CADTLazyD : LazyD CADT)
+  (CADTLazyD : IsLazyD CADT)
   where
   
   open import Cast Label using (Cast)
   open import R.BlameStrategies using (BlameStrategy)
   open import Bisimulation.BisimulationRelation Label LazyDBS CADT
-  open LazyD CADTLazyD
+  open IsLazyD CADTLazyD
 
   lem-⟦_⟧' : ∀ {P Q lv rv}
            → (c : Cast (` P) (` Q))

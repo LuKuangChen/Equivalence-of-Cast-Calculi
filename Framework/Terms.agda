@@ -3,7 +3,7 @@ module Terms
   where
 
 open import Types
-open import Variables
+open import Variables public
 open import Cast Label
 
 infix  4 _⊢_

@@ -1,9 +1,9 @@
-open import Types
-open import R.BlameStrategies
-open import S.CastADT
-open import Bisimulation.ApplyCastBisimulate
+open import equivalence-of-cast-calculi.Type
+open import equivalence-of-cast-calculi.R.BlameStrategies
+open import equivalence-of-cast-calculi.S.CastADT
+open import equivalence-of-cast-calculi.Bisimulation.ApplyCastBisimulate
 
-module Bisimulation.BisimulationProof
+module equivalence-of-cast-calculi.Bisimulation.BisimulationProof
   (Label : Set)
   (BS : BlameStrategy Label)
   (CADT : CastADT Label (BlameStrategy.Injectable BS))
@@ -11,20 +11,19 @@ module Bisimulation.BisimulationProof
   where
 
 open BlameStrategy BS using (Injectable)
-open import Variables using (∅)
-open import LabelUtilities Label
-open import Terms Label
-open import Cast Label
-open import Observables Label
-open import Error using (Error; return; raise; _>=>_; _>>=_; >>=-return)
-open import Chain using ([]; _∷_; _++_)
-open import Bisimulation.FromAFewStepsToTheEnd using (_∷_)
+open import equivalence-of-cast-calculi.LabelUtilities Label
+  renaming (negate-label×polarity to neg)
+open import equivalence-of-cast-calculi.CC Label hiding (_,_)
+open import equivalence-of-cast-calculi.Observable Label
+open import equivalence-of-cast-calculi.Error
+open import equivalence-of-cast-calculi.Chain using ([]; _∷_; _++_)
+open import equivalence-of-cast-calculi.Bisimulation.FromAFewStepsToTheEnd using (_∷_)
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; sym)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Product using (_×_; _,_; ∃-syntax)
 
-open import Bisimulation.BisimulationRelation Label BS CADT
+open import equivalence-of-cast-calculi.Bisimulation.BisimulationRelation Label BS CADT
 
 open L using ([]; _∷_)
 
@@ -158,16 +157,16 @@ lemma-L-do-app f []       a k = []
 lemma-L-do-app f (cs ⟪ (` S1 ⇒ T1 ⟹[ l ] ` S2 ⇒ T2)) a k
   = it (cont _ _) ∷ next
   where
-  next : (L.apply-cast (S2 ⟹[ negate-label l ] S1) a
+  next : (L.apply-cast (S2 ⟹[ neg l ] S1) a
           >>= λ v →
           (return (L.cont v (L.[ L.app₂ (view-lambda f cs) ]
                              L.[ L.□⟨ T1 ⟹[ l ] T2 ⟩ ] k))))
            L.—→*
-         (L.apply-cast (S2 ⟹[ negate-label l ] S1) a
+         (L.apply-cast (S2 ⟹[ neg l ] S1) a
           >>= L.⟦ dom cs ⟧
           >>= λ v →
           L.do-app f v (view-cont (cod cs L.++ ((T1 ⟹[ l ] T2) ∷ [])) k))
-  next with L.apply-cast (S2 ⟹[ negate-label l ] S1) a
+  next with L.apply-cast (S2 ⟹[ neg l ] S1) a
   next | raise l  = []
   next | return v
     rewrite sym (view-cont-++ (cod cs) ((T1 ⟹[ l ] T2) ∷ []) k)
@@ -204,9 +203,9 @@ lem-L-do-car v1 v2 (cs ⟪ ((` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4))) k
   = it (cont _ _) ∷ (IH ++ next)
   where
     next : (L.⟦ lft cs ⟧ v1 >>=
-       (λ v' → return (cont v' (L.[ L.□⟨ T1 L.⟹[ l ] T3 ⟩ ] k))))
+       (λ v' → return (cont v' (L.[ L.□⟨ T1 ⟹[ l ] T3 ⟩ ] k))))
       L.—→*
-      ((L.⟦ lft cs ⟧ v1 >>= (λ x → L.apply-cast (T1 L.⟹[ l ] T3) x >>= return))
+      ((L.⟦ lft cs ⟧ v1 >>= (λ x → L.apply-cast (T1 ⟹[ l ] T3) x >>= return))
        >>= (λ v' → return (cont v' k)))
     next
       with L.⟦ lft cs ⟧ v1
@@ -389,7 +388,8 @@ safety S | inj₂ (lSp , rSp) | lS'' , rS'' , lS'⟼lS'' , rS'⟼rS'' , S''
   = inj₂ (lS'' , rS'' , (it lSp ∷ lS'⟼lS'') , (it rSp ∷ rS'⟼rS'') , S'')
 
 module Foo {T : Type} where
-  open import Bisimulation.FromAFewStepsToTheEnd using (module BothWays)
+  open import equivalence-of-cast-calculi.Bisimulation.FromAFewStepsToTheEnd
+    using (module BothWays)
   module CorrectnessTheorems =
     BothWays (L.system {T = T}) R.system StateRelate safety
   open CorrectnessTheorems using (thm-final-LR; thm-final-RL) public
@@ -397,9 +397,9 @@ module Foo {T : Type} where
 correctness-l : ∀ {T}
   → {e : ∅ ⊢ T}
   → {o : Observable T}
-  → L.Evalo e o
+  → L.Eval e o
   ---
-  → R.Evalo e o
+  → R.Eval e o
 correctness-l {e = e} (L.val xs) with Foo.thm-final-LR (load e) xs (halt _)
 correctness-l {e = e} (L.val xs) | _ , ys , (R.halt rv) , return (halt v)
   rewrite observe v
@@ -411,9 +411,9 @@ correctness-l {e = e} (L.err xs) | _ , ys , (R.error l) , raise l
 correctness-r : ∀ {T}
   → {e : ∅ ⊢ T}
   → {o : Observable T}
-  → R.Evalo e o
+  → R.Eval e o
   ---
-  → L.Evalo e o
+  → L.Eval e o
 correctness-r {e = e} (R.val xs) with Foo.thm-final-RL (load e) xs (halt _)
 correctness-r {e = e} (R.val xs) | _ , ys , (L.halt rv) , return (halt v)
   rewrite sym (observe v)

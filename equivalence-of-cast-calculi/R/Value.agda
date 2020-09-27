@@ -1,14 +1,12 @@
-open import Types
+open import equivalence-of-cast-calculi.Type
 
-module R.Values
+module equivalence-of-cast-calculi.R.Value
   (Label : Set)
   (Injectable : PreType → Set)
   where
   
-open import Terms Label
-open import Variables
-open import Cast Label using (Cast; _⟹[_]_)
-open import Error
+open import equivalence-of-cast-calculi.CC Label
+open import equivalence-of-cast-calculi.Error
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Relation.Nullary using (¬_)

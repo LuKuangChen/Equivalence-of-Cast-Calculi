@@ -1,7 +1,7 @@
-open import Types
-open import S.CastADT
+open import equivalence-of-cast-calculi.Type
+open import equivalence-of-cast-calculi.S.CastADT
 
-module S.Machine
+module equivalence-of-cast-calculi.S.Machine
   (Label : Set)
   (Injectable : PreType → Set)
   (cast-adt : CastADT Label Injectable)
@@ -9,14 +9,12 @@ module S.Machine
 
 open CastADT cast-adt using (Cast; id; ⌈_⌉; _⨟_; ⟦_⟧)
 
-open import Error
-open import LabelUtilities Label
+open import equivalence-of-cast-calculi.Error
+open import equivalence-of-cast-calculi.LabelUtilities Label
 
-open import Variables using (∅)
-open import Cast Label using (_⟹[_]_)
-open import Terms Label
-open import Observables Label using (Observable; ValueDisplay; dyn; #t; #f; lam; cons)
-open import S.Values Label Injectable Cast
+open import equivalence-of-cast-calculi.CC Label hiding (Cast)
+open import equivalence-of-cast-calculi.Observable Label using (Observable; ValueDisplay; dyn; #t; #f; lam; cons)
+open import equivalence-of-cast-calculi.S.Value Label Injectable Cast
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong)
 
@@ -201,7 +199,7 @@ data _—→_ {T : Type} : State T → State T → Set where
     → (sp : Progressing s)
     → s —→ progress sp
 
-open import Bisimulation.FromAFewStepsToTheEnd using (System)
+open import equivalence-of-cast-calculi.TransitionSystem using (System)
 
 deterministic : ∀ {T}
   → {s t1 t2 : State T}
@@ -219,7 +217,7 @@ system = record
            ; deterministic = deterministic
            }
 
-module Eval {T : Type} where
+module Evaluation {T : Type} where
   open import Data.Product using (∃-syntax)
   open System (system {T}) using (_—→*_; _—→+_) public
 
@@ -230,8 +228,8 @@ module Eval {T : Type} where
   observe (lam⟨ c1 ⇒ c2 ⟩ e E) = lam
   observe (cons⟨ c1 ⊗ c2 ⟩ v1 v2) = cons
 
-  data Evalo (e : ∅ ⊢ T) : Observable T → Set where
-    val : ∀ {v} → (load e) —→* return (halt v) → Evalo e (return (observe v))
-    err : ∀ {l} → (load e) —→* raise l → Evalo e (raise l)
+  data Eval (e : ∅ ⊢ T) : Observable T → Set where
+    val : ∀ {v} → (load e) —→* return (halt v) → Eval e (return (observe v))
+    err : ∀ {l} → (load e) —→* raise l → Eval e (raise l)
 
-open Eval using (Evalo; val; err; observe; _—→*_; _—→+_) public
+open Evaluation using (Eval; val; err; observe; _—→*_; _—→+_) public

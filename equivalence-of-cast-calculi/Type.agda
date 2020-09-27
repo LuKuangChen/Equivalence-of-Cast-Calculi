@@ -1,4 +1,4 @@
-module Types where
+module equivalence-of-cast-calculi.Type where
 open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Data.Empty using (⊥-elim)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)

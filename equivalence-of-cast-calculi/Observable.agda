@@ -1,9 +1,9 @@
-module Observables
+module equivalence-of-cast-calculi.Observable
   (Label : Set)
   where
 
-open import Types
-open import LabelUtilities Label
+open import equivalence-of-cast-calculi.Type
+open import equivalence-of-cast-calculi.LabelUtilities Label
 
 data ValueDisplay : Type → Set where
   dyn : ValueDisplay *
@@ -18,7 +18,7 @@ data ValueDisplay : Type → Set where
   cons : ∀ {T1 T2}
     → ValueDisplay (` T1 ⊗ T2)
 
-open import Error
+open import equivalence-of-cast-calculi.Error
 
 Observable : Type → Set
 Observable T = Error Label×Polarity (ValueDisplay T)

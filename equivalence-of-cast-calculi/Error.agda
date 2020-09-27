@@ -1,23 +1,23 @@
-module Error where
+module equivalence-of-cast-calculi.Error where
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
 infixl 30 _>>=_
 infixl 30 _>=>_
 
-data Error (Label : Set) (A : Set) : Set where
-  raise  : (l : Label) → Error Label A
-  return : (v : A) → Error Label A
+data Error (M : Set) (A : Set) : Set where
+  raise  : (m : M) → Error M A
+  return : (a : A) → Error M A
 
-Handler : ∀ (Label A B : Set) → Set
-Handler Label A B = A → Error Label B
+Handler : ∀ (M A B : Set) → Set
+Handler M A B = A → Error M B
 
 _>>=_ : ∀ {L A B}
   → Error L A
   → Handler L A B
   → Error L B
-return x >>= h = h x
-raise l >>= h = raise l
+_>>=_ (return x) h = h x
+_>>=_ (raise l)  h = raise l
 
 >>=-assoc : ∀ {L A B C}
   → (r : Error L A)

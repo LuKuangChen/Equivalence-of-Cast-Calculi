@@ -1,10 +1,10 @@
-module Terms
+module equivalence-of-cast-calculi.CC
   (Label : Set)
   where
 
-open import Types
-open import Variables public
-open import Cast Label
+open import equivalence-of-cast-calculi.Type
+open import equivalence-of-cast-calculi.Variable public
+open import equivalence-of-cast-calculi.Cast Label public
 
 infix  4 _⊢_
 
@@ -61,8 +61,4 @@ data _⊢_ : Context → Type → Set where
     --------
     → Γ ⊢ T
 
-  -- blame : ∀ {Γ T}
-  --   → (l : Label)
-  --   ---
-  --   → Γ ⊢ T
 

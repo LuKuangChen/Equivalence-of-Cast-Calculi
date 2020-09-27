@@ -1,26 +1,27 @@
-module Bisimulation.LazyUDCastADT
+module equivalence-of-cast-calculi.Bisimulation.LazyUDCastADT
   (Label : Set)  
   where
 
-open import Types
-open import LabelUtilities Label
-open import Variables using (Context)
-open import Terms Label
-open import Error
-open import Cast Label using (_⟹[_]_)
+open import equivalence-of-cast-calculi.Type
+open import equivalence-of-cast-calculi.LabelUtilities Label
+  renaming (negate-label×polarity to neg)
+open import equivalence-of-cast-calculi.CC Label using (_⊢_; _⟹[_]_)
+open import equivalence-of-cast-calculi.Error
 
-open import R.BlameStrategies Label using (BlameStrategy; LazyUDBS)
+open import equivalence-of-cast-calculi.R.BlameStrategies Label
+  using (BlameStrategy; LazyUDBS)
 open BlameStrategy LazyUDBS using (Injectable)
 
-open import S.CastADT Label Injectable
-import S.Values using (Env; Value; dyn; #t; #f; lam⟨_⇒_⟩; cons⟨_⊗_⟩)
+open import equivalence-of-cast-calculi.S.CastADT Label Injectable
+import equivalence-of-cast-calculi.S.Value
+  using (Env; Value; dyn; #t; #f; lam⟨_⇒_⟩; cons⟨_⊗_⟩)
 
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Nullary using (¬_; yes; no)
 
 record IsLazyUD (ADT : CastADT) : Set where
   open CastADT ADT
-  open S.Values Label Injectable Cast
+  open equivalence-of-cast-calculi.S.Value Label Injectable Cast
   field      
     eq-¬⌣ : ∀ {T1 T2}
       → (v : Value T1)
@@ -85,16 +86,14 @@ record IsLazyUD (ADT : CastADT) : Set where
         return b
 
     eq-⇒ : ∀ T21 T22 T11 T12
-      → ∀ {S T}
-      → (l : Label×Polarity)
-      → {Γ : Context}
+      → ∀ {S T} l {Γ}
       → (c₁ : Cast T11 S)
       → (c₂ : Cast T T12)
       → ∀ e
       → (E : Env Γ)
       → ⟦ ⌈ (` T11 ⇒ T12) ⟹[ l ] (` T21 ⇒ T22) ⌉ ⟧ (lam⟨ c₁ ⇒ c₂ ⟩ e E)
           ≡
-        return (lam⟨ ⌈ T21 ⟹[ negate-label l ] T11 ⌉ ⨟ c₁ ⇒ c₂ ⨟ ⌈ T12 ⟹[ l ] T22 ⌉ ⟩ e E)
+        return (lam⟨ ⌈ T21 ⟹[ neg l ] T11 ⌉ ⨟ c₁ ⇒ c₂ ⨟ ⌈ T12 ⟹[ l ] T22 ⌉ ⟩ e E)
 
     eq-⊗ : ∀ T21 T22 T11 T12
       → ∀ {S T}
@@ -116,9 +115,9 @@ module Theorems
   (CADTLazyUD : IsLazyUD CADT)
   where
   
-  open import Cast Label using (Cast)
-  open import R.BlameStrategies using (BlameStrategy)
-  open import Bisimulation.BisimulationRelation Label LazyUDBS CADT
+  open import equivalence-of-cast-calculi.Cast Label using (Cast)
+  open import equivalence-of-cast-calculi.R.BlameStrategies using (BlameStrategy)
+  open import equivalence-of-cast-calculi.Bisimulation.BisimulationRelation Label LazyUDBS CADT
   open IsLazyUD CADTLazyUD
 
   open import Relation.Nullary using (yes; no)
@@ -127,7 +126,7 @@ module Theorems
   open import Relation.Binary.PropositionalEquality using (_≡_; refl)
   open import Data.Empty using (⊥; ⊥-elim)
 
-  open R.BlameStrategies.LazyUD Label using (project)
+  open equivalence-of-cast-calculi.R.BlameStrategies.LazyUD Label using (project)
   
   lem-project : ∀ {Q lv rv}
     → (l : Label×Polarity)
@@ -157,7 +156,7 @@ module Theorems
   lem-proxy (lam⟨ lcs , c1 ⇒ c2 ⟩ e E) (` S1 ⇒ T1 ⟹[ l ] ` S2 ⇒ T2) ⌣⇒
     rewrite eq-⇒ S2 T2 S1 T1 l (rcast c1) (rcast c2) e (renv E)
     = _ , refl
-      , lam⟨ lcs ⟪ _ , just (S2 ⟹[ negate-label l ] S1) ⨟ c1 ⇒ c2 ⨟ just (T1 ⟹[ l ] T2) ⟩ e E
+      , lam⟨ lcs ⟪ _ , just (S2 ⟹[ neg l ] S1) ⨟ c1 ⇒ c2 ⨟ just (T1 ⟹[ l ] T2) ⟩ e E
   lem-proxy (cons⟨ lcs , c1 ⊗ c2 ⟩ v1 v2) (` L1 ⊗ R1 ⟹[ l ] ` L2 ⊗ R2) ⌣⊗
     rewrite eq-⊗ L2 R2 L1 R1 l (rcast c1) (rcast c2) (rvalue v1) (rvalue v2)
     = _ , refl

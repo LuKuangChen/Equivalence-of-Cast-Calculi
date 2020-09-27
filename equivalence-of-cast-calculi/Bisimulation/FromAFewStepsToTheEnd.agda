@@ -1,4 +1,4 @@
-module Bisimulation.FromAFewStepsToTheEnd
+module equivalence-of-cast-calculi.Bisimulation.FromAFewStepsToTheEnd
   where
 
 open import Data.Empty using (⊥; ⊥-elim)
@@ -8,15 +8,9 @@ open import Data.Product using (Σ; _×_ ; Σ-syntax; ∃-syntax; _,_; proj₁; 
 open import Data.Nat using (ℕ; zero; suc)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; sym; subst)
 
-open import Chain
+open import equivalence-of-cast-calculi.TransitionSystem public
 
--- This is a parameterized bisimulation proof between any two systems.
-
--- A *system* is a deterministic transition system, which includes
---   - a set of states
---   - a transition relation
---   - a theorem saying that final state cannot transition
---   - a theorem saying that the transition relation is deterministic
+-- This is a parameterized bisimulation proof between any two systems (System.agda)
 
 -- The parameterized bisimulation proof claims that
 -- given a bisimulation relation _≈_
@@ -28,44 +22,6 @@ open import Chain
 --     s₂ —→* s₄ and s₄ final and s₃ ≈ s₄ for some s₄
 --   - s₂ —→* s₄ and s₄ final implies
 --     s₁ —→* s₃ and s₃ final and s₃ ≈ s₄ for some s₃
-
-record System (State : Set) : Set₁ where
-  field
-    _—→_ : State → State → Set
-    Final : State → Set
-    final-progressing-absurd : ∀ {s t}
-      → Final s
-      → (s —→ t)
-      → ⊥
-    deterministic : ∀ {s t1 t2}
-      → s —→ t1
-      → s —→ t2
-      → t1 ≡ t2
-
-  _—→*_ : State → State → Set
-  _—→*_ S T = Chain _—→_ S T
-
-  record _—→+_ (s s' : State) : Set where
-    constructor _∷_
-    field
-      {t} : State
-      x  : s —→  t
-      xs : t —→* s'
-
-  data Prefix : {s1 s2 s3 : State} → (s1 —→* s2) → (s1 —→* s3) → Set where
-    zero : ∀ {s1 s3}
-      → {xs : s1 —→* s3}
-      → Prefix [] xs
-
-    suc : ∀ {s0 s1 s2 s3}
-      → {x : s0 —→ s1}
-      → {y : s0 —→ s1}
-      → {xs : s1 —→* s2}
-      → {ys : s1 —→* s3}
-      → Prefix xs ys
-      → Prefix (x ∷ xs) (y ∷ ys)
-
-open System using (_∷_) public
 
 module OneWay
   {lState rState : Set}
@@ -135,7 +91,6 @@ module OneWay
   ... | refl
     with lem-final-helper ss' lxs' lxs (prefix lxs ls'-halt lxs') ls'-halt
   ... | rs'' , rxs , rhalt , bis = rs'' , (rx' ∷ (rxs' ++ rxs)) , rhalt , bis
-
 
 module BothWays
   {lState rState : Set}

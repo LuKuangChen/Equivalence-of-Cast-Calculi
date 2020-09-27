@@ -1,12 +1,12 @@
-module R.BlameStrategies
+module equivalence-of-cast-calculi.R.BlameStrategies
   (Label : Set)
   where
 
-open import Types
-open import LabelUtilities Label
-open import R.Values Label
-open import Cast Label
-open import Error using (Error; return; raise; _>>=_)
+open import equivalence-of-cast-calculi.Type
+open import equivalence-of-cast-calculi.LabelUtilities Label
+open import equivalence-of-cast-calculi.R.Value Label
+open import equivalence-of-cast-calculi.Cast Label
+open import equivalence-of-cast-calculi.Error using (Error; return; raise; _>>=_)
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Data.Empty using (⊥-elim)
@@ -21,7 +21,7 @@ record BlameStrategy : Set₁ where
       → Error Label×Polarity (Value Injectable T)
 
 module LazyD where
-  open import Types
+  open import equivalence-of-cast-calculi.Type
   open import Relation.Nullary using (yes; no)
 
   I? : PreType → Set
@@ -45,7 +45,7 @@ LazyDBS : BlameStrategy
 LazyDBS = record { Injectable = LazyD.I? ; apply-cast = LazyD.⟦_⟧ }
 
 module LazyUD where
-  open import Types
+  open import equivalence-of-cast-calculi.Type
 
   I? : PreType → Set
   I? = Ground

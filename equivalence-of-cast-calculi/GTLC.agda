@@ -1,8 +1,8 @@
-module GTLC
+module equivalence-of-cast-calculi.GTLC
   (Label : Set)
   where
-open import Types
-open import Variables
+open import equivalence-of-cast-calculi.Type
+open import equivalence-of-cast-calculi.Variable
 
 infix  4 _⊢_
 

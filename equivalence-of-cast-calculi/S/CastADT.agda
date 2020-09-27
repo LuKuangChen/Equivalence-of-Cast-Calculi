@@ -1,19 +1,18 @@
-open import Types
+open import equivalence-of-cast-calculi.Type
 
-module S.CastADT
+module equivalence-of-cast-calculi.S.CastADT
   (Label : Set)
   (Injectable : PreType → Set)
   where
 
-open import LabelUtilities Label
-open import Error using (_>=>_; Error; return)
-open import Cast Label renaming (Cast to SrcCast)
-import S.Values using (Value)
+open import equivalence-of-cast-calculi.LabelUtilities Label
+open import equivalence-of-cast-calculi.Error using (_>=>_; Error; return)
+open import equivalence-of-cast-calculi.Cast Label renaming (Cast to SrcCast)
+open import equivalence-of-cast-calculi.S.Value Label Injectable
 
 open import Relation.Binary.PropositionalEquality using (_≡_)
 
 record CastADT : Set₁ where
-  open S.Values Label Injectable
   field
     Cast : Type → Type → Set
 

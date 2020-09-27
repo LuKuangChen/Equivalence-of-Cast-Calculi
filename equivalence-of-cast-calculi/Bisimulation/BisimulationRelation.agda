@@ -1,28 +1,27 @@
-open import Types
-open import R.BlameStrategies
-open import S.CastADT
+open import equivalence-of-cast-calculi.Type
+open import equivalence-of-cast-calculi.R.BlameStrategies
+open import equivalence-of-cast-calculi.S.CastADT
 
-module Bisimulation.BisimulationRelation
+module equivalence-of-cast-calculi.Bisimulation.BisimulationRelation
   (Label : Set)
   (BS : BlameStrategy Label)
   (CADT : CastADT Label (BlameStrategy.Injectable BS))
   where
 
-open import LabelUtilities Label
-open BlameStrategy BS using (Injectable) public
+open import equivalence-of-cast-calculi.LabelUtilities Label
+  renaming (negate-label×polarity to neg)
+open BlameStrategy BS using (Injectable)
 
-open import Variables
-open import Types
-open import Terms Label
-open import Error
-open import Cast Label using () renaming (Cast to SCast)
-open import Observables Label
+open import equivalence-of-cast-calculi.Type
+open import equivalence-of-cast-calculi.CC Label hiding (Cast)
+open import equivalence-of-cast-calculi.Error
+open import equivalence-of-cast-calculi.Observable Label
 
 module L where
   open BlameStrategy BS using (apply-cast) public
-  open import R.Values Label Injectable public
-  open import Cast Label public
-  open import R.Machine Label BS public
+  open import equivalence-of-cast-calculi.CC Label using (Cast) public
+  open import equivalence-of-cast-calculi.R.Value Label Injectable public
+  open import equivalence-of-cast-calculi.R.Machine Label BS public
   
   open import Relation.Binary.PropositionalEquality using (_≡_; refl)
   
@@ -68,16 +67,17 @@ module L where
   ... | return v' = lem-seq xs ys v'
   ... | raise l = refl
 
-open L hiding (lookup; _—→_)
+open L hiding (lookup; _—→_; Cast)
+
 
 module R where
-  open import S.Values Label Injectable (CastADT.Cast CADT) public
   open CastADT CADT public
-  open import S.Machine Label Injectable CADT public
-  open import Chain using (_++_) public
+  open import equivalence-of-cast-calculi.S.Value Label Injectable Cast public
+  open import equivalence-of-cast-calculi.S.Machine Label Injectable CADT public
+  open import equivalence-of-cast-calculi.Chain using (_++_) public
 
-open R hiding (lookup; id; _⨟_; _—→_; [□⟨_⟩]_)
-  renaming (Cast to DCast)
+open R hiding (lookup; id; _⨟_; _—→_; [□⟨_⟩]_; Cast)
+
 
 data CastListRelate : {S T : Type} → CastList S T → R.Cast S T → Set where
   id : ∀ {T}
@@ -121,7 +121,7 @@ view-lambda v (cs ⟪ c) = view-lambda v cs ⇒⟨ c ⟩
 dom : ∀ {T11 T12 T21 T22} → FCastList T11 T12 T21 T22 → CastList T21 T11
 dom [] = []
 dom (cs ⟪ ((` T21 ⇒ T22) ⟹[ l ] (` T31 ⇒ T32)))
-  = ( T31 ⟹[ negate-label l ] T21 ) ∷ dom cs
+  = ( T31 ⟹[ neg l ] T21 ) ∷ dom cs
 
 cod : ∀ {T11 T12 T21 T22} → FCastList T11 T12 T21 T22 → CastList T12 T22
 cod [] = []
@@ -379,30 +379,6 @@ data OrdinaryStateRelate {Z : Type} : L.OrdinaryState Z → R.OrdinaryState Z
   halt : ∀ {lv rv}
     → (v : ValueRelate lv rv)
     → OrdinaryStateRelate (halt lv) (halt rv)
-
--- view-cont-cast : ∀ {T1 T2 T3}
---   → (v : L.Value T1)
---   → (cs : CastList T1 T2)
---   → (k : L.Cont T2 T3)
---   → (L.Progressing (return (cont v (view-cont cs k))))
--- view-cont-cast v [] k = cont v k
--- view-cont-cast v (c ∷ cs) k = cont v (L.[ □⟨ c ⟩ ] (view-cont cs k))
-
--- data ProgressingRelate {Z : Type} :
---   {lS : L.State Z}(lSp : L.Progressing lS)
---   {rS : R.State Z}(rSp : R.Progressing rS)
---   → Set
---   where
---   expr : ∀ {Γ T}
---     → (e : Γ ⊢ T)
---     → {lE : L.Env Γ}
---     → {rE : R.Env Γ}
---     → (E : EnvRelate lE rE)
---     → {lK : L.Cont T Z}
---     → {rK : R.Cont T Z}
---     → (K : ContRelate lK rK)
---     ------------
---     → ProgressingRelate (L.expr e lE lK) (R.expr e rE rK)
     
 StateRelate : ∀ {T} → L.State T → R.State T → Set
 StateRelate = ErrorRelate OrdinaryStateRelate

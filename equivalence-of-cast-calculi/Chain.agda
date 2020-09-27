@@ -1,4 +1,4 @@
-module Chain where
+module equivalence-of-cast-calculi.Chain where
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong)
 

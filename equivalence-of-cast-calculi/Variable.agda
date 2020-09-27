@@ -1,6 +1,6 @@
-module Variables where
+module equivalence-of-cast-calculi.Variable where
 
-open import Types
+open import equivalence-of-cast-calculi.Type
 
 data Context : Set where
   ∅   : Context
@@ -20,6 +20,7 @@ data _∋_ : Context → Type → Set where
       ---------
     → Γ , B ∋ A
 
+{- delete maybe? -}
 extL :  Type → Context → Context
 extL t ∅ = ∅ , t
 extL t (C , x) = (extL t C) , x

@@ -8,7 +8,7 @@ open import equivalence-of-cast-calculi.LabelUtilities Label
 open import equivalence-of-cast-calculi.CC Label using (_⊢_; _⟹[_]_)
 open import equivalence-of-cast-calculi.Error
 
-open import equivalence-of-cast-calculi.R.BlameStrategies Label
+open import equivalence-of-cast-calculi.C.BlameStrategies Label
   using (BlameStrategy; LazyUDBS)
 open BlameStrategy LazyUDBS using (Injectable)
 
@@ -116,7 +116,7 @@ module Theorems
   where
   
   open import equivalence-of-cast-calculi.Cast Label using (Cast)
-  open import equivalence-of-cast-calculi.R.BlameStrategies using (BlameStrategy)
+  open import equivalence-of-cast-calculi.C.BlameStrategies using (BlameStrategy)
   open import equivalence-of-cast-calculi.Bisimulation.BisimulationRelation Label LazyUDBS CADT
   open IsLazyUD CADTLazyUD
 
@@ -126,7 +126,7 @@ module Theorems
   open import Relation.Binary.PropositionalEquality using (_≡_; refl)
   open import Data.Empty using (⊥; ⊥-elim)
 
-  open equivalence-of-cast-calculi.R.BlameStrategies.LazyUD Label using (project)
+  open equivalence-of-cast-calculi.C.BlameStrategies.LazyUD Label using (project)
   
   lem-project : ∀ {Q lv rv}
     → (l : Label×Polarity)

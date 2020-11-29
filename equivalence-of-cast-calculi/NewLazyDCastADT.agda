@@ -21,8 +21,8 @@ open import equivalence-of-cast-calculi.Bisimulation.LazyDCastADT Label
 open import equivalence-of-cast-calculi.Observable Label
   using (Observable) public
 
-open import equivalence-of-cast-calculi.R.BlameStrategies Label using (LazyDBS)
-open import equivalence-of-cast-calculi.R.Machine Label LazyDBS
+open import equivalence-of-cast-calculi.C.BlameStrategies Label using (LazyDBS)
+open import equivalence-of-cast-calculi.C.Machine Label LazyDBS
   using ()
   renaming (Eval to Evalᵣ) public
 open import equivalence-of-cast-calculi.S.Machine Label Same

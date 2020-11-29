@@ -1,6 +1,6 @@
 open import equivalence-of-cast-calculi.Type
 
-module equivalence-of-cast-calculi.R.Value
+module equivalence-of-cast-calculi.C.Value
   (Label : Set)
   (Injectable : PreType → Set)
   where

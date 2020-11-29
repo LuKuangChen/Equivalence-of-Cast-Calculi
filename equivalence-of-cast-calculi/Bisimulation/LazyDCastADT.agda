@@ -8,7 +8,7 @@ open import equivalence-of-cast-calculi.LabelUtilities Label
 open import equivalence-of-cast-calculi.CC Label using (_⊢_; _⟹[_]_)
 open import equivalence-of-cast-calculi.Error
 
-open import equivalence-of-cast-calculi.R.BlameStrategies Label
+open import equivalence-of-cast-calculi.C.BlameStrategies Label
   using (BlameStrategy; LazyDBS)
 open BlameStrategy LazyDBS
   using (Injectable)
@@ -88,7 +88,7 @@ module Theorems
   (CADTLazyD : IsLazyD CADT)
   where
   
-  open import equivalence-of-cast-calculi.R.BlameStrategies using (BlameStrategy)
+  open import equivalence-of-cast-calculi.C.BlameStrategies using (BlameStrategy)
   open import equivalence-of-cast-calculi.Bisimulation.BisimulationRelation Label LazyDBS CADT
   open IsLazyD CADTLazyD
 

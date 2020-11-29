@@ -1,6 +1,6 @@
-open import equivalence-of-cast-calculi.R.BlameStrategies using (BlameStrategy)
+open import equivalence-of-cast-calculi.C.BlameStrategies using (BlameStrategy)
 
-module equivalence-of-cast-calculi.R.Machine
+module equivalence-of-cast-calculi.C.Machine
   (Label : Set)
   (BS : BlameStrategy Label)
   where
@@ -11,7 +11,7 @@ open import equivalence-of-cast-calculi.Observable Label
 open import equivalence-of-cast-calculi.LabelUtilities Label
 open import equivalence-of-cast-calculi.CC Label
 open import equivalence-of-cast-calculi.Error
-open import equivalence-of-cast-calculi.R.Value Label Injectable
+open import equivalence-of-cast-calculi.C.Value Label Injectable
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong)
 

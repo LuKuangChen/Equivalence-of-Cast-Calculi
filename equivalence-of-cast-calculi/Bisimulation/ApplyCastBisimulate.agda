@@ -1,4 +1,4 @@
-open import equivalence-of-cast-calculi.R.BlameStrategies
+open import equivalence-of-cast-calculi.C.BlameStrategies
 open import equivalence-of-cast-calculi.S.CastADT
 
 module equivalence-of-cast-calculi.Bisimulation.ApplyCastBisimulate

@@ -1,5 +1,5 @@
 open import equivalence-of-cast-calculi.Type
-open import equivalence-of-cast-calculi.R.BlameStrategies
+open import equivalence-of-cast-calculi.C.BlameStrategies
 open import equivalence-of-cast-calculi.S.CastADT
 open import equivalence-of-cast-calculi.Bisimulation.ApplyCastBisimulate
 
@@ -145,32 +145,71 @@ lem-L-apply-cont v (c ∷ cs) k with L.apply-cast c v
 ... | return v' = it (cont v' (view-cont cs k)) ∷ lem-L-apply-cont v' cs k 
 ... | raise l = []
 
-lemma-L-do-app : ∀ {S1 T1 S2 T2 T}
-  → (f  : L.Value (` S1 ⇒ T1))
+lem-L-do-app : ∀ {Γ S1 T1 S2 T2 T}
+  → ∀ e
+  → (E : L.Env Γ)
   → (cs : FCastList S1 T1 S2 T2)
-  → (a  : L.Value S2)
+  → (v  : L.Value S2)
   → (k  : L.Cont T2 T)
-  → (L.do-app (view-lambda f cs) a k)
+  → L.do-app (view-lambda (L.lam e E) cs) v k
       L.—→*
-    (L.⟦ dom cs ⟧ a >>= λ v → (L.do-app f v (view-cont (cod cs) k)))
-lemma-L-do-app f []       a k = []
-lemma-L-do-app f (cs ⟪ (` S1 ⇒ T1 ⟹[ l ] ` S2 ⇒ T2)) a k
+    L.⟦ dom cs ⟧ v >>= λ v →
+    return (expr e (v L.∷ E) (view-cont (cod cs) k))
+lem-L-do-app e E [] v k = []
+lem-L-do-app e E (cs ⟪ (` S1 ⇒ T1 ⟹[ l ] ` S2 ⇒ T2)) v k
   = it (cont _ _) ∷ next
   where
-  next : (L.apply-cast (S2 ⟹[ neg l ] S1) a
-          >>= λ v →
-          (return (L.cont v (L.[ L.app₂ (view-lambda f cs) ]
-                             L.[ L.□⟨ T1 ⟹[ l ] T2 ⟩ ] k))))
-           L.—→*
-         (L.apply-cast (S2 ⟹[ neg l ] S1) a
-          >>= L.⟦ dom cs ⟧
-          >>= λ v →
-          L.do-app f v (view-cont (cod cs L.++ ((T1 ⟹[ l ] T2) ∷ [])) k))
-  next with L.apply-cast (S2 ⟹[ neg l ] S1) a
-  next | raise l  = []
-  next | return v
-    rewrite sym (view-cont-++ (cod cs) ((T1 ⟹[ l ] T2) ∷ []) k)
-    = it (cont _ _) ∷ lemma-L-do-app f cs v (L.[ L.□⟨ T1 ⟹[ l ] T2 ⟩ ] k)
+  next :
+    (L.apply-cast (S2 ⟹[ neg l ] S1) v >>= λ v →
+     return (L.cont v (L.[ L.app₂ (view-lambda (L.lam e E) cs) ] L.[ L.□⟨ T1 ⟹[ l ] T2 ⟩ ] k)))
+      L.—→*
+    (L.⟦ (S2 ⟹[ neg l ] S1) ∷ dom cs ⟧ v >>= λ v →
+     return (expr e (v L.∷ E) (view-cont (cod cs L.++ ((T1 ⟹[ l ] T2) ∷ [])) k)))
+  next with L.apply-cast (S2 ⟹[ neg l ] S1) v
+  ... | raise l  = []
+  ... | return v'
+     rewrite sym (view-cont-++ (cod cs) ((T1 ⟹[ l ] T2) ∷ []) k)
+     = it (cont _ _) ∷ lem-L-do-app e E cs v' (L.[ L.□⟨ T1 L.Cast.⟹[ l ] T2 ⟩ ] k)
+
+lem-R-do-app : ∀ {Γ S1 T1 S2 T2 T}
+  → ∀ e
+  → (E : R.Env Γ)
+  → (c : R.Cast S2 S1)
+  → (d : R.Cast T1 T2)
+  → (v : R.Value S2)
+  → (k : R.Cont T2 T)
+  → R.do-app (R.lam⟨ c ⇒ d ⟩ e E) v k
+      R.—→*
+    R.⟦ c ⟧ v >>= λ v →
+    return (expr e (v R.∷ E) (R.ext-cont d k))
+lem-R-do-app e E c d v k = []
+
+-- lemma-L-do-app : ∀ {S1 T1 S2 T2 T}
+--   → (f  : L.Value (` S1 ⇒ T1))
+--   → (cs : FCastList S1 T1 S2 T2)
+--   → (a  : L.Value S2)
+--   → (k  : L.Cont T2 T)
+--   → (L.do-app (view-lambda f cs) a k)
+--       L.—→*
+--     (L.⟦ dom cs ⟧ a >>= λ v → (L.do-app f v (view-cont (cod cs) k)))
+-- lemma-L-do-app f []       a k = []
+-- lemma-L-do-app f (cs ⟪ (` S1 ⇒ T1 ⟹[ l ] ` S2 ⇒ T2)) a k
+--   = it (cont _ _) ∷ next
+--   where
+--   next : (L.apply-cast (S2 ⟹[ neg l ] S1) a
+--           >>= λ v →
+--           (return (L.cont v (L.[ L.app₂ (view-lambda f cs) ]
+--                              L.[ L.□⟨ T1 ⟹[ l ] T2 ⟩ ] k))))
+--            L.—→*
+--          (L.apply-cast (S2 ⟹[ neg l ] S1) a
+--           >>= L.⟦ dom cs ⟧
+--           >>= λ v →
+--           L.do-app f v (view-cont (cod cs L.++ ((T1 ⟹[ l ] T2) ∷ [])) k))
+--   next with L.apply-cast (S2 ⟹[ neg l ] S1) a
+--   next | raise l  = []
+--   next | return v
+--     rewrite sym (view-cont-++ (cod cs) ((T1 ⟹[ l ] T2) ∷ []) k)
+--     = it (cont _ _) ∷ lemma-L-do-app f cs v (L.[ L.□⟨ T1 ⟹[ l ] T2 ⟩ ] k)
 
 do-app : ∀ {T1 T2 Z lv1 rv1 lv2 rv2 lk rk}
   → ValueRelate {` T1 ⇒ T2} lv1 rv1
@@ -181,11 +220,11 @@ do-app : ∀ {T1 T2 Z lv1 rv1 lv2 rv2 lk rk}
       (L.do-app lv1 lv2 lk L.—→* lS' ×
        R.do-app rv1 rv2 rk R.—→* rS' ×
        StateRelate {Z} lS' rS')
-do-app (lam⟨ lcs , c1 ⇒ c2 ⟩ e E) a k
-  = step (lemma-L-do-app (L.lam e (lenv E)) lcs (lvalue a) (lcont k))
-         []
-         (done (lem->>= (lem-⟦ c1 ⟧ a)
-                        λ v → return (expr e (v ∷ E) (lemma-ext-cont c2 k))))
+do-app (lam⟨ lcs , c ⇒ d ⟩ e E) v k
+  = step (lem-L-do-app e (lenv E) lcs (lvalue v) (lcont k))
+         (lem-R-do-app e (renv E) (rcast c) (rcast d) (rvalue v) (rcont k))
+         (done (lem->>= (lem-⟦ c ⟧ v)
+                        λ v → return (expr e (v ∷ E) (lemma-ext-cont d k))))
 
 lem-L-do-fst : ∀ {T1 T2 T3 T4 Z}
   → (v1 : L.Value T1)

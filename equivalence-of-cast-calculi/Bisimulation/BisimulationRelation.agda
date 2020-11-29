@@ -1,5 +1,5 @@
 open import equivalence-of-cast-calculi.Type
-open import equivalence-of-cast-calculi.R.BlameStrategies
+open import equivalence-of-cast-calculi.C.BlameStrategies
 open import equivalence-of-cast-calculi.S.CastADT
 
 module equivalence-of-cast-calculi.Bisimulation.BisimulationRelation
@@ -20,8 +20,8 @@ open import equivalence-of-cast-calculi.Observable Label
 module L where
   open BlameStrategy BS using (apply-cast) public
   open import equivalence-of-cast-calculi.CC Label using (Cast) public
-  open import equivalence-of-cast-calculi.R.Value Label Injectable public
-  open import equivalence-of-cast-calculi.R.Machine Label BS public
+  open import equivalence-of-cast-calculi.C.Value Label Injectable public
+  open import equivalence-of-cast-calculi.C.Machine Label BS public
   
   open import Relation.Binary.PropositionalEquality using (_≡_; refl)
   

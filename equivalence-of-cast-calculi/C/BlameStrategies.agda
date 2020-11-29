@@ -1,10 +1,10 @@
-module equivalence-of-cast-calculi.R.BlameStrategies
+module equivalence-of-cast-calculi.C.BlameStrategies
   (Label : Set)
   where
 
 open import equivalence-of-cast-calculi.Type
 open import equivalence-of-cast-calculi.LabelUtilities Label
-open import equivalence-of-cast-calculi.R.Value Label
+open import equivalence-of-cast-calculi.C.Value Label
 open import equivalence-of-cast-calculi.Cast Label
 open import equivalence-of-cast-calculi.Error using (Error; return; raise; _>>=_)
 

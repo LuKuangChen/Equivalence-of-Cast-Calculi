@@ -1,8 +1,17 @@
 module illustration.LazyUDHypercoercions (Label : Set) where
 
+{-
+To understand how hypercoercions implement Cast ADT,  we recommand searching
+for ' : CastADT' and work backward from there.
+
+Everything from there to the first occurrance of ' : IsLazyUD' proves that
+Lazy UD hypercoercions is a Lazy UD Cast ADT.
+-}
+
 open import equivalence-of-cast-calculi.NewLazyUDCastADT Label
   renaming (negate-label×polarity to neg)
   renaming (B to B̂; _⇒_ to _⇒̂_; _⊗_ to _⊗̂_)
+-- adding hats to type constructors because we want to reuse these names
 
 open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Data.Empty using (⊥-elim)

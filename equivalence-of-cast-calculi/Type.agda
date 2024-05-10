@@ -5,12 +5,12 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
 open import Data.Product using (∃-syntax; _,_; proj₁)
 open import Data.Vec using (Vec; replicate; []; _∷_; map)
 open import Data.Nat using (ℕ)
-                           
+
 infix  99 `_
 infix 101 _·_
 infix 100 _⇒_
 infix 100 _⊗_
-          
+
 data TypeOp : Set where
   `B : TypeOp
   `⊗ : TypeOp
@@ -41,7 +41,7 @@ record PreType where
   field
     op : TypeOp
     T* : Vec Type (arity op)
-                         
+
 data Type where
   *  : Type
   `_ : (P : PreType) → Type
@@ -58,7 +58,7 @@ polarity `⇒ = - ∷ + ∷ []
 choose : {A : Set} → Polarity → A → A → A
 choose - a b = a
 choose + a b = b
-               
+
 pattern B       = `B · []
 pattern _⇒_ S T = `⇒ · (S ∷ T ∷ [])
 pattern _⊗_ S T = `⊗ · (S ∷ T ∷ [])
@@ -92,14 +92,14 @@ ground-unique `⇒ `⇒ = refl
 ground-unique `⊗ `⊗ = refl
 
 op→ground : TypeOp → PreType
-op→ground op = op · replicate *
+op→ground op = op · replicate (arity op) *
 
 op→ground-Ground : ∀ op → Ground (op→ground op)
 op→ground-Ground `B = `B
 op→ground-Ground `⊗ = `⊗
 op→ground-Ground `⇒ = `⇒
 
-inv-ground : ∀ {P} → Ground P → ∃[ o ](P ≡ o · (replicate *))
+inv-ground : ∀ {P} → Ground P → ∃[ o ](P ≡ o · (replicate (arity o) *))
 inv-ground `B = `B , refl
 inv-ground `⇒ = `⇒ , refl
 inv-ground `⊗ = `⊗ , refl
@@ -313,6 +313,6 @@ meet *~* = *
 meet (*~P P) = (` P)
 meet (P~* P) = (` P)
 meet ~B = (` B)
-meet (~⇒ S~T₁ S~T₂) = ` meet S~T₁ ⇒ meet S~T₂ 
+meet (~⇒ S~T₁ S~T₂) = ` meet S~T₁ ⇒ meet S~T₂
 meet (~⊗ S~T₁ S~T₂) = ` meet S~T₁ ⊗ meet S~T₂
 

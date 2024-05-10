@@ -37,7 +37,7 @@ data Tail : PreType → Type → Set where
   ε : ∀ {P}
       ------------
     → Tail P (` P)
-    
+
   ‼ : ∀ {P}
     → (gP : Ground P)
       ---------------
@@ -54,7 +54,7 @@ mutual
       (t : Tail Q B) →
       ---
       Cast A B
-    
+
   data Body : PreType → PreType → Set where
     ⊥ : ∀ {P Q}
       → (l : Label×Polarity)
@@ -100,7 +100,7 @@ data Gap : ∀ {P T Q} → Tail P T → Head T Q → Set where
     → {h : Head T P}
     → (p : CompatibleTailHead t h)
     → Gap t h
-    
+
 check-gap : ∀ {P T Q}
   → (t : Tail P T)
   → (h : Head T Q)
@@ -109,13 +109,13 @@ check-gap ε ε = none none
 check-gap (‼ gP) (⁇ gQ l) with gP ≟G gQ
 check-gap (‼ gP) (⁇ gQ l) | yes refl rewrite ground-unique gP gQ = none (some gQ)
 check-gap (‼ gP) (⁇ gQ l) | no ¬P≡Q  = some ¬P≡Q l
-                                   
+
 mutual
   _⨟_ : ∀ {T1 T2 T3} → Cast T1 T2 → Cast T2 T3 → Cast T1 T3
   id*        ⨟ d   = d
   ↷ h1 m1 t1 ⨟ id* = ↷ h1 m1 t1
   ↷ h1 m1 t1 ⨟ ↷ h2 m2 t2 = ↷ h1 (seq-m m1 t1 h2 m2) t2
-                                                     
+
   seq-m : ∀ {P1 P2 T P3 P4}
     → Body P1 P2
     → Tail P2 T
@@ -127,7 +127,7 @@ mutual
   seq-m (` m1) .(‼ _) .(⁇ _ l) m2 | some ¬P≡Q l = ⊥ l
   seq-m (` m1) t1 h2 (⊥ l2) | none p = ⊥ l2
   seq-m (` m1) t1 h2 (` m2) | none p = ` (m1 ⨟' m2)
-                                              
+
   _⨟'_ : ∀ {T1 T2 T3} → PreBody T1 T2 → PreBody T2 T3 → PreBody T1 T3
   B ⨟' B = B
   (c₁ ⇒ c₂) ⨟' (c₃ ⇒ c₄) = (c₃ ⨟ c₁) ⇒ (c₂ ⨟ c₄)
@@ -139,7 +139,7 @@ mutual
   ⇑ l (` B̂)     = ↷ ε (` B)               (‼ `B)
   ⇑ l (` S ⇒̂ T) = ↷ ε (` (⇓ (neg l) S ⇒ ⇑ l T)) (‼ `⇒)
   ⇑ l (` S ⊗̂ T) = ↷ ε (` (⇑ l S ⊗ ⇑ l T)) (‼ `⊗)
-  
+
   ⇓ : Label×Polarity → ∀ T → Cast * T
   ⇓ l *     = id*
   ⇓ l (` B̂)     = ↷ (⁇ `B l) (` B)                 ε
@@ -225,7 +225,7 @@ mutual
   identityˡ (↷ ε (` B) t2) = refl
   identityˡ (↷ ε (` (c₁ ⇒ c₂)) t2) rewrite identityʳ c₁ | identityˡ c₂ = refl
   identityˡ (↷ ε (` (c₁ ⊗ c₂)) t2) rewrite identityˡ c₁ | identityˡ c₂ = refl
-  
+
   identityʳ : ∀ {T1 T2} → (c : Cast T1 T2) → c ⨟ id T2 ≡ c
   identityʳ id* = refl
   identityʳ (↷ t1 m (‼ P)) = refl
@@ -265,13 +265,13 @@ mutual
   assoc-seq-m (` B) t1 h2 (` B) t2 h3 (` B) | none p | none q = refl
   assoc-seq-m (` (c₁ ⇒ c₂)) t1 h2 (` (c₃ ⇒ c₄)) t2 h3 (` (c₅ ⇒ c₆))
     | none p | none q
-    = cong₂ (λ □ ■ → (` □ ⇒ ■)) (sym (assoc c₅ c₃ c₁)) (assoc c₂ c₄ c₆) 
+    = cong₂ (λ □ ■ → (` □ ⇒ ■)) (sym (assoc c₅ c₃ c₁)) (assoc c₂ c₄ c₆)
   assoc-seq-m (` (c₁ ⊗ c₂)) t1 h2 (` (c₃ ⊗ c₄)) t2 h3 (` (c₅ ⊗ c₆))
     | none p | none q
-    = cong₂ (λ □ ■ → (` □ ⊗ ■)) (assoc c₁ c₃ c₅) (assoc c₂ c₄ c₆) 
+    = cong₂ (λ □ ■ → (` □ ⊗ ■)) (assoc c₁ c₃ c₅) (assoc c₂ c₄ c₆)
 
 lem-id-m : ∀ {P}
-  → (v : Value Cast (` P))  
+  → (v : Value Cast (` P))
   -----------------------------
   → proxy v (id-m P) ≡ v
 lem-id-m {B̂} v = refl
@@ -279,7 +279,7 @@ lem-id-m {S ⇒̂ T} (lam⟨ c ⇒ d ⟩ e E)  rewrite identityˡ c | identityʳ
 lem-id-m {S ⊗̂ T} (cons⟨ c ⊗ d ⟩ v u) rewrite identityʳ c | identityʳ d = refl
 
 lem-id : ∀ {T}
-  → (v : Value Cast T)  
+  → (v : Value Cast T)
   -----------------------------
   → ⟦ id T ⟧ v ≡ return v
 lem-id {*} v = refl
@@ -333,7 +333,7 @@ lem-seq (↷ h1 m1 t1) (↷ h2 m2 t2) v | return v'
 ... | raise l    = refl
 ... | return v'' = refl
 
-H : CastADT 
+H : CastADT
 H = record
     { Cast = Cast
     ; id  = id
@@ -446,9 +446,9 @@ eq-*I-succ (lam⟨ c1 ⇒ c2 ⟩ e E) l `⇒
 eq-*I-succ (cons⟨ c1 ⊗ c2 ⟩ v v₁) l `⊗
   rewrite identityʳ c1 | identityʳ c2
   = refl
-    
+
 eq-*I-fail : {P Q : PreType}
-  → (v : Value Cast (` P))  
+  → (v : Value Cast (` P))
   → (l : Label×Polarity)
   → (gP : Ground P)
   → (gQ : Ground Q)
@@ -488,7 +488,7 @@ correctness-1 : ∀ {T e}
   → Evalᵣ e o
 correctness-1
   = theorem-LazyUD-CastADT-correct-part-1 H HIsLazyUD
-               
+
 correctness-2 : ∀ {T e}
   → {o : Observable T}
   → Evalᵣ e o

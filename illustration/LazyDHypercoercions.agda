@@ -45,13 +45,13 @@ data Cast where
     (t : Tail Q B) →
     ---
     Cast A B
-  
+
 data Body where
   ⊥ : ∀ {P Q}
     → (l : Label×Polarity)
       ---
     → Body P Q
-             
+
   `_ : ∀ {P Q} →
      (m : PreBody P Q) →
      ---
@@ -61,20 +61,20 @@ data Body where
 data PreBody where
 
   B̂ : PreBody B B
-  
+
   _⇒̂_ : ∀ {S1 S2 T1 T2}
     → (c₁ : Cast S2 S1)
     → (c₂ : Cast T1 T2)
       ---------------------------
     → PreBody (S1 ⇒ T1) (S2 ⇒ T2)
-    
+
   _⊗̂_ : ∀ {S1 S2 T1 T2}
     → (c₁ : Cast S1 S2)
     → (c₂ : Cast T1 T2)
       ---------------------------
     → PreBody (S1 ⊗ T1) (S2 ⊗ T2)
 
-                              
+
 data GapT : Type → Type → Set where
   none : ∀ {T} → GapT T T
   some : (l : Label×Polarity) → ∀ T1 T2 → GapT T1 T2
@@ -169,7 +169,7 @@ mutual
   seq id* g (↷ h2 m2 t2) = ↷ (mk-proj g h2) m2 t2
   seq (↷ h1 m1 t1) g id* = ↷ h1 m1 (mk-inj t1 g)
   seq (↷ h1 m1 t1) g (↷ h2 m2 t2) = ↷ h1 (seq-m m1 (mk-gap t1 g h2) m2) t2
-  
+
   seq-m : ∀ {P1 P2 P3 P4}
     → Body P1 P2
     → GapP P2 P3
@@ -181,7 +181,7 @@ mutual
   seq-m (` m1) .(some l _ _) m2 | bad ¬P⌣Q l = ⊥ l
   seq-m (` m1) g (⊥ l2) | good P⌣Q = ⊥ l2
   seq-m (` m1) g (` m2) | good P⌣Q = ` seq-mm P⌣Q m1 g m2
-  
+
   seq-mm : ∀ {P1 P2 P3 P4}
     → (` P2) ⌣ (` P3)
     → PreBody P1 P2
@@ -222,7 +222,7 @@ mutual
   identityˡ (↷ ε (` B̂) t2) = refl
   identityˡ (↷ ε (` (c₁ ⇒̂ c₂)) t2) rewrite identityʳ c₁ | identityˡ c₂ = refl
   identityˡ (↷ ε (` (c₁ ⊗̂ c₂)) t2) rewrite identityˡ c₁ | identityˡ c₂ = refl
-  
+
   identityʳ : ∀ {T1 T2} → (c : Cast T1 T2) → c ⨟ id T2 ≡ c
   identityʳ id* = refl
   identityʳ (↷ t1 m (‼ P)) = refl
@@ -292,7 +292,7 @@ seq-assoc (↷ h1 m1 t1) g1 (↷ h2 m2 t2) g2 id* = refl
 seq-assoc (↷ h1 m1 t1) g1 (↷ h2 m2 t2) g2 (↷ h3 m3 t3)
   rewrite seq-m-assoc m1 (mk-gap t1 g1 h2) m2 (mk-gap t2 g2 h3) m3
   = refl
-    
+
 ⨟-assoc : ∀ {T1 T2 T3 T4}
   → (c1 : Cast T1 T2)
   → (c2 : Cast T2 T3)
@@ -310,7 +310,7 @@ CastResult T = Error Label×Polarity (Value Cast T)
   → Value Cast (` P)
   ---
   → CastResult T
-⟦ ‼ P ⟧t v = return (dyn (same P) v)
+⟦ ‼ P ⟧t v = return (dyn (all P) v)
 ⟦ ε   ⟧t v = return v
 
 proxy : ∀ {P1 P2}
@@ -334,7 +334,7 @@ proxy (cons⟨ c1 ⊗ c2 ⟩ v1 v2) (c3 ⊗̂ c4) = cons⟨ c1 ⨟ c3 ⊗ c2 ⨟
   → Value Cast T
   → CastResult (` P)
 ⟦ ε      ⟧h v = return v
-⟦ ⁇ P2 l ⟧h (dyn (same P1) v) = ⟦ seq-m (` id-m P1) (some l (` P1) (` P2)) (` id-m P2) ⟧m v 
+⟦ ⁇ P2 l ⟧h (dyn (all P1) v) = ⟦ seq-m (` id-m P1) (some l (` P1) (` P2)) (` id-m P2) ⟧m v
 
 ⟦_⟧ : ∀ {T1 T2}
   → Cast T1 T2
@@ -346,15 +346,15 @@ proxy (cons⟨ c1 ⊗ c2 ⟩ v1 v2) (c3 ⊗̂ c4) = cons⟨ c1 ⨟ c3 ⊗ c2 ⨟
 
 mutual
   lem-id-m : ∀ {P}
-    → (v : Value Cast (` P))  
+    → (v : Value Cast (` P))
     -----------------------------
     → proxy v (id-m P) ≡ v
   lem-id-m {B} v = refl
   lem-id-m {S ⇒ T} (lam⟨ c ⇒ d ⟩ e E)  rewrite identityˡ c | identityʳ d = refl
   lem-id-m {S ⊗ T} (cons⟨ c ⊗ d ⟩ v u) rewrite identityʳ c | identityʳ d = refl
-  
+
   lem-id : ∀ {T}
-    → (v : Value Cast T)  
+    → (v : Value Cast T)
     -----------------------------
     → ⟦ id T ⟧ v ≡ return v
   lem-id {*} v = refl
@@ -399,7 +399,7 @@ lem-seq-m (` (c2 ⇒̂ d2)) (‼ (S1 ⇒ T1)) (⁇ (S2 ⇒ T2) l) (` (c3 ⇒̂ d
   | lem1 (neg l) c3 (c2 ⨟ c1) | lem1 l (d1 ⨟ d2) d3
   = cong₂ (λ c d → return (lam⟨ c ⇒ d ⟩ e E))
           (seq-assoc c3 _ c2 _ c1)
-          (sym (seq-assoc d1 _ d2 _ d3)) 
+          (sym (seq-assoc d1 _ d2 _ d3))
 lem-seq-m (` (c2 ⊗̂ d2)) (‼ .(_ ⊗ _)) (⁇ .(_ ⊗ _) l) (` (c3 ⊗̂ d3))
           (cons⟨ c1 ⊗ d1 ⟩ v u) | yes ⌣⊗
   rewrite lem1 l (c1 ⨟ c2) c3 | lem1 l (d1 ⨟ d2) d3
@@ -467,14 +467,14 @@ eq-** l v = refl
 
 eq-P* : ∀ {P}
   → (l : Label×Polarity)
-  → (v : Value Cast (` P))  
+  → (v : Value Cast (` P))
   → ⟦ ⌈ (` P) ⟹[ l ] * ⌉ ⟧ v
       ≡
-    return (dyn (same P) v)
+    return (dyn (all P) v)
 eq-P* l v rewrite lem-id-m v = refl
 
 eq-*P : ∀ Q P l v
-  → ⟦ ⌈ *   ⟹[ l ] ` Q ⌉ ⟧ (dyn (same P) v)
+  → ⟦ ⌈ *   ⟹[ l ] ` Q ⌉ ⟧ (dyn (all P) v)
       ≡
     ⟦ ⌈ ` P ⟹[ l ] ` Q ⌉ ⟧ v
 eq-*P Q P l v with ⟦ seq-m (` id-m P) (some l (` P) (` Q)) (` id-m Q) ⟧m v
@@ -500,7 +500,7 @@ correctness-1 : ∀ {T e}
   → Evalᵣ e o
 correctness-1
   = theorem-LazyD-CastADT-correct-part-1 H HIsLazyD
-               
+
 correctness-2 : ∀ {T e}
   → {o : Observable T}
   → Evalᵣ e o

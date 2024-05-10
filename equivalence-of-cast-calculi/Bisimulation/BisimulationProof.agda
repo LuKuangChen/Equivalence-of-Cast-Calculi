@@ -71,7 +71,6 @@ view-cont-++ : ∀ {T1 T2 T3 Z}
 view-cont-++ []       ds k = refl
 view-cont-++ (c ∷ cs) ds k rewrite view-cont-++ cs ds k = refl
 
--- the next two lemmas are not useful yet in formal proof
 lemma-mk-cont : ∀ {T1 T2}
   → {lk : L.Cont T1 T2}
   → {rk : R.PreCont T1 T2}
@@ -142,7 +141,7 @@ lem-L-apply-cont : ∀ {T1 T2 T3}
     (L.⟦ cs ⟧ v >>= λ v' → (L.apply-cont v' k))
 lem-L-apply-cont v [] k = []
 lem-L-apply-cont v (c ∷ cs) k with L.apply-cast c v
-... | return v' = it (cont v' (view-cont cs k)) ∷ lem-L-apply-cont v' cs k 
+... | return v' = it (cont v' (view-cont cs k)) ∷ lem-L-apply-cont v' cs k
 ... | raise l = []
 
 lem-L-do-app : ∀ {Γ S1 T1 S2 T2 T}
@@ -183,33 +182,6 @@ lem-R-do-app : ∀ {Γ S1 T1 S2 T2 T}
     R.⟦ c ⟧ v >>= λ v →
     return (expr e (v R.∷ E) (R.ext-cont d k))
 lem-R-do-app e E c d v k = []
-
--- lemma-L-do-app : ∀ {S1 T1 S2 T2 T}
---   → (f  : L.Value (` S1 ⇒ T1))
---   → (cs : FCastList S1 T1 S2 T2)
---   → (a  : L.Value S2)
---   → (k  : L.Cont T2 T)
---   → (L.do-app (view-lambda f cs) a k)
---       L.—→*
---     (L.⟦ dom cs ⟧ a >>= λ v → (L.do-app f v (view-cont (cod cs) k)))
--- lemma-L-do-app f []       a k = []
--- lemma-L-do-app f (cs ⟪ (` S1 ⇒ T1 ⟹[ l ] ` S2 ⇒ T2)) a k
---   = it (cont _ _) ∷ next
---   where
---   next : (L.apply-cast (S2 ⟹[ neg l ] S1) a
---           >>= λ v →
---           (return (L.cont v (L.[ L.app₂ (view-lambda f cs) ]
---                              L.[ L.□⟨ T1 ⟹[ l ] T2 ⟩ ] k))))
---            L.—→*
---          (L.apply-cast (S2 ⟹[ neg l ] S1) a
---           >>= L.⟦ dom cs ⟧
---           >>= λ v →
---           L.do-app f v (view-cont (cod cs L.++ ((T1 ⟹[ l ] T2) ∷ [])) k))
---   next with L.apply-cast (S2 ⟹[ neg l ] S1) a
---   next | raise l  = []
---   next | return v
---     rewrite sym (view-cont-++ (cod cs) ((T1 ⟹[ l ] T2) ∷ []) k)
---     = it (cont _ _) ∷ lemma-L-do-app f cs v (L.[ L.□⟨ T1 ⟹[ l ] T2 ⟩ ] k)
 
 do-app : ∀ {T1 T2 Z lv1 rv1 lv2 rv2 lk rk}
   → ValueRelate {` T1 ⇒ T2} lv1 rv1

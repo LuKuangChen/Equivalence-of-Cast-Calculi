@@ -63,8 +63,8 @@ pattern B       = `B · []
 pattern _⇒_ S T = `⇒ · (S ∷ T ∷ [])
 pattern _⊗_ S T = `⊗ · (S ∷ T ∷ [])
 
-data Same : PreType → Set where
-  same : ∀ P → Same P
+data All : PreType → Set where
+  all : ∀ P → All P
 
 data Ground : PreType → Set where
   `B : Ground (B)

@@ -15,21 +15,21 @@ infix 100 _⊗_
 mutual
 
   data CoeG : PreType → PreType → Set where
-  
+
     B : CoeG B̂ B̂
-    
+
     _⇒_ : ∀ {S1 T1 S2 T2}
       → (s : CoeS S2 S1)
       → (t : CoeS T1 T2)
       → CoeG (S1 ⇒̂ T1) (S2 ⇒̂ T2)
-      
+
     _⊗_ : ∀ {S1 T1 S2 T2}
       → (s : CoeS S1 S2)
       → (t : CoeS T1 T2)
       → CoeG (S1 ⊗̂ T1) (S2 ⊗̂ T2)
 
   data CoeI : PreType → Type → Set where
-  
+
     ⊥ : ∀ {A P Q}
       → (A⌣G : (` A) ⌣ (` P))
       → (G : Ground P)
@@ -38,26 +38,26 @@ mutual
       → (¬G≡H : ¬ (P ≡ Q))
       → ∀ {T}
       → CoeI A T
-  
+
     _,_‼ : ∀ {P Q}
       → (g : CoeG P Q)
       → (G : Ground Q)
       → CoeI P *
-  
+
     `_ : ∀ {P Q}
       → (g : CoeG P Q)
       → CoeI P (` Q)
-  
+
   data CoeS : Type → Type → Set where
-  
+
     id*   : CoeS * *
-    
+
     _⁇_,_ : ∀ {P T}
       → (G : Ground P)
       → (l : Label×Polarity)
       → (i : CoeI P T)
       → CoeS * T
-      
+
     `_    : ∀ {P T}
       → (i : CoeI P T)
       → CoeS (` P) T
@@ -93,12 +93,12 @@ mutual
   id* ⨟ t = t
   (G ⁇ l , i) ⨟ t = G ⁇ l , (i i⨟s t)
   (`       i) ⨟ t = `       (i i⨟s t)
-                                      
+
 mutual
   ⇑* : Label×Polarity → ∀ T → Cast T *
   ⇑* l *     = id*
   ⇑* l (` P) = ⇑ l P
-  
+
   ⇑ : Label×Polarity → ∀ P → Cast (` P) *
   ⇑ l B̂       = ` (B , `B ‼)
   ⇑ l (S ⇒̂ T) = ` (⇓* (neg l) S ⇒ ⇑* l T , `⇒ ‼)
@@ -107,9 +107,9 @@ mutual
   ⇓* : Label×Polarity → ∀ T → Cast * T
   ⇓* l *     = id*
   ⇓* l (` P) = ⇓ l P
-  
+
   ⇓ : Label×Polarity → ∀ P → Cast * (` P)
-  ⇓ l B̂       = (`B ⁇ l , ` B)                
+  ⇓ l B̂       = (`B ⁇ l , ` B)
   ⇓ l (S ⇒̂ T) = (`⇒ ⁇ l , ` ⇑* (neg l) S ⇒ (⇓* l T))
   ⇓ l (S ⊗̂ T) = (`⊗ ⁇ l , ` ⇓* l S ⊗ (⇓* l T))
 
@@ -196,7 +196,7 @@ mutual
   g-identityˡ B = refl
   g-identityˡ (s ⇒ t) rewrite identityʳ s | identityˡ t = refl
   g-identityˡ (s ⊗ t) rewrite identityˡ s | identityˡ t = refl
-  
+
   g-identityʳ : ∀ {P1 P2} → (g : CoeG P1 P2) → g g⨟g id-g P2 ≡ g
   g-identityʳ B = refl
   g-identityʳ (s ⇒ t) rewrite identityˡ s | identityʳ t = refl
@@ -213,7 +213,7 @@ mutual
   identityˡ (` (g , G ‼)) rewrite g-identityˡ g = refl
   identityˡ (` (` g))     rewrite g-identityˡ g = refl
   identityˡ (` ⊥ A⌣G G l H ¬G≡H) = cong (λ □ → (` ⊥ □ G l H ¬G≡H)) (⌣unique _ _)
-  
+
   identityʳ : ∀ {T1 T2} → (c : Cast T1 T2) → c ⨟ id T2 ≡ c
   identityʳ id* = refl
   identityʳ (G ⁇ l , i) rewrite i-identityʳ i = refl
@@ -243,7 +243,7 @@ mutual
     rewrite assoc-ggg g1 g2 g = refl
   assoc-ggi g1 g2 (` g)
     rewrite assoc-ggg g1 g2 g = refl
-  
+
   assoc-gis : ∀ {T1 T2 T3 T4}
     → (c1 : CoeG T1 T2)
     → (c2 : CoeI T2 T3)
@@ -281,7 +281,7 @@ mutual
   assoc (` i) c2 c3 rewrite assoc-iss i c2 c3 = refl
 
 lem-id : ∀ {T}
-  → (v : Value Cast T)  
+  → (v : Value Cast T)
   -----------------------------
   → ⟦ id T ⟧ v ≡ return v
 lem-id {*} v = refl
@@ -298,7 +298,7 @@ lem-g⨟g : ∀ {T1 T2 T3}
   → (c2 : CoeG T2 T3)
   → ∀ v
   --------------------
-  → ⟦ c1 g⨟g c2 ⟧g v ≡ ⟦ c2 ⟧g (⟦ c1 ⟧g v) 
+  → ⟦ c1 g⨟g c2 ⟧g v ≡ ⟦ c2 ⟧g (⟦ c1 ⟧g v)
 lem-g⨟g B B v = refl
 lem-g⨟g (s2 ⇒ t2) (s3 ⇒ t3) (lam⟨ s1 ⇒ t1 ⟩ e E)
   rewrite assoc s3 s2 s1 | assoc t1 t2 t3
@@ -455,9 +455,9 @@ eq-*I-succ (lam⟨ c1 ⇒ c2 ⟩ e E) l `⇒
 eq-*I-succ (cons⟨ c1 ⊗ c2 ⟩ v v₁) l `⊗
   rewrite identityʳ c1 | identityʳ c2
   = refl
-    
+
 eq-*I-fail : {P Q : PreType}
-  → (v : Value Cast (` P))  
+  → (v : Value Cast (` P))
   → ∀ l
   → (gP : Ground P)
   → (gQ : Ground Q)
@@ -497,7 +497,7 @@ correctness-1 : ∀ {T e}
   → Evalᵣ e o
 correctness-1
   = theorem-LazyUD-CastADT-correct-part-1 S SIsLazyUD
-               
+
 correctness-2 : ∀ {T e}
   → {o : Observable T}
   → Evalᵣ e o

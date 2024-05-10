@@ -2,7 +2,7 @@ module equivalence-of-cast-calculi.Theorems
   (Label : Set)
   where
 
-open import equivalence-of-cast-calculi.Type using (Ground; Same)
+open import equivalence-of-cast-calculi.Type using (Ground; All)
 open import equivalence-of-cast-calculi.Variable using (∅)
 open import equivalence-of-cast-calculi.CC Label using (_⊢_)
 open import equivalence-of-cast-calculi.Observable Label
@@ -30,48 +30,48 @@ open import equivalence-of-cast-calculi.C.BlameStrategies Label
 -- then C is correct (evalS(C,e) = o if and only if evalD(e) = o)
 
 theorem-LazyD-CastADT-correct-part-1 : ∀ {T}
-  → (C : CastADT Same)
+  → (C : CastADT All)
   → IsLazyD C
   → {e : ∅ ⊢ T}
   → {o : Observable T}
-  → Evalˢ Same C e o
+  → Evalˢ All C e o
   ---
   → Evalᶜ LazyDBS e o
-theorem-LazyD-CastADT-correct-part-1 C CisLazyD prf
-  = correctness-r LazyDBS C (lem-⟦_⟧-D C CisLazyD) prf
+theorem-LazyD-CastADT-correct-part-1 C CIsLazyD prf
+  = correctness-r LazyDBS C (lem-⟦_⟧-D C CIsLazyD) prf
 
 theorem-LazyD-CastADT-correct-part-2 : ∀ {T}
-  → (C : CastADT Same)
+  → (C : CastADT All)
   → IsLazyD C
   → {e : ∅ ⊢ T}
   → {o : Observable T}
   → Evalᶜ LazyDBS e o
   ---
-  → Evalˢ Same C e o
-theorem-LazyD-CastADT-correct-part-2 C CisLazyD prf
-  = correctness-l LazyDBS C (lem-⟦_⟧-D C CisLazyD) prf
+  → Evalˢ All C e o
+theorem-LazyD-CastADT-correct-part-2 C CIsLazyD prf
+  = correctness-l LazyDBS C (lem-⟦_⟧-D C CIsLazyD) prf
 
 -- For all implementations of CastADT C, If C is LazyUD
 -- then C is correct (evalS(C,e) = o if and only if evalUD(e) = o)
 
 theorem-LazyUD-CastADT-correct-part-1 : ∀ {T}
   → (C : CastADT Ground)
-  → (lazyd : IsLazyUD C)
+  → (CIsLazyUD : IsLazyUD C)
   → {e : ∅ ⊢ T}
   → {o : Observable T}
   → Evalˢ Ground C e o
   ---
   → Evalᶜ LazyUDBS e o
-theorem-LazyUD-CastADT-correct-part-1 C lazyd prf
-  = correctness-r LazyUDBS C (lem-⟦_⟧-UD C lazyd) prf
+theorem-LazyUD-CastADT-correct-part-1 C CIsLazyUD prf
+  = correctness-r LazyUDBS C (lem-⟦_⟧-UD C CIsLazyUD) prf
 
 theorem-LazyUD-CastADT-correct-part-2 : ∀ {T}
   → (C : CastADT Ground)
-  → (lazyd : IsLazyUD C)
+  → (CIsLazyUD : IsLazyUD C)
   → {e : ∅ ⊢ T}
   → {o : Observable T}
   → Evalᶜ LazyUDBS e o
   ---
   → Evalˢ Ground C e o
-theorem-LazyUD-CastADT-correct-part-2 C lazyd prf
-  = correctness-l LazyUDBS C (lem-⟦_⟧-UD C lazyd) prf
+theorem-LazyUD-CastADT-correct-part-2 C CIsLazyUD prf
+  = correctness-l LazyUDBS C (lem-⟦_⟧-UD C CIsLazyUD) prf

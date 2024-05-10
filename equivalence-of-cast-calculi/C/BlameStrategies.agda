@@ -25,7 +25,7 @@ module LazyD where
   open import Relation.Nullary using (yes; no)
 
   I? : PreType → Set
-  I? = Same
+  I? = All
 
   CastResult : Type → Set
   CastResult T = Error Label×Polarity (Value I? T)
@@ -37,8 +37,8 @@ module LazyD where
 
   ⟦_⟧ : ∀ {S T} → Cast S T → Value I? S → CastResult T
   ⟦ * ⟹[ l ] * ⟧ v = return v
-  ⟦ * ⟹[ l ] (` Q) ⟧ (dyn (same P) v) = apply-cast' v ((` P) ⟹[ l ] (` Q))
-  ⟦ (` P) ⟹[ l ] * ⟧ v = return (dyn (same P) v)
+  ⟦ * ⟹[ l ] (` Q) ⟧ (dyn (all P) v) = apply-cast' v ((` P) ⟹[ l ] (` Q))
+  ⟦ (` P) ⟹[ l ] * ⟧ v = return (dyn (all P) v)
   ⟦ (` P) ⟹[ l ] (` Q) ⟧ v = apply-cast' v ((` P) ⟹[ l ] (` Q))
 
 LazyDBS : BlameStrategy
@@ -60,7 +60,7 @@ module LazyUD where
   project (dyn gP v) l gQ with (` unground gP) ≟ (` unground gQ)
   ... | yes refl = return v
   ... | no ¬p = raise l
-  
+
   ⟦_⟧ : ∀ {S T} → Cast S T → Value I? S → Result T
   ⟦ *   ⟹[ l ] * ⟧ v = return v
   ⟦ ` P ⟹[ l ] * ⟧ v with ground? P

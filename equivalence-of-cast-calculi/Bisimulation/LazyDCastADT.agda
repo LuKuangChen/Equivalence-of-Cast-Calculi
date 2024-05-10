@@ -1,5 +1,5 @@
 module equivalence-of-cast-calculi.Bisimulation.LazyDCastADT
-  (Label : Set)  
+  (Label : Set)
   where
 
 open import equivalence-of-cast-calculi.Type
@@ -41,13 +41,13 @@ record IsLazyD (ADT : CastADT) : Set where
 
     eq-P* : ∀ {P}
       → (l : Label×Polarity)
-      → (v : Value (` P))  
+      → (v : Value (` P))
       → ⟦ ⌈ (` P) ⟹[ l ] * ⌉ ⟧ v
           ≡
-        return (dyn (same P) v)
-      
+        return (dyn (all P) v)
+
     eq-*P : ∀ Q P l v
-      → ⟦ ⌈ * ⟹[ l ] (` Q) ⌉ ⟧ (dyn (same P) v)
+      → ⟦ ⌈ * ⟹[ l ] (` Q) ⌉ ⟧ (dyn (all P) v)
           ≡
         ⟦ ⌈ (` P) ⟹[ l ] (` Q) ⌉ ⟧ v
 
@@ -87,7 +87,7 @@ module Theorems
   (CADT : CastADT)
   (CADTLazyD : IsLazyD CADT)
   where
-  
+
   open import equivalence-of-cast-calculi.C.BlameStrategies using (BlameStrategy)
   open import equivalence-of-cast-calculi.Bisimulation.BisimulationRelation Label LazyDBS CADT
   open IsLazyD CADTLazyD
@@ -112,16 +112,16 @@ module Theorems
   lem-⟦_⟧' (.(` _) ⟹[ l ] .(` _)) v | no ¬p
     rewrite eq-¬⌣ l ¬p (rvalue v)
     = raise l
-  
+
   lem-⟦_⟧ : ∀ {S T lv rv}
           → (c : L.Cast S T)
           → ValueRelate lv rv
           → CastResultRelate (L.apply-cast c lv)
                              (R.⟦ R.⌈ c ⌉ ⟧ rv)
   lem-⟦_⟧ (*   ⟹[ l ] *)   v rewrite eq-** l (rvalue v) = return v
-  lem-⟦_⟧ (` P ⟹[ l ] *)   v rewrite eq-P* l (rvalue v) = return (dyn (same P) v)
+  lem-⟦_⟧ (` P ⟹[ l ] *)   v rewrite eq-P* l (rvalue v) = return (dyn (all P) v)
   lem-⟦_⟧ (` P ⟹[ l ] ` Q) v = lem-⟦_⟧' (` P ⟹[ l ] ` Q) v
-  lem-⟦_⟧ (*   ⟹[ l ] ` Q) (dyn (same P) v)
+  lem-⟦_⟧ (*   ⟹[ l ] ` Q) (dyn (all P) v)
     rewrite eq-*P Q P l (rvalue v)
     = lem-⟦_⟧' (` P ⟹[ l ] ` Q) v
-                  
+

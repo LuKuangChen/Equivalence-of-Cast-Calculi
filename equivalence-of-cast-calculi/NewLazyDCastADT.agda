@@ -11,10 +11,10 @@ open import equivalence-of-cast-calculi.CC Label
   using (_⊢_; Context; _⟹[_]_)
   renaming (Cast to SrcCast)
   public
-open import equivalence-of-cast-calculi.S.CastADT Label Same
+open import equivalence-of-cast-calculi.S.CastADT Label All
   using (CastADT)
   public
-open import equivalence-of-cast-calculi.S.Value Label Same
+open import equivalence-of-cast-calculi.S.Value Label All
   public
 open import equivalence-of-cast-calculi.Bisimulation.LazyDCastADT Label
   using (IsLazyD) public
@@ -25,7 +25,7 @@ open import equivalence-of-cast-calculi.C.BlameStrategies Label using (LazyDBS)
 open import equivalence-of-cast-calculi.C.Machine Label LazyDBS
   using ()
   renaming (Eval to Evalᵣ) public
-open import equivalence-of-cast-calculi.S.Machine Label Same
+open import equivalence-of-cast-calculi.S.Machine Label All
   using ()
   renaming (Eval to Evalₛ) public
 open import equivalence-of-cast-calculi.Theorems Label

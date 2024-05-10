@@ -1,5 +1,7 @@
 # Equivalence of Cast Calculi
 
+This repo comes with [Kuang-Chen Lu's master's thesis](https://lukuangchen.github.io/Downloads/thesis-of-KuangChen.pdf).
+
 This repo aims at helping people to develop new cast representations and to prove their correctness.
 
 The package [equivalence-of-cast-calculi](./equivalence-of-cast-calculi) contains necessary semantic definition and theorems.
@@ -11,6 +13,6 @@ If a user want to prove a Lazy UD cast representation is correct, the user shoul
 3. prove that `c` is a Lazy UD Cast ADT.
 
 For illustration, please refer to [illustration](./illustration). There each file applies our framework to a known cast representation.
-We recommand starting with [coercions in normal form](./illustration/LazyUDCoercionsInNormalForm.agda) if you know coercions, coercions in normal form, or canonical coercions.
+We recommand starting with [coercions in normal form](./illustration/LazyUDCoercionsInNormalForm.agda) if you know coercions.
 Otherwise, [Lazy UD hypercoercions](illustration/LazyUDHypercoercions.agda) is recommanded because 
 this cast representation is described in details in our paper.

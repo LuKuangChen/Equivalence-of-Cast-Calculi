@@ -5,7 +5,7 @@ This repo comes with [Kuang-Chen Lu's master's thesis](https://lukuangchen.githu
 I assume you, the reader, already know
 
 * what *gradual typing* is,
-* that *structural* (rather than *nominal*) gradual typing can incur terrible runtime overhead because of casts
+* why casts in *structural* (rather than *nominal*) gradual typing can incur terrible runtime overhead
 * that we can optimize some overhead away by representing casts more compactly with cast calculi/representations
 
 When my thesis was written (2020), the most well-known cast calculi were *coercion* and *threesome*.

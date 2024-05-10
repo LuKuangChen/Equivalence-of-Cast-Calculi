@@ -45,3 +45,5 @@ There, each file applies our framework to a known cast representation.
 I recommend starting with [coercions in normal form](./illustration/LazyUDCoercionsInNormalForm.agda) if you know coercion.
 Otherwise, [Lazy UD hypercoercions](illustration/LazyUDHypercoercions.agda) are recommended because
 this cast representation is described in detail in my thesis.
+
+Check the [equivalence-of-cast-calculi](./equivalence-of-cast-calculi) folder for things like the semantics, the ADT, properties, and theorems.

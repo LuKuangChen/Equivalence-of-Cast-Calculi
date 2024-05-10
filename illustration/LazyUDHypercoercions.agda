@@ -8,7 +8,7 @@ Everything from there to the first occurrance of ' : IsLazyUD' proves that
 Lazy UD hypercoercions is a Lazy UD Cast ADT.
 -}
 
-open import equivalence-of-cast-calculi.NewLazyUDCastADT Label
+open import equivalence-of-cast-calculi.LazyUDCastADT Label
   renaming (negate-label×polarity to neg)
   renaming (B to B̂; _⇒_ to _⇒̂_; _⊗_ to _⊗̂_)
 -- adding hats to type constructors because we want to reuse these names

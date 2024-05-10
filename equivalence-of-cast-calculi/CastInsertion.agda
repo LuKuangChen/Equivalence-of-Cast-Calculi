@@ -9,7 +9,6 @@ open import equivalence-of-cast-calculi.GTLC Label
   renaming (_⊢_ to _⊢G_)
 open import equivalence-of-cast-calculi.CC   Label
   renaming (_⊢_ to _⊢C_)
-open import equivalence-of-cast-calculi.Cast Label
 
 typeof : ∀ {Γ T} → Γ ⊢G T → Type
 typeof {Γ} {T} e = T
@@ -27,9 +26,9 @@ compile (if e₁ e₂ e₃ l T₁~B T₂~T₃)
        (compile e₂ ⟨ typeof e₂ ⟹[ mklp l ] meet T₂~T₃ ⟩)
        (compile e₃ ⟨ typeof e₃ ⟹[ mklp l ] meet T₂~T₃ ⟩)
 compile (cons e₁ e₂) = cons (compile e₁) (compile e₂)
-compile (car e l T▹T₁⊗T₂)
-  = car (compile e ⟨ typeof e ⟹[ mklp l ] (` match-target T▹T₁⊗T₂) ⟩)
-compile (cdr e l T▹T₁⊗T₂)
-  = cdr (compile e ⟨ typeof e ⟹[ mklp l ] (` match-target T▹T₁⊗T₂) ⟩)
-  
+compile (fst e l T▹T₁⊗T₂)
+  = fst (compile e ⟨ typeof e ⟹[ mklp l ] (` match-target T▹T₁⊗T₂) ⟩)
+compile (snd e l T▹T₁⊗T₂)
+  = snd (compile e ⟨ typeof e ⟹[ mklp l ] (` match-target T▹T₁⊗T₂) ⟩)
+
 

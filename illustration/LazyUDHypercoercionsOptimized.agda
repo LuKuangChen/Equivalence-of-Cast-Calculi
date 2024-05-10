@@ -9,7 +9,7 @@ This property has a benefit that applying identity casts, which
 I guess happens a lot in realistic programs, always take constant time.
 -}
 
-open import equivalence-of-cast-calculi.NewLazyUDCastADT Label
+open import equivalence-of-cast-calculi.LazyUDCastADT Label
   renaming (negate-label×polarity to neg)
 
 open import Relation.Nullary using (Dec; yes; no; ¬_)
@@ -26,7 +26,7 @@ open import Relation.Binary.PropositionalEquality
 data Head : (G : TypeOp) → Type → (Vec Type (arity G)) → Set where
 
   ⁇ : ∀ G
-    → (l : Label×Polarity) → Head G * (replicate *) 
+    → (l : Label×Polarity) → Head G * (replicate *)
 
   ε : ∀ {G Ts}
     → Head G (` G · Ts) Ts
@@ -76,14 +76,14 @@ data PreBody where
 
   ε : ∀ {G Ts}
     → PreBody G Ts Ts
-    
+
   _⇒̂_ : ∀ {S₁ S₂ T₁ T₂}
     → (c : Cast S₂ S₁)
     → (d : Cast T₁ T₂)
     → .(¬p : ¬ (Identity c × Identity d))
       --------------------------------------
     → PreBody `⇒ (S₁ ∷ T₁ ∷ []) (S₂ ∷ T₂ ∷ [])
-    
+
   _⊗̂_ : ∀ {S₁ S₂ T₁ T₂}
     → (c : Cast S₁ S₂)
     → (d : Cast T₁ T₂)
@@ -338,7 +338,7 @@ identityˡ (↷ ε (⊥ l) t₂) = refl
 identityˡ (↷ ε (` ε) t₂) = refl
 identityˡ (↷ ε (` (c₁ ⇒̂ c₂) ¬p) t₂) rewrite identityʳ c₁ | identityˡ c₂ = refl
 identityˡ (↷ ε (` (c₁ ⊗̂ c₂) ¬p) t₂) rewrite identityˡ c₁ | identityˡ c₂ = refl
-                                                                       
+
 identityʳ * = refl
 identityʳ (↷ t₁ m (‼ P)) = refl
 identityʳ (↷ t₁ (⊥ l) ε) = refl
@@ -518,7 +518,7 @@ assoc-seq-m (` m₁) t₁ h₂ (` m₂) (‼ G) (⁇ H l) m₃ | inj₂ refl | i
 assoc-seq-m (` m₁) (‼ G) (⁇ H l) m₂ t₂ h₃ m₃ | inj₁ (it ¬G≡H) = refl
 
 lem-id : ∀ T
-  → (v : Value Cast T)  
+  → (v : Value Cast T)
   -----------------------------
   → ⟦ id T ⟧ v ≡ return v
 lem-id *     v = refl
@@ -765,10 +765,10 @@ eq-*I-succ (lam⟨ c₁ ⇒ c₂ ⟩ e E) l `⇒
 eq-*I-succ (cons⟨ c₁ ⊗ c₂ ⟩ v v₁) l `⊗
   rewrite identityʳ c₁ | identityʳ c₂
   = refl
-    
+
 
 eq-*I-fail : {P Q : PreType}
-  → (v : Value Cast (` P))  
+  → (v : Value Cast (` P))
   → (l : Label×Polarity)
   → (gP : Ground P)
   → (gQ : Ground Q)
@@ -813,7 +813,7 @@ correctness-1 : ∀ {T e}
   → Evalᵣ e o
 correctness-1
   = theorem-LazyUD-CastADT-correct-part-1 H HIsLazyUD
-               
+
 correctness-2 : ∀ {T e}
   → {o : Observable T}
   → Evalᵣ e o

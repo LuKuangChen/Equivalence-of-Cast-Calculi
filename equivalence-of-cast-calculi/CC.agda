@@ -9,7 +9,7 @@ open import equivalence-of-cast-calculi.Cast Label public
 infix  4 _⊢_
 
 data _⊢_ : Context → Type → Set where
-                                
+
   var : ∀ {Γ T}
     → (x : Γ ∋ T)
     --------
@@ -19,7 +19,7 @@ data _⊢_ : Context → Type → Set where
     → (e : Γ , T1 ⊢ T2)
     -------------
     → Γ ⊢ ` T1 ⇒ T2
-  
+
   app : ∀ {Γ T1 T2}
     → (e1 : Γ ⊢ ` T1 ⇒ T2)
     → (e2 : Γ ⊢ T1)
@@ -50,11 +50,11 @@ data _⊢_ : Context → Type → Set where
   fst : ∀ {Γ S T}
     → (e : Γ ⊢ (` S ⊗ T))
     → Γ ⊢ S
-    
+
   snd : ∀ {Γ S T}
     → (e : Γ ⊢ (` S ⊗ T))
     → Γ ⊢ T
-  
+
   _⟨_⟩ : ∀ {Γ T S}
     → (e : Γ ⊢ S)
     → (c : Cast S T)

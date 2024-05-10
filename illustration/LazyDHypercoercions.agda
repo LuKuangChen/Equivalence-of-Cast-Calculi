@@ -2,7 +2,7 @@ module illustration.LazyDHypercoercions
   (Label : Set)
   where
 
-open import equivalence-of-cast-calculi.NewLazyDCastADT Label
+open import equivalence-of-cast-calculi.LazyDCastADT Label
   renaming (negate-label×polarity to neg)
 
 open import Data.Empty
@@ -113,17 +113,17 @@ g-cod : ∀ {T1 T2 T3 T4}
 g-cod none = none
 g-cod (some l (` T1 ⇒ T2) (` T3 ⇒ T4)) = some l T2 T4
 
-g-car : ∀ {T1 T2 T3 T4}
+g-fst : ∀ {T1 T2 T3 T4}
   → GapP (T1 ⊗ T2) (T3 ⊗ T4)
   → GapT T1 T3
-g-car none = none
-g-car (some l (` T1 ⊗ T2) (` T3 ⊗ T4)) = some l T1 T3
+g-fst none = none
+g-fst (some l (` T1 ⊗ T2) (` T3 ⊗ T4)) = some l T1 T3
 
-g-cdr : ∀ {T1 T2 T3 T4}
+g-snd : ∀ {T1 T2 T3 T4}
   → GapP (T1 ⊗ T2) (T3 ⊗ T4)
   → GapT T2 T4
-g-cdr none = none
-g-cdr (some l (` T1 ⊗ T2) (` T3 ⊗ T4)) = some l T2 T4
+g-snd none = none
+g-snd (some l (` T1 ⊗ T2) (` T3 ⊗ T4)) = some l T2 T4
 
 mk-proj : ∀ {T P}
   → GapT * T
@@ -191,7 +191,7 @@ mutual
     → PreBody P1 P4
   seq-mm ⌣B B̂ g B̂ = B̂
   seq-mm ⌣⇒ (c₁ ⇒̂ c₂) g (c₃ ⇒̂ c₄) = (seq c₃ (g-dom g) c₁) ⇒̂ (seq c₂ (g-cod g) c₄)
-  seq-mm ⌣⊗ (c₁ ⊗̂ c₂) g (c₃ ⊗̂ c₄) = (seq c₁ (g-car g) c₃) ⊗̂ (seq c₂ (g-cdr g) c₄)
+  seq-mm ⌣⊗ (c₁ ⊗̂ c₂) g (c₃ ⊗̂ c₄) = (seq c₁ (g-fst g) c₃) ⊗̂ (seq c₂ (g-snd g) c₄)
 
 mutual
   id : ∀ T → Cast T T
@@ -274,8 +274,8 @@ seq-m-assoc (` (c₁ ⇒̂ c₂)) g1 (` (c₃ ⇒̂ c₄)) g2 (` (c₅ ⇒̂ c�
     | seq-assoc c₂ (g-cod g1) c₄ (g-cod g2) c₆
   = refl
 seq-m-assoc (` (c₁ ⊗̂ c₂)) g1 (` (c₃ ⊗̂ c₄)) g2 (` (c₅ ⊗̂ c₆)) | good ⌣⊗ | good ⌣⊗
-  rewrite seq-assoc c₁ (g-car g1) c₃ (g-car g2) c₅
-    | seq-assoc c₂ (g-cdr g1) c₄ (g-cdr g2) c₆
+  rewrite seq-assoc c₁ (g-fst g1) c₃ (g-fst g2) c₅
+    | seq-assoc c₂ (g-snd g1) c₄ (g-snd g2) c₆
   = refl
 
 seq-assoc id* g1 id* g2 id* = refl

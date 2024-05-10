@@ -1,6 +1,6 @@
 module illustration.LazyUDCoercionsInNormalForm (Label : Set) where
 
-open import equivalence-of-cast-calculi.NewLazyUDCastADT Label
+open import equivalence-of-cast-calculi.LazyUDCastADT Label
   renaming (negate-label×polarity to neg)
   renaming (B to B̂; _⇒_ to _⇒̂_; _⊗_ to _⊗̂_)
 

@@ -1,6 +1,6 @@
 module illustration.LazyUDThreesomes (Label : Set) where
 
-open import equivalence-of-cast-calculi.NewLazyUDCastADT Label
+open import equivalence-of-cast-calculi.LazyUDCastADT Label
   renaming (negate-label×polarity to neg)
 
 open import Data.Empty using () renaming (⊥ to Empty)
@@ -23,7 +23,7 @@ proof easier, we use type constructors in place of ground types.
 -}
 
 data OptionalLabel (op : TypeOp) : Type → (Vec Type (arity op)) → Set where
-  ⁇ : (l : Label×Polarity) → OptionalLabel op * (replicate *) 
+  ⁇ : (l : Label×Polarity) → OptionalLabel op * (replicate *)
   ε : ∀ {Ts} → OptionalLabel op (` op · Ts) Ts
 
 data Tail (op : TypeOp) : (Vec Type (arity op)) → Type → Set where
@@ -50,7 +50,7 @@ data LabeledType where
     → {t : Tail G Ts T}
       ---------------
     → LabeledType S T
-    
+
 data LabeledPreType where
 
   B̂ : LabeledPreType `B [] []
@@ -96,9 +96,9 @@ no-gap-at-all ‼ (⁇ l) = refl
 no-gap-at-all ε ε = refl
 
 _∘_ : ∀ {T1 T2 T3} → LabeledType T2 T3 → LabeledType T1 T2 → LabeledType T1 T3
-T̂ ∘ *         = T̂        
-T̂ ∘ ⊥ m G p   = ⊥ m G p  
-* ∘ Ŝ@(^ P̂ p) = Ŝ        
+T̂ ∘ *         = T̂
+T̂ ∘ ⊥ m G p   = ⊥ m G p
+* ∘ Ŝ@(^ P̂ p) = Ŝ
 ⊥ m H q     ∘ ^ P̂ p with quick-gnd P̂ ≟op H
 ⊥ m H q     ∘ ^ P̂ p | yes refl = ⊥ m H p
 ⊥ m H (⁇ l) ∘ ^ P̂ p | no ¬G≡H  = ⊥ l (quick-gnd P̂) p
@@ -107,7 +107,7 @@ T̂ ∘ ⊥ m G p   = ⊥ m G p
 ^ Q̂ (⁇ m) ∘ ^ P̂ p {t} | no ¬G≡H = ⊥ m (quick-gnd P̂) p
 ^ Q̂ ε     ∘ ^ P̂ p {t} | no ¬G≡H = ⊥-elim (impossible-tail t ¬G≡H)
 ^ Q̂ q     ∘ ^ P̂ p {t} | yes refl with no-gap-at-all t q
-^ B̂         q {s} ∘ ^ B̂         p {t} | yes refl | refl = ^ B̂ p {s}            
+^ B̂         q {s} ∘ ^ B̂         p {t} | yes refl | refl = ^ B̂ p {s}
 ^ (Ŝ₂ ⇒̂ T̂₂) q {s} ∘ ^ (Ŝ₁ ⇒̂ T̂₁) p {t} | yes refl | refl
   = ^ ((Ŝ₁ ∘ Ŝ₂) ⇒̂ (T̂₂ ∘ T̂₁)) p {s}
 ^ (Ŝ₂ ⊗̂ T̂₂) q {s} ∘ ^ (Ŝ₁ ⊗̂ T̂₁) p {t} | yes refl | refl
@@ -288,7 +288,7 @@ data Cast : Type → Type → Set where
   _⟹_[_] : ∀ S T
     → (T̂ : LabeledType S T)
     → Cast S T
-    
+
 _⨟_ : ∀ {T1 T2 T3} → Cast T1 T2 → Cast T2 T3 → Cast T1 T3
 (T1 ⟹ T2 [ Ŝ ]) ⨟ (.T2 ⟹ T3 [ T̂ ]) = T1 ⟹ T3 [ T̂ ∘ Ŝ ]
 
@@ -307,11 +307,11 @@ mutual
   ⇑ l (` B)     = ^ (B̂)             ε {‼}
   ⇑ l (` S ⇒ T) = ^ (⇓ (neg l) S ⇒̂ ⇑ l T) ε {‼}
   ⇑ l (` S ⊗ T) = ^ (⇑ l S ⊗̂ ⇑ l T) ε {‼}
-  
+
   ⇓ : Label×Polarity → ∀ T → LabeledType * T
   ⇓ l *     = *
   ⇓ l (` B)     = ^ (B̂)               (⁇ l) {ε}
-  ⇓ l (` S ⇒ T) = ^ (⇑ (neg l) S ⇒̂ (⇓ l T)) (⁇ l) {ε} 
+  ⇓ l (` S ⇒ T) = ^ (⇑ (neg l) S ⇒̂ (⇓ l T)) (⁇ l) {ε}
   ⇓ l (` S ⊗ T) = ^ (⇓ l S ⊗̂ (⇓ l T)) (⁇ l) {ε}
 
 ⌈_⌉' : ∀ {T1 T2} → SrcCast T1 T2 → LabeledType T1 T2
@@ -491,7 +491,7 @@ inject G (` P) {ε} v = v
 ⨟-identityʳ (S ⟹ T [ T̂ ]) = cong (λ □ → S ⟹ T [ □ ]) (∘-identityˡ T T̂)
 
 lem-id : ∀ T
-  → (v : Value Cast T)  
+  → (v : Value Cast T)
   -----------------------------
   → ⟦ id T ⟧ v ≡ return v
 lem-id (*) v = refl
@@ -750,8 +750,8 @@ eq-*I-succ (cons⟨ c1 ⊗ c2 ⟩ v v₁) l `⊗
   = refl
 
 eq-*I-fail : {P Q : PreType}
-  → (v : Value Cast (` P))  
-  → ∀ l 
+  → (v : Value Cast (` P))
+  → ∀ l
   → (gP : Ground P)
   → (gQ : Ground Q)
   → ¬ (_≡_ {A = Type} (` P) (` Q))
@@ -790,7 +790,7 @@ correctness-1 : ∀ {T e}
   → Evalᵣ e o
 correctness-1
   = theorem-LazyUD-CastADT-correct-part-1 C CIsLazyUD
-               
+
 correctness-2 : ∀ {T e}
   → {o : Observable T}
   → Evalᵣ e o

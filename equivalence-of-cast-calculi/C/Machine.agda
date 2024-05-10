@@ -22,7 +22,7 @@ data Frame : Type → Type → Set where
     → (E : Env Γ)
     --------
     → Frame (` S ⇒ T) T
-                          
+
   app₂ : ∀ {S T}
     → (v1 : Value (` S ⇒ T))
     --------
@@ -51,7 +51,7 @@ data Frame : Type → Type → Set where
   □⟨_⟩ : ∀ {S T}
     → (c : Cast S T)
     → Frame S T
-    
+
 data Cont : Type → Type → Set where
 
   [_]_ : ∀ {S T Z}
@@ -59,19 +59,19 @@ data Cont : Type → Type → Set where
     → (k : Cont T Z)
     ---
     → Cont S Z
-                
+
   □ : ∀ {Z}
     ----------
     → Cont Z Z
 
-data OrdinaryState (T : Type) : Set where 
+data OrdinaryState (T : Type) : Set where
   expr : ∀ {Γ S}
     → (e : Γ ⊢ S)
     → (E : Env Γ)
     → (K : Cont S T)
     ------------
     → OrdinaryState T
-    
+
   cont : ∀ {S}
     → (v : Value S)
     → (K : Cont S T)
@@ -86,7 +86,7 @@ State T = Error Label×Polarity (OrdinaryState T)
 data Final {T : Type} : State T →  Set where
   halt : ∀ v
     → Final (return (halt v))
-      
+
   error : ∀ l
     → Final (raise l)
 
@@ -97,7 +97,7 @@ data Progressing {T : Type} : State T →  Set where
     → (K : Cont S T)
     ------------
     → Progressing (return (expr e E K))
-    
+
   cont : ∀ {S}
     → (v : Value S)
     → (K : Cont S T)
@@ -140,7 +140,7 @@ do-fst : ∀ {T1 T2 Z}
 do-fst (cons v1 v2) k = return (cont v1 k)
 do-fst (v ⊗⟨ (` T1 ⊗ T2) ⟹[ l ] (` T3 ⊗ T4) ⟩) k
   = return (cont v ([ fst₁ ] [ □⟨ T1 ⟹[ l ] T3 ⟩ ] k))
-  
+
 do-snd : ∀ {T1 T2 Z}
   → Value (` T1 ⊗ T2)
   → Cont T2 Z

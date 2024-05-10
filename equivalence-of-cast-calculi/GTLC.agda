@@ -7,7 +7,7 @@ open import equivalence-of-cast-calculi.Variable
 infix  4 _⊢_
 
 data _⊢_ : Context → Type → Set where
-                                
+
   var : ∀ {Γ T}
     → (x : Γ ∋ T)
     --------
@@ -17,7 +17,7 @@ data _⊢_ : Context → Type → Set where
     → (e : Γ , S ⊢ T)
     -------------
     → Γ ⊢ ` S ⇒ T
-  
+
   app : ∀ {Γ T1 S T T2}
     → (e1 : Γ ⊢ T1)
     → (e2 : Γ ⊢ T2)
@@ -51,13 +51,13 @@ data _⊢_ : Context → Type → Set where
     -----
     → Γ ⊢ (` T1 ⊗ T2)
 
-  car : ∀ {Γ S⊗T S T}
+  fst : ∀ {Γ S⊗T S T}
     → (e : Γ ⊢ S⊗T)
     → (l  : Label)
     → (m : S⊗T ▹ (S ⊗ T))
     → Γ ⊢ S
-    
-  cdr : ∀ {Γ S⊗T S T}
+
+  snd : ∀ {Γ S⊗T S T}
     → (e : Γ ⊢ S⊗T)
     → (l  : Label)
     → (m : S⊗T ▹ (S ⊗ T))

@@ -1,4 +1,4 @@
-module equivalence-of-cast-calculi.NewLazyDCastADT
+module equivalence-of-cast-calculi.LazyDCastADT
   (Label : Set)
   where
 
